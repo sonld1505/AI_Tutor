@@ -1,0 +1,44 @@
+id: SPRINT-001
+# No PI exists yet: PI Objectives need PO-owned business value (I-001). Factory
+# sprint only; not product scope. Created by CLAUDE_SM 2026-10-03.
+pi: null
+
+goal: "Python/FastAPI support in the factory gates (US-FACTORY-002), so that the factory validation Story US-FACTORY-001 can start."
+
+start_date: null   # not set by the human PO; not invented
+end_date: null
+
+stories:
+  - id: US-FACTORY-002
+    type: enabler
+    points: 3
+    assigned_role: CODEX_DEVOPS
+    worktree_branch: feature/US-FACTORY-002-devops   # planned; not created (blockers below)
+    status: READY
+    commitment: committed
+  - id: US-FACTORY-001
+    type: user
+    points: 2
+    assigned_role: CODEX_BACKEND
+    status: BLOCKED          # blocked_by US-FACTORY-002 (D-005)
+    commitment: not_committed   # pulled in only after US-FACTORY-002 is DONE, by PO decision
+
+risks:
+  - R-001   # DoR validator fail-open: SM checks DoR by hand
+  - R-002   # validator does not enforce BLOCKED/depends_on: SM gate before any US-FACTORY-001 worktree
+
+# Must clear before Codex DevOps starts (READY -> IN_PROGRESS):
+blockers:
+  - I-002   # base branch for the worktree must contain Phase 1 scripts (develop has only README.md)
+  - I-003   # create-worktree.sh rejects US-FACTORY-002; PO to approve a recorded one-time bootstrap
+# I-007 CLOSED 2026-10-03 (docker ps OK as ubuntu).
+# Execution readiness review CLAUDE_SM 2026-10-03: DoR PASS 7/7, start NOT cleared
+# (I-002, I-003 open) -> US-FACTORY-002 stays READY; assignment planned, not active.
+# Must clear before US-FACTORY-002 can be DONE (not blocking start):
+done_blockers:
+  - I-005   # acceptable DoD evidence while repo has no backend/
+  - D-001   # Jenkins multibranch job connected to GitHub
+
+metrics:
+  committed_points: 3
+  completed_points: 0

@@ -2,6 +2,9 @@ id: US-XXX
 
 title: ""
 
+story_type: user     # user | enabler (SAFe Enabler Story: factory/technical prerequisite)
+depends_on: []       # Story IDs that must be DONE before this Story may enter development
+
 epic: ""
 feature: ""
 
@@ -9,6 +12,7 @@ feature: ""
 # State machine: agents/claude/scrum-master.md
 status: DRAFT
 blocked_from: null   # state to return to when status is BLOCKED; null otherwise
+blocked_by: []       # Story/RAID IDs causing BLOCKED; empty otherwise
 priority: medium
 story_points: null
 

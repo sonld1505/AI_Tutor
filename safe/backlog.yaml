@@ -1,7 +1,21 @@
 # Prioritized backlog — owner: PM_PO. Template: safe/templates/backlog.yaml
-# Empty on purpose: Epics/Features wait for approval of docs/capstone/SCOPE-AITUTOR.md
+# Product Epics/Features wait for approval of docs/capstone/SCOPE-AITUTOR.md
 # (decision 2026-10-03, see docs/factory/PLAYBOOK-SAFE-MAPPING.md).
 updated: "2026-10-03"
 approved_by: null
 
-items: []
+# Factory items below are not product scope (I-001 exceptions). Order and MoSCoW
+# are proposed by Claude; the human PO decides.
+items:
+  - ref: US-FACTORY-002
+    moscow: null
+    rationale: "Enabler, 3 pts. Prerequisite of US-FACTORY-001 (D-005). READY (AD-01 pinned python:3.12 container). Committed to SPRINT-001, Codex DevOps. Start needs I-002, I-003, I-007; DONE needs I-005, D-001."
+  - ref: US-FACTORY-001
+    moscow: null
+    rationale: "Factory validation, 2 pts. DoR PASS; BLOCKED until US-FACTORY-002 is DONE."
+  - ref: DEF-001
+    moscow: null
+    rationale: "HIGH. No owning Story (I-004); validator stays fail-open, SM checks DoR by hand (R-001)."
+  - ref: DEF-003
+    moscow: null
+    rationale: "MEDIUM, latent while deploy.sh exits 1. No owning Story (I-004)."

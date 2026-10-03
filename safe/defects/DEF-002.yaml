@@ -7,6 +7,7 @@ found_by: CLAUDE_SM
 found_on: "2026-10-03"
 owner_role: DEVOPS
 related:
+  - US-FACTORY-002   # consolidated into this Enabler Story as AC11-AC13 (PO decision 2026-10-03)
   - scripts/create-worktree.sh
   - "branch develop (at 2d8ecc6, contains only README.md)"
 

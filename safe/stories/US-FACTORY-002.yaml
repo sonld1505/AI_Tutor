@@ -1,0 +1,220 @@
+id: US-FACTORY-002
+
+title: "Enable Python/FastAPI support in AI Factory CI tooling"
+
+# SAFe Enabler Story (factory tooling, not product scope). Prerequisite of US-FACTORY-001.
+# Replaces the former standalone task FACTORY-DEVOPS-001 (RAID D-004, closed).
+# Consolidates DEF-002 (create-worktree.sh base-branch check) because it changes
+# the same file (PO decision 2026-10-03: one Story owns create-worktree.sh).
+# DEF-001 and DEF-003 were in the previous draft of this ID; they are no longer
+# in scope and are tracked in RAID I-004 until the PO assigns them.
+#
+# Decisions approved by the human PO on 2026-10-03:
+#   ID patterns: exactly ^US-[0-9]+$ and ^US-FACTORY-[0-9]+$.
+#   Python baseline: Python 3.12; canonical project marker backend/pyproject.toml
+#     (a requirements.txt may exist for compatibility but is never the marker).
+#   Tooling: pytest, pytest-cov, ruff. Coverage threshold: 80%.
+#   Jenkins fail-closed behaviour is not modified in this Story.
+#
+# Architecture decision AD-01 (human PO, 2026-10-03, resolves former Q1 / RAID I-006):
+#   Python 3.12 is provided ONLY through a pinned Docker image (canonical runtime
+#   python:3.12; DevOps pins the exact version/digest when implementing).
+#   All Python backend gates run inside that container: dependency installation,
+#   build/package validation, ruff, pytest, pytest-cov.
+#   The same execution model serves Codex local validation and Jenkins CI: no
+#   separate local and CI Python paths.
+#   Python 3.12 is NOT installed on the EC2 host, and host Python (3.14.4) is never
+#   the required runtime for US-FACTORY-001 or US-FACTORY-002.
+story_type: enabler
+depends_on: []
+epic: ""
+feature: ""
+
+# DRAFT | REFINED | READY | IN_PROGRESS | DEV_COMPLETE | TESTING | QA | DONE | BLOCKED
+# State machine: agents/claude/scrum-master.md
+status: READY        # DoR PASS 7/7 (manual, 2026-10-03). SM readiness review 2026-10-03: start held by RAID I-002, I-003 (I-007 closed)
+blocked_from: null
+blocked_by: []
+priority: high       # prerequisite of US-FACTORY-001
+story_points: 3      # human PO, 2026-10-03
+
+business_context: >
+  The PO approved Python 3.12 + FastAPI as the baseline backend direction and
+  chose US-FACTORY-<number> IDs for factory validation Stories. The factory
+  gate scripts support neither: create-worktree.sh accepts only ^US-[0-9]+$,
+  and build.sh, lint.sh and unit-test.sh detect only Maven/Node/Android
+  projects. US-FACTORY-001 (health endpoint) cannot enter development until
+  this Enabler is DONE. DEF-002 (worktree created from a base branch that
+  lacks the factory files) is fixed here as well, because it changes the same
+  script.
+
+business_value: >
+  Lets the first Python/FastAPI Story run through the real gates instead of
+  being forced onto a stack chosen only because CI already supports it, while
+  keeping NO UNIT TEST PASS = NO DEPLOY. Adds an 80% coverage floor so a Python
+  project cannot pass the unit-test gate with untested code.
+
+description: >
+  As the factory owner (human PO), I want the factory scripts to create
+  worktrees for US-FACTORY-* Stories and to build, lint, unit-test and
+  coverage-check a Python 3.12 / FastAPI backend, failing closed in every
+  uncertain case, so that US-FACTORY-001 can be implemented and verified by
+  the standard gates.
+  Owner role: Codex DevOps (scripts/**, jenkins/**).
+  Out of scope: Jenkinsfile changes (fail-closed stages stay as they are),
+  enabling deploy.sh, the DoR validator fix (DEF-001), the promotion policy
+  (DEF-003), and any backend application code (US-FACTORY-001).
+
+acceptance_criteria:
+  # --- create-worktree.sh (PO AC01 + consolidated DEF-002) ---
+  - id: AC01
+    description: "scripts/create-worktree.sh accepts Story IDs matching ^US-[0-9]+$ or ^US-FACTORY-[0-9]+$ and rejects every other ID. The pattern is not broadened beyond these two."
+  - id: AC02
+    description: "scripts/build.sh detects a Python project by backend/pyproject.toml (requirements.txt alone is not detected) and builds it with Python 3.12, including FastAPI projects. It fails if the pinned Python 3.12 container cannot run or dependency installation fails."
+  - id: AC03
+    description: "scripts/lint.sh runs ruff on the Python project and fails when ruff reports violations or cannot run."
+  - id: AC04
+    description: "scripts/unit-test.sh runs pytest on the Python project."
+  - id: AC05
+    description: "pytest-cov is supported and unit-test.sh enforces a minimum coverage of 80%. The threshold is set by the gate script, so project configuration cannot lower it."
+  - id: AC06
+    description: "A pytest failure causes unit-test.sh to return non-zero."
+  - id: AC07
+    description: "Coverage below 80% causes unit-test.sh to return non-zero."
+  - id: AC08
+    description: "If no supported test project is detected, unit-test.sh returns non-zero. If test execution cannot start (interpreter, pytest or pytest-cov missing, collection error, zero tests collected), unit-test.sh returns non-zero."
+  - id: AC09
+    description: "Existing Maven and Node support is not broken: their detection and commands in build.sh, lint.sh and unit-test.sh behave as before."
+  - id: AC10
+    description: "NO UNIT TEST PASS = NO DEPLOY remains enforced: unit-test.sh prints UNIT TEST GATE: FAILED / DEPLOYMENT FORBIDDEN on every failure path, and the Jenkinsfile stage order (Unit Test Gate before any Deploy stage) is unchanged."
+  - id: AC11
+    description: "create-worktree.sh fails and names each missing path when the base branch lacks AGENTS.md, agents/codex/<role>.md, scripts/validate-story.sh, scripts/unit-test.sh or safe/stories/<id>.yaml. (DEF-002 AC01)"
+  - id: AC12
+    description: "create-worktree.sh runs DoR validation against the Story content as it exists on the base branch, not the current checkout. (DEF-002 AC02)"
+  - id: AC13
+    description: "Automated tests cover every failure path above plus at least one passing case for each script changed (see test_scenarios). (DEF-002 AC03, extended)"
+
+functional_requirements:
+  - "FR01: ID check is a single anchored match against the two approved patterns; no case-insensitive matching, no prefix/suffix tolerance."
+  - "FR02: Python detection keys on backend/pyproject.toml only; detection is added beside the existing Maven/Node/Android checks without changing them."
+  - "FR03: Every Python gate step (dependency installation, build/package validation, ruff, pytest, pytest-cov) runs inside the pinned python:3.12 Docker image (AD-01), never on host Python. The image is referenced by exact version/digest, defined once in the repo and reused by build.sh, lint.sh and unit-test.sh."
+  - "FR04: pytest, pytest-cov and ruff are installed inside the container from the backend project's declared development dependencies in pyproject.toml. The expected declaration is documented so US-FACTORY-001 can follow it."
+  - "FR08: The gate scripts themselves start the container, so a Codex agent running ./scripts/<gate>.sh locally and Jenkins running the same script use the same execution model (AD-01). Jenkinsfile is not changed."
+  - "FR05: The coverage gate uses pytest-cov's fail-under at 80 set on the command line by unit-test.sh."
+  - "FR06: Base-branch checks read files with git (e.g. git cat-file -e <base>:<path>) without checking the base branch out."
+  - "FR07: Every failure prints which check failed (pattern, missing path, tool, coverage value)."
+
+non_functional_requirements:
+  - "NFR01 (fail closed): UNKNOWN != PASS. A missing interpreter, tool, file or result is FAIL (spec §2.4)."
+  - "NFR02 (no regression): Maven/Node/Android behaviour unchanged (AC09)."
+  - "NFR03 (scope guard): Jenkinsfile, deploy.sh, validate-story.sh are not modified."
+  - "NFR04 (secrets): no credential, token or private index URL is added to the repo or printed in logs."
+  - "NFR05 (reproducibility): the Python runtime is the pinned image digest recorded in the repo; the host Python version has no effect on gate results."
+
+dependencies:
+  - "DEP01: Container runtime for the gates: Docker 29.1 is installed and the jenkins user can use it (CHANGELOG 2026-10-03). The ubuntu user is listed in the docker group, but the current Claude session got 'permission denied' on /var/run/docker.sock (2026-10-03); Codex local validation needs a fresh login session (RAID I-007). Pulling the image needs registry access from the host."
+  - "DEP02: Worktree bootstrap: this Story changes the regex that today rejects its own ID, so create-worktree.sh cannot create its worktree (RAID I-003)."
+  - "DEP03: Base branch must contain the Phase 1 files (RAID I-002) for AC11/AC12 to be meaningful outside test fixtures."
+  - "DEP04: The DoR validator is fail-open (DEF-001, R-001): this Story's DoR is checked by hand."
+  - "DEP05: Jenkins DoD evidence: until US-FACTORY-001 adds backend/, build.sh and unit-test.sh fail closed on this repository by design (RAID I-005)."
+
+components:
+  backend: false
+  frontend: false
+  android: false
+  ios: false
+  infrastructure: true
+
+api_impact: false
+ui_impact: false
+data_impact: false
+security_impact: true     # changes the gates that control worktree creation and deployment eligibility
+privacy_impact: false
+
+test_scenarios:
+  # Script tests run against temporary git repositories / fixture projects, so
+  # the real repository is never modified.
+  - id: TS01
+    covers: [AC01, AC13]
+    scenario: "IDs US-1, US-101, US-FACTORY-001, US-FACTORY-2 -> pass the ID check."
+  - id: TS02
+    covers: [AC01, AC13]
+    scenario: "IDs us-101, US-, US-FACTORY-, US-FACTORY-01a, US-FACTORY-001-x, FACTORY-001, US-ABC-001, 'US-101 ' -> rejected, exit non-zero, no branch or worktree created."
+  - id: TS03
+    covers: [AC02, AC13]
+    scenario: "Fixture backend/pyproject.toml (FastAPI app) -> build.sh runs inside the pinned python:3.12 container (log shows the image digest and Python 3.12.x), installs dependencies, exit 0."
+  - id: TS04
+    covers: [AC02, AC08]
+    scenario: "Fixture with only backend/requirements.txt -> not detected as Python; build.sh and unit-test.sh fail closed (no supported project)."
+  - id: TS05
+    covers: [AC02, AC08]
+    scenario: "Container cannot run (Docker unavailable, or the pinned image reference is invalid/unpullable) -> build.sh, lint.sh and unit-test.sh exit non-zero naming the failed runtime; none falls back to host Python."
+  - id: TS06
+    covers: [AC03]
+    scenario: "Fixture with a ruff violation -> lint.sh exit non-zero; clean fixture -> exit 0."
+  - id: TS07
+    covers: [AC04, AC05, AC10]
+    scenario: "Fixture with passing tests and coverage >= 80% -> unit-test.sh exit 0, UNIT TEST GATE: PASSED, coverage figure printed."
+  - id: TS08
+    covers: [AC06, AC10]
+    scenario: "Fixture with one failing test -> unit-test.sh exit non-zero, DEPLOYMENT FORBIDDEN."
+  - id: TS09
+    covers: [AC05, AC07, AC10]
+    scenario: "Fixture with passing tests but coverage below 80% -> exit non-zero."
+  - id: TS10
+    covers: [AC05, AC07]
+    scenario: "Fixture whose pyproject.toml sets fail_under = 50 and coverage 60% -> still exit non-zero (gate threshold wins)."
+  - id: TS11
+    covers: [AC08]
+    scenario: "Fixture missing pytest-cov, fixture with a collection error, fixture with zero tests -> each exit non-zero."
+  - id: TS12
+    covers: [AC08]
+    scenario: "Repository with no supported project -> unit-test.sh exit non-zero (current behaviour kept)."
+  - id: TS13
+    covers: [AC09]
+    scenario: "Fixture backend/package.json with a passing and a failing npm test; fixture backend/pom.xml where Maven is available -> results identical to the scripts before this Story. If Maven/Node is not installed on the host, record N/A, not PASS."
+  - id: TS14
+    covers: [AC11, AC13]
+    scenario: "Base branch containing only README.md -> create-worktree.sh exit non-zero, lists every missing path, creates nothing."
+  - id: TS15
+    covers: [AC12, AC13]
+    scenario: "Story READY in the checkout but DRAFT on the base branch -> exit non-zero."
+  - id: TS16
+    covers: [AC11, AC12]
+    scenario: "Complete base branch with a READY US-FACTORY-* Story -> worktree created; test removes branch and worktree."
+  - id: TS18
+    covers: [AC02, AC04]
+    scenario: "Run the gates with host python3 removed from PATH -> results unchanged (proves host Python is not used, AD-01)."
+  - id: TS17
+    covers: [AC10]
+    scenario: "git diff of the Story branch shows no change to Jenkinsfile, scripts/deploy.sh or scripts/validate-story.sh."
+
+open_questions: []
+
+# Evidence links (Jenkins build, test report, review) are required for each true value.
+# Filled by Tester/QA/Scrum Master — never by the implementing agent alone.
+definition_of_done:
+  implementation_complete: false
+  code_review_passed: false
+  build_passed: false
+  lint_passed: false
+  unit_tests_passed: false
+  integration_tests_passed: false
+  acceptance_criteria_passed: false
+  security_scan_passed: false
+  qa_passed: false
+  documentation_updated: false
+  evidence: []
+
+# Keep this block LAST: scripts/validate-story.sh reads the 20 lines after it.
+# Keys must match safe/templates/definition-of-ready.yaml.
+# DoR assessment by CLAUDE_BA (manual, R-001), 2026-10-03.
+# Re-assessed 2026-10-03 after AD-01. Result: DoR PASS (7/7) -> READY.
+definition_of_ready:
+  business_value_defined: true        # business_value
+  story_defined: true                 # scope fixed by PO decisions; DEF-002 consolidated
+  acceptance_criteria_defined: true   # AC01-AC13, each testable
+  dependencies_identified: true       # DEP01-DEP05; RAID I-002, I-003, I-005, I-007, D-001
+  architecture_reviewed: true         # AD-01 (pinned python:3.12 container, one model for local + CI), human PO
+  test_scenarios_defined: true        # TS01-TS17; every AC covered
+  estimation_completed: true          # 3 points, human PO
