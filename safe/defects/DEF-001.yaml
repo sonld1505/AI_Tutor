@@ -42,6 +42,12 @@ acceptance_criteria:
 evidence:
   - "Local run 2026-10-03 on chore/phase1-agent-factory-foundation: case1 exit=0, case2 exit=0, case3 exit=0, template exit=1."
 
+planned_fix: >
+  2026-10-03, human PO (US-FACTORY-003 Q5): US-FACTORY-003 AC19 may repair DoR enforcement by
+  delegating validate-story.sh to the central validator. This defect is NOT closed by that
+  Story: it closes only after AC01-AC10 above are shown by automated tests and verified
+  independently, recorded by the Scrum Master.
+
 verification:
   verified_by: null
   evidence: []

@@ -1,0 +1,398 @@
+id: US-FACTORY-003
+
+title: "Enforce the mandatory Factory workflow with a central fail-closed gate validator and revision-bound durable evidence"
+
+# SAFe Enabler Story (factory tooling, not product scope). Drafted by CLAUDE_BA 2026-10-03.
+# Created on human PO instruction 2026-10-03 (decisions A-F below). I-001 exception
+# recorded in safe/raid.yaml (2026-10-03, on PO instruction).
+#
+# Origin (traceability): during US-FACTORY-002 the independent Tester and QA ran, and
+# CLAUDE_SM recorded DEV_COMPLETE -> TESTING -> QA, although the mandatory Code Review
+# gate had never run (CLAUDE.md Mandatory Flow: Unit Test -> Code Review -> Integration
+# Test -> QA). Nothing in the repository could stop it: factory/orchestrator/ is empty,
+# the state machine exists only as prose (agents/claude/scrum-master.md, spec §12), the
+# only executable gate is the DoR check (validate-story.sh, fail-open: DEF-001), Story
+# status / depends_on are not enforced (R-002), DoD evidence is free text, and nothing
+# binds evidence to a code revision. Tester evidence existed only under /tmp (I-008).
+# See DEVBOOK-AITUTOR.md #7.
+#
+# Decisions by the human PO, 2026-10-03 (creation):
+#   A. BA defines requirements only. Codex DevOps implements on feature/US-FACTORY-003-devops.
+#      No exception to the CLAUDE.md role model.
+#   B. Create this Story through the normal governance process. US-FACTORY-002 is not
+#      modified by this action.
+#   C. Mandatory gate order: Implementation -> Unit Test PASS -> Code Review PASS ->
+#      Integration Test PASS -> TESTING (independent Tester) -> QA -> Jenkins / remaining
+#      DoD -> DONE. Jenkins is a completion (DoD) gate after QA; it is NOT a prerequisite
+#      for dispatching Tester.
+#   D. Code Review is independent of the implementing agent; no self-approval. No new
+#      reviewer role is invented.
+#   E. A mandatory gate is N/A only if (1) the Story/specification explicitly permits N/A
+#      for that gate, (2) PO approval is recorded, (3) a reason is recorded, (4) durable
+#      evidence of the decision exists. Missing tooling, missing configuration or failed
+#      execution is never N/A.
+#   F. This Story defines and implements a repository-supported durable evidence model.
+#      /tmp artifacts alone never satisfy a gate. It does not close I-008, I-005, D-001,
+#      R-002, DEF-001 or any other RAID/defect item; each closes only on its own criteria.
+#
+# PO review of the BA draft, 2026-10-03: draft approved in principle; Q1-Q9 resolved
+# (see resolved_questions); AC01-AC15 approved as baseline subject to refinement;
+# explicit coverage added for implementation fingerprint, acceptance-contract
+# fingerprint, stale evidence, independent PR review, external CI artifact references,
+# N/A approval evidence, no /tmp-only evidence, out-of-order dispatch. Story points 8.
+# Refinement by CLAUDE_BA 2026-10-03: AC01-AC15 renumbered/extended to AC01-AC23
+# (mapping old -> new in CHANGELOG.md). Two conflicts not settled by Q1-Q9 were raised
+# as Q10, Q11.
+#
+# PO decision 2026-10-03 (second review): Q10 option (a) approved -> AD-02; Q11: the
+# implementing DevOps role produces the pre-TESTING Integration Test evidence; for this
+# Story Integration Test is applicable, MUST execute, not N/A-eligible; evidence
+# interpretation approved (the Git-tracked structured record is authoritative; external
+# CI artifacts and raw logs are supporting; an external reference alone never gives PASS).
+# Applied by CLAUDE_BA: AC05, AC08, AC09, AC14, AC15, AC20, AC23 updated; AC24, AC25 added;
+# TS13, TS14, TS18, TS23, TS24 updated; TS25-TS27 added.
+#
+# Architecture decision AD-02 (human PO, 2026-10-03; resolves Q10; extends AD-01 of
+# US-FACTORY-002, which decided the pinned python:3.12 image but whose implementation is
+# not on develop):
+#   1. US-FACTORY-003 introduces the single canonical shared Python runtime contract of
+#      the Factory, from its own clean base. Exactly one runtime contract exists on develop.
+#   2. Pinned Python 3.12 Docker image, pinned by digest; no host Python, no host fallback.
+#   3. Every validator dependency, including the YAML parser, is version-pinned and
+#      integrity/hash checked.
+#   4. The runtime helper supports the paths the central validator needs (repository root
+#      including safe/, factory/, scripts/, the workflow definition and Git metadata), not
+#      only backend/.
+#   5. The uncommitted US-FACTORY-002 runtime files (scripts/python-runtime.sh,
+#      scripts/python-gate.py) are not copied and are not baseline evidence; image tag,
+#      digest and dependency pins are selected and verified independently in this Story.
+#   6. After this Story is integrated, US-FACTORY-002 recovers/rebases and adopts the
+#      canonical runtime instead of keeping its own (recorded in RAID I-009; the 002 Story
+#      is not edited by this refinement).
+#
+# State history (CLAUDE_BA, manual DoR check because of DEF-001 / R-001):
+#   2026-10-03 created DRAFT (DoR 3/7)
+#   2026-10-03 PO review Q1-Q9 -> stays DRAFT (DoR 4/7; Q10, Q11 open)
+#   2026-10-03 PO decision Q10/Q11 -> DRAFT -> REFINED (zero open questions)
+#              -> READY (DoR 7/7). Start still held by DEP01 (Story not on a base branch).
+#
+# Reconciliation with the specification (CLAUDE_BA, 2026-10-03):
+#   - Decision C matches CLAUDE.md / spec §5 Mandatory Flow and the spec §1 diagram
+#     (Tester -> QA -> Jenkins). Spec §12 gates DEV_COMPLETE -> TESTING on "Unit Test PASS";
+#     C adds Code Review and Integration Test to that same transition (stricter, no
+#     conflict; neither is a Story state).
+#   - Spec §43 (future orchestrator) and the §29 Step 8-9 walkthrough list Jenkins before
+#     Tester. Both are non-MUST. C is used; Jenkins may still run earlier on the PR, it is
+#     just not a dispatch precondition for Tester (PO Q6 confirms).
+#   - Spec §42 (Phase 1): orchestration stays supervised, no autonomous loop. The
+#     orchestrator in this Story validates and refuses; it does not launch agents (AC03).
+#   - Spec §13: "require PR/review/status checks" on the Git host -> PO Q1: an approved
+#     GitHub PR review is the authoritative Code Review evidence (AC13).
+story_type: enabler
+depends_on: []       # US-FACTORY-002 is NOT a dependency: PO Q4 orders 003 before 002's merge
+epic: ""
+feature: ""
+
+# DRAFT | REFINED | READY | IN_PROGRESS | DEV_COMPLETE | TESTING | QA | DONE | BLOCKED
+# State machine: agents/claude/scrum-master.md
+status: READY        # 2026-10-03 DRAFT -> REFINED -> READY (DoR 7/7, open_questions empty); not started: DEP01
+blocked_from: null
+blocked_by: []
+priority: high       # proposed by CLAUDE_BA; PO Q4 orders this Story before US-FACTORY-002's merge
+story_points: 8      # human PO, 2026-10-03 (Q9)
+
+business_context: >
+  The factory's quality rules (Mandatory Flow, NO UNIT TEST PASS = NO DEPLOY,
+  UNKNOWN != PASS, DoD before DONE) are written in CLAUDE.md, AGENTS.md, the role
+  files and the Phase 1 specification, but only the DoR check is executable, and it
+  is fail-open (DEF-001). Workflow order therefore depends on agents and humans
+  remembering it. In US-FACTORY-002 that failed: Tester and QA ran before Code
+  Review, the Story was moved to QA, and the Tester evidence existed only in /tmp.
+  The process had to be stopped and repaired by hand.
+
+business_value: >
+  Every later Story (starting with US-FACTORY-002's recovery and US-FACTORY-001) is
+  delivered through gates that a machine checks: an agent cannot be dispatched, and a
+  Story cannot change state, unless its predecessor gates have durable PASS evidence
+  bound to the current implementation and the current acceptance contract. Out-of-order
+  execution, stale evidence and self-approval become visible BLOCK results instead of
+  being discovered later by a human.
+
+description: >
+  As the factory owner (human PO), I want one central, fail-closed gate validator,
+  driven by one machine-readable workflow definition, called by a supervised
+  orchestrator entry point, by scripts/validate-story.sh and by an additive Jenkins
+  stage, so that no Story state change, no agent dispatch and no completion can
+  happen unless every mandatory predecessor gate has valid, durable PASS evidence,
+  bound to both the implementation fingerprint and the acceptance-contract
+  fingerprint, from an allowed, independent producer.
+  Owner role: Codex DevOps (scripts/**, factory/** except factory/state/, jenkins/**,
+  Jenkinsfile additive stage, docs for the mechanism).
+  It also introduces the Factory's single canonical pinned Python 3.12 runtime
+  contract (AD-02) and an additive Factory integration test command.
+  Out of scope: autonomous agent loops (spec §42, Phase 2); changing the Story state
+  of any real Story (US-FACTORY-001/002) or closing any RAID/defect item; weakening any
+  existing gate, threshold or Jenkins stage; changing scripts/create-worktree.sh
+  (owned by US-FACTORY-002 AC01, PO Q4 isolation); migrating build.sh / lint.sh /
+  unit-test.sh to the runtime (US-FACTORY-002 recovery, AD-02 item 6); configuring
+  GitHub branch protection or accounts (human, D-006); product/backend application code.
+
+acceptance_criteria:
+  - id: AC01
+    description: "Single source of truth: one Git-tracked, machine-readable workflow definition defines states, allowed transitions (normal flow, BLOCKED, failure return paths), gate prerequisites for each transition and each role dispatch, allowed producer roles per gate, which gates bind to the implementation fingerprint and which also bind to the acceptance-contract fingerprint, the path classification for the implementation fingerprint (AC10), the material Story keys for the acceptance-contract fingerprint (AC11), N/A eligibility (AC15) and the allowed external artifact systems (AC09). The validator, orchestrator, validate-story.sh and the Jenkins stage read only this definition; no gate order is hard-coded elsewhere. A missing, unreadable or schema-invalid definition makes every command BLOCK."
+  - id: AC02
+    description: "Central validator: exposes can-transition(story, from, to), can-dispatch(story, role) and validate-gate(story, gate), plus a read-only status report listing each gate as PASS / MISSING / INVALID / STALE_IMPLEMENTATION / STALE_CONTRACT / NOT_EXECUTED / N/A-APPROVED. It returns PASS (exit 0) only when every precondition holds; otherwise BLOCK (non-zero) listing every unmet precondition with gate and reason (missing / invalid field / result not PASS / stale implementation / stale contract / wrong producer / self-approval / non-durable artifact / external reference incomplete / review not verified / open blocker)."
+  - id: AC03
+    description: "Supervised orchestrator entry point: one command is the sanctioned path to (a) change a Story's status and (b) dispatch a role (implementing role, Code Review request, Integration Test, Tester, QA) for a Story. It calls the central validator first. On BLOCK it changes no file and dispatches nothing. On PASS it records the transition/dispatch (including the implementing agent identity at implementation dispatch) and prints the role invocation for a human to start. It contains no autonomous loop, starts no agent process, and performs no commit, push, merge or deploy (spec §42, §43)."
+  - id: AC04
+    description: "Transition rules match agents/claude/scrum-master.md exactly: normal flow DRAFT->REFINED->READY->IN_PROGRESS->DEV_COMPLETE->TESTING->QA->DONE; failure paths (Unit Test FAIL->IN_PROGRESS, Functional Test FAIL->IN_PROGRESS, QA FAIL->IN_PROGRESS/TESTING, DoD FAIL->an earlier state with recorded reason, requirement ambiguity->DRAFT/REFINED); any state before DONE -> BLOCKED only with blocked_from set to that state and non-empty blocked_by; BLOCKED -> blocked_from only. Every other transition, including DRAFT->IN_PROGRESS and any transition out of DONE, is BLOCK."
+  - id: AC05
+    description: "Gate prerequisites (PO decision C, PO Q11), evaluated against the evaluated revision, in this order: READY->IN_PROGRESS and implementing-role dispatch need DoR PASS (AC19 rules), status READY, every depends_on Story DONE, Story not BLOCKED. IN_PROGRESS->DEV_COMPLETE needs build, lint and Unit Test PASS, produced by the implementing role with the gate commands the workflow definition names for the Story (AC25). In DEV_COMPLETE: Code Review request needs Unit Test PASS; Integration Test run needs Unit Test and independent Code Review PASS. DEV_COMPLETE->TESTING and Tester dispatch need Unit Test, Code Review and Integration Test PASS (Integration N/A-APPROVED only where AC15 allows; never for this Story). TESTING->QA and QA dispatch need Tester PASS plus all of the above still valid. QA->DONE per AC06. Jenkins is not a precondition for Tester or QA dispatch. Producers: Unit Test, build, lint and Integration Test = the implementing role only (for this Story CODEX_DEVOPS); Code Review = verified GitHub PR review (AC13); Tester = CODEX_TESTER; QA = CODEX_QA; Jenkins = the Jenkins build (AC18). The Tester never produces evidence that authorises its own dispatch."
+  - id: AC06
+    description: "QA->DONE needs: QA PASS; every acceptance criterion recorded PASS in the QA record; Unit Test, Code Review, Integration Test and Tester valid (not STALE); Jenkins PASS evidence for the same implementation fingerprint, including PASS of the Jenkins Factory Validation stage (AC18); every Story definition_of_done key true with an evidence reference; blocked_by empty; no OPEN RAID item whose blocks list contains the Story; every depends_on Story DONE. Any missing item is BLOCK."
+  - id: AC07
+    description: "Fail closed: a missing evidence record, a missing or empty mandatory field, an unparseable record, an unknown gate, role or Story, a result other than PASS (including UNKNOWN, PARTIAL, NOT_EXECUTED, PASS WITH BLOCKERS), or an unreadable Story/workflow file never satisfies a gate. A claim in conversation or agent output without a valid record never satisfies a gate."
+  - id: AC08
+    description: "Durable evidence location and record (PO Q2): gate records live in factory/evidence/<story-id>/ and are Git-tracked at the evaluated revision. Each record contains at least story_id, gate, result, producer_role, producer identity, timestamp (ISO 8601 UTC), source commit, implementation fingerprint (AC10), acceptance-contract fingerprint (AC11; for contract-bound gates), per-AC/TS results where the gate verifies AC/TS, and artifacts. Files allowed under factory/evidence/ are structured records and short summaries only (.yaml, .yml, .json, .md); any other file type there (e.g. raw .log, .jsonl, archives, fixture trees) is rejected. The Git-tracked structured record is the authoritative gate record (PO, evidence interpretation): it must contain enough to determine the result independently (Story, gate, result, producer, timestamp, both fingerprints as applicable, commit, artifact hashes/references, and per-AC/TS results where the gate verifies them). The validator still checks every required field and integrity rule; a record saying PASS is not trusted on its own."
+  - id: AC09
+    description: "External CI artifact references (PO Q2): large execution logs are not committed; a record may reference them as external artifacts with system (from the allowed list in the workflow definition; initially jenkins only), job, build number, artifact path and sha256 computed by the producer before archiving; no credential or token in the reference. An incomplete reference, a reference to a local path, or an unknown system is BLOCK. External CI artifacts and raw logs are supporting evidence only: a complete reference is accepted as supporting metadata, and a record never satisfies a gate merely because an external reference exists (AC08 rules still apply in full). The Jenkins Factory Validation stage (AC18) verifies that each external reference of the Story being completed exists in the Jenkins archive with the recorded sha256; a missing or mismatched artifact blocks QA->DONE."
+  - id: AC10
+    description: "Implementation fingerprint (PO Q8.1): computed with Git object hashes (no checkout, no working-tree content) from the paths classified as implementation in the workflow definition. Any path not explicitly classified as non-implementation counts as implementation (fail closed). Non-implementation classes are listed explicitly and include at least factory/evidence/**, safe/** and documentation-only paths named in the definition. The same tree always gives the same fingerprint."
+  - id: AC11
+    description: "Acceptance-contract fingerprint (PO Q8.2): a hash over the canonical serialisation (parsed YAML, sorted keys; comments and formatting ignored) of the material Story keys listed in the workflow definition (at least description, acceptance_criteria, functional_requirements, non_functional_requirements, test_scenarios, depends_on, components and the api/ui/data/security/privacy impact flags) plus the Git blob hashes of the files the Story lists under contract_refs (relevant specification; absent = empty list). All other Story keys (status, blocked_from, blocked_by, assignment, priority, story_points, business_context, business_value, open_questions, resolved_questions, definition_of_done, definition_of_ready) are non-material."
+  - id: AC12
+    description: "Stale evidence and invalidation (PO Q8): (a) an implementation fingerprint change makes every implementation-bound gate whose record carries the old fingerprint (Unit Test, Code Review, Integration Test, Tester, QA, Jenkins) STALE_IMPLEMENTATION, and every gate downstream of a stale gate in the workflow definition is also not satisfied; (b) an acceptance-contract fingerprint change makes Tester and QA STALE_CONTRACT (and everything downstream of them), while Unit Test, Code Review and Integration Test stay valid if their implementation fingerprint still matches; (c) a change only to non-implementation paths and non-material Story keys stales nothing. STALE never satisfies a precondition. The validator names each stale gate and the rerun order. Stale records are kept unchanged as history; nothing deletes or rewrites them."
+  - id: AC13
+    description: "Independent Code Review (PO Q1, decision D): Code Review PASS requires an approved GitHub PR review, verified through the GitHub API at evaluation time, where (1) the review state is APPROVED and is that reviewer's latest non-comment review on the PR, and no reviewer's latest review is CHANGES_REQUESTED; (2) the reviewed commit (review commit_id) is present locally and has the same implementation fingerprint as the evaluated revision; (3) the reviewer login differs from the PR author, from every GitHub author/committer login of the PR commits (an unresolved login is BLOCK) and from the implementing agent identity recorded at dispatch (AC03). A repository-written record alone, without successful GitHub verification, never gives PASS. If GitHub is unreachable or no credential is available, Code Review is NOT_EXECUTED and BLOCK; it is never assumed PASS. The implementing agent never writes a Code Review PASS."
+  - id: AC14
+    description: "Role separation: each gate accepts records only from the producer roles allowed by the workflow definition (AC05); a record from any other role is BLOCK. Tester and QA records must not come from the implementing role. Unit Test, build, lint and Integration Test records must come from the implementing role; such a record from the Tester or QA role is BLOCK. No new reviewer role is created by this Story."
+  - id: AC15
+    description: "N/A approval (PO decision E, Q3): a gate result N/A satisfies a precondition only if the workflow definition marks the gate N/A-eligible and the Story explicitly permits N/A for that gate, and an N/A record exists in factory/evidence/<story-id>/ with PO approval (approver identity and date), reason and the durable reference to the PO decision. N/A on a gate that is not eligible or not permitted by the Story, or without approval, reason or reference, is BLOCK. A failed run, missing tool or missing configuration recorded as N/A is BLOCK; N/A is never inferred. Integration Test is mandatory wherever an integration target exists. For US-FACTORY-003 itself no gate is N/A-permitted; Integration Test is applicable and MUST execute (PO Q11, AC24)."
+  - id: AC16
+    description: "Out-of-order dispatch rejection: dispatching Integration Test before Code Review PASS, Tester before Integration Test PASS, QA before Tester PASS, or any role for a Story that is BLOCKED, not in the state required by the workflow definition, or whose predecessor evidence is STALE, is BLOCK; nothing is recorded and no invocation is printed. Records produced by an out-of-order run are kept as history but never satisfy a precondition."
+  - id: AC17
+    description: "No /tmp-only evidence: an artifact or record whose path is under /tmp (or any path outside the repository), is untracked, is gitignored (e.g. factory/logs/), or whose sha256 does not match, never satisfies a gate, even if its content shows PASS."
+  - id: AC18
+    description: "Jenkins integration (PO Q6): an additive 'Factory Validation' stage runs the central validator immediately after Checkout, so it runs even when backend gates fail closed (I-005). On a feature/<story-id>-<role> branch it fails the build when that Story's recorded status is not supported by valid evidence or any of its evidence records is invalid; on other branches it fails when any Story with status DONE does not satisfy AC06. It performs the external-artifact verification of AC09. No existing stage is removed, reordered or weakened; Jenkins stays a QA->DONE completion gate and is not moved before Tester. The stage needs no credential other than those stored in Jenkins (never printed)."
+  - id: AC19
+    description: "DoR enforcement (PO Q5): scripts/validate-story.sh keeps its interface (STORY_FILE environment variable, exit 0 / non-zero, last line 'DEFINITION OF READY: PASSED' or 'DEFINITION OF READY: FAILED') and delegates to the central validator, which implements DEF-001 AC01-AC09. scripts/create-worktree.sh is not modified. This Story does not close DEF-001, R-001 or R-002; DEF-001 closes only after its own AC01-AC10 are shown by automated tests and verified independently, recorded by the Scrum Master."
+  - id: AC20
+    description: "No regression and no weakening: NO UNIT TEST PASS = NO DEPLOY stays enforced; relative to the base commit, deploy.sh, build.sh, lint.sh, unit-test.sh, integration-test.sh, security-scan.sh, quality-gate.sh, build-artifact.sh and create-worktree.sh are unchanged, no docker-compose.test.yml is added, and the Jenkinsfile diff only adds the AC18 stage; no path in the validator, orchestrator or Jenkins stage turns a failed, missing, stale or not-executed gate into PASS or deploy permission (spec §43)."
+  - id: AC21
+    description: "Test isolation and mock labelling: automated tests run only against disposable fixture repositories, fixture Stories and fixture evidence; they never read or change safe/stories/*, safe/raid.yaml, safe/sprints/*, factory/state/* or factory/evidence/* of the real repository. GitHub API and Jenkins archive responses in automated tests come from local stubs that are labelled MOCK in code, test names and logs, and never count as Integration Test evidence. Every scenario in test_scenarios except TS24 (real integration, AC24) and TS25 (real Jenkins build) runs automatically."
+  - id: AC22
+    description: "Documentation describes: the mandatory workflow and gate prerequisites, the workflow definition, the evidence record format and location, external artifact references, both fingerprints and their path/key classification, stale rules, the independent PR review rule and the GitHub credential/permission it needs (without secrets), N/A rules, fail-closed behaviour, the orchestrator and Jenkins stage, the validate-story.sh delegation, and the recovery procedure after an out-of-order execution (return via the AC04 failure path, keep the old evidence as history, rerun the gates in order)."
+  - id: AC23
+    description: "Canonical runtime (AD-02, PO Q7/Q10): this Story adds exactly one Git-tracked runtime contract that defines a Python 3.12 Docker image pinned by digest and a runtime helper; the validator, orchestrator, evidence writer, validate-story.sh delegation, the Factory integration command (AC24), the Factory test suite and the Jenkins stage all run only through it. Every Python dependency (including the YAML parser) is version-pinned and installed with hash verification (or baked into a digest-pinned image); an integrity mismatch is BLOCK. The helper mounts the repository paths the validator needs (repository root incl. safe/, factory/, scripts/, workflow definition, and Git metadata, including a linked worktree's common Git directory) read-only, and grants write access only to the files the orchestrator / evidence writer may write (Story status, factory/state/<story>.json, factory/evidence/<story>/), leaving them owned by the invoking host user. Host Python is never used; Docker, image or dependency failure is BLOCK with no host fallback. The helper logs the image reference and Python version. The 002 runtime files are not copied (AD-02 item 5). Documentation states that US-FACTORY-002 must adopt this contract on recovery."
+  - id: AC24
+    description: "Factory Integration Test (PO Q11): an additive Factory integration command, named in the workflow definition as the Integration Test gate command for Factory enabler Stories and documented. Reason it is not scripts/integration-test.sh: that script only runs docker-compose.test.yml and exits 1 without it; running Factory tests through it (by changing its no-compose branch or adding docker-compose.test.yml) would change what the existing Jenkins 'Integration Test' stage reports, so it stays unchanged (AC20). The command runs in the canonical runtime (AC23) on a disposable clone of the evaluated revision (the real working tree, safe/ and factory/ are not changed) and exercises the real components of this Story together, with no mock of any Factory component: workflow definition load and schema check; orchestrator -> central validator -> evidence writer for a scripted sequence of transitions and dispatches including at least one BLOCK and one PASS; both fingerprints and stale detection after a real commit; validate-story.sh delegation; the Jenkins stage entry point run locally; and read-only verification of this Story's own approved PR review through the real GitHub API (AC13). It is run by the implementing DevOps role after independent Code Review PASS and writes the Integration Test record (AC08) with per-step results. Any failed or not-executed step (e.g. GitHub unreachable) is FAIL / NOT_EXECUTED, never PASS and never N/A."
+  - id: AC25
+    description: "Pre-DEV_COMPLETE gate commands for this Story (named in the workflow definition, run by the implementing role in the canonical runtime): build = workflow-definition schema check plus byte-compilation of every Factory Python source; lint = a version-pinned static checker over every Factory Python source with zero findings; Unit Test = the Factory automated test suite (every scenario except TS24 and TS25) with zero failures, zero not-executed and at least one test collected per scenario; a run that collects no tests is FAIL. No coverage threshold is set by this Story (none is defined for Factory tooling). The repository's build.sh, lint.sh and unit-test.sh remain the Jenkins backend gates and are not used to produce or replace this evidence; their Jenkins results stay subject to I-005."
+
+functional_requirements:
+  - "FR01: One workflow definition file plus its schema check (AC01)."
+  - "FR02: Validator commands can-transition, can-dispatch, validate-gate and a read-only status report (AC02)."
+  - "FR03: Orchestrator command for status change and role dispatch; writes nothing on BLOCK (AC03, AC16)."
+  - "FR04: Evidence writer used by the orchestrator and gate producers to create a record with all AC08 fields from the current Git revision; it refuses non-durable artifact paths (AC17) and incomplete external references (AC09)."
+  - "FR05: Implementation fingerprint (AC10) and acceptance-contract fingerprint (AC11) computed deterministically from Git objects and the parsed Story."
+  - "FR06: GitHub review verifier (AC13) using a read-only credential stored outside Git (Jenkins credential store / local environment), never printed."
+  - "FR07: validate-story.sh delegates to the central DoR check (AC19)."
+  - "FR08: Additive Jenkinsfile 'Factory Validation' stage (AC18)."
+  - "FR09: Each BLOCK message names the gate, the precondition and the reason (AC02)."
+  - "FR10: Canonical runtime contract and helper (AD-02, AC23)."
+  - "FR11: Additive Factory integration command (AC24) and gate commands (AC25) registered in the workflow definition."
+
+non_functional_requirements:
+  - "NFR01 (fail closed): UNKNOWN != PASS (spec §57 rule 2); every unreadable, missing or unverifiable input is BLOCK."
+  - "NFR02 (supervised): no autonomous loop, no automatic merge or deploy (spec §42)."
+  - "NFR03 (no weakening): AC20; existing gate scripts keep their exit behaviour."
+  - "NFR04 (secrets): evidence records, logs and external references contain no credential, token or credential-bearing URL; GitHub and Jenkins credentials live only in Jenkins / the local environment and are never printed (CLAUDE_AI_Tutor.md §5, agents/codex/devops.md)."
+  - "NFR05 (determinism): the same repository revision and evidence give the same result. Network is used only to obtain the pinned runtime and its pinned dependencies, for GitHub review verification (AC13) and for Jenkins archive verification (AC09/AC18); an unavailable network gives NOT_EXECUTED / BLOCK, never PASS."
+  - "NFR06 (auditability): records are append-only history; corrections are new records."
+  - "NFR07 (personal data): evidence records store only GitHub logins / agent role identities needed for AC13/AC14; no child or product data (CLAUDE_AI_Tutor.md §5)."
+
+dependencies:
+  - "DEP01 (start blocker, after READY): US-FACTORY-003.yaml and the related management updates are untracked/uncommitted in the US-FACTORY-002 DevOps worktree; they are on no base branch (same situation as former I-002). A human must commit them on a management branch from origin/develop f16ff1a and merge to develop; that merge commit is the DevOps base. The base's create-worktree.sh rejects US-FACTORY-003 (^US-[0-9]+$), so the worktree is a recorded manual bootstrap (precedent I-003). PO Q4: separate worktree, US-FACTORY-002 worktree untouched."
+  - "DEP02 (Q4 ordering): US-FACTORY-002 is not merged before this Story is integrated (RAID I-009). Overlap: 002 changes create-worktree.sh, build.sh, lint.sh, unit-test.sh and adds its own runtime files. This Story does not touch those scripts (AC20) and does not copy the 002 runtime (AD-02); 002 adopts the canonical runtime on recovery (AD-02 item 6)."
+  - "DEP03 (blocker for Code Review, Integration Test and therefore TESTING; not a start blocker): independent GitHub reviewer account and read-only GitHub API credential for local and Jenkins use (RAID D-006). GitHub does not let a PR author approve their own PR; Code Review of this Story needs a reviewer login other than the PR author and the implementing identity, and AC24 verifies that review through the real API. gh is not logged in on EC2. Implementation and Unit Test can proceed without it."
+  - "DEP04 (DONE blocker): Jenkins multibranch job (D-001) for TS24 and this Story's Jenkins DoD evidence."
+  - "DEP05 (DONE blocker): Jenkins Build/Unit stages fail closed on a repository without backend/ (I-005 pattern); this Story adds no backend/, so its own Jenkins PASS needs the same PO decision as I-005."
+  - "DEP06 (DONE blocker): security scanning is not configured (security-scan.sh exit 1), so DoD security_scan_passed cannot be true (same as US-FACTORY-002)."
+  - "DEP07: DoR validator is fail-open (DEF-001, R-001): this Story's DoR is checked by hand."
+  - "DEP08 (resolved by AD-02): this Story creates the canonical runtime itself; needs Docker for the ubuntu and jenkins users (I-007 closed; jenkins can use Docker) and registry/package-index access to pull the pinned image and hash-pinned dependencies (not yet tested on EC2)."
+  - "DEP09 (resolved by PO Q11): Integration Test produced by the implementing DevOps role via the additive command (AC24)."
+  - "Operating note (no requirement change): Tester and QA records must be committed to feature/US-FACTORY-003-devops (or merged into it) to be Git-tracked at the evaluated revision; committing them does not change the implementation fingerprint (factory/evidence/ is non-implementation). The SM coordinates who commits them under AGENTS.md Git policy."
+  - "Bootstrap note: until this Story's orchestrator is merged, this Story's own state changes are made by CLAUDE_SM by hand. From Unit Test onward its own evidence is produced in the AC08 format under factory/evidence/US-FACTORY-003/ so the merged validator can evaluate it."
+
+components:
+  backend: false
+  frontend: false
+  android: false
+  ios: false
+  infrastructure: true
+
+api_impact: false         # no product API; consumes the GitHub REST API read-only (AC13) and the Jenkins archive (AC09)
+ui_impact: false
+data_impact: false        # no product data; adds factory/evidence/ records (process metadata, NFR07)
+security_impact: true     # gate enforcement, role separation, evidence integrity, GitHub/Jenkins credentials
+privacy_impact: false     # no child data; reviewer GitHub logins only (NFR07)
+
+contract_refs:            # relevant specification for the acceptance-contract fingerprint (AC11)
+  - agents/claude/scrum-master.md
+  - safe/templates/definition-of-ready.yaml
+  - safe/templates/definition-of-done.yaml
+
+test_scenarios:
+  # All scenarios except TS24 use disposable fixture repositories, fixture Stories and
+  # fixture evidence (AC21). GitHub/Jenkins responses come from MOCK-labelled local stubs.
+  # "BLOCK" = non-zero exit, nothing written, reason printed.
+  - id: TS01
+    covers: [AC02, AC05, AC06]
+    scenario: "Happy path: Implementation -> Unit PASS -> Code Review PASS (MOCK GitHub: independent approval) -> Integration PASS -> Tester PASS -> QA PASS, all at the same fingerprints: every transition and dispatch up to QA is PASS. With Jenkins PASS (incl. Factory Validation stage) and full DoD, QA->DONE is PASS."
+  - id: TS02
+    covers: [AC05, AC07, AC16]
+    scenario: "Unit PASS, no Code Review record -> Integration dispatch, Tester dispatch and DEV_COMPLETE->TESTING are BLOCK, naming Code Review MISSING."
+  - id: TS03
+    covers: [AC05, AC07, AC16]
+    scenario: "Unit, Code Review, Integration PASS, no Tester record -> QA dispatch and TESTING->QA are BLOCK."
+  - id: TS04
+    covers: [AC05, AC16]
+    scenario: "Tester PASS but Code Review record missing -> QA dispatch BLOCK; Tester record kept, never satisfies."
+  - id: TS05
+    covers: [AC06]
+    scenario: "Everything PASS except Jenkins evidence -> QA->DONE BLOCK; then Jenkins PASS but one DoD key false or without evidence -> BLOCK; then QA record without PASS for one AC -> BLOCK; then OPEN RAID item listing the Story in blocks -> BLOCK; then blocked_by non-empty -> BLOCK; then a depends_on Story not DONE -> BLOCK."
+  - id: TS06
+    covers: [AC07, AC08]
+    scenario: "A record missing each mandatory field in turn -> BLOCK each time; result UNKNOWN / PARTIAL / NOT_EXECUTED / PASS WITH BLOCKERS -> BLOCK; unparseable record -> BLOCK; unknown gate/role/Story -> BLOCK."
+  - id: TS07
+    covers: [AC10, AC12]
+    scenario: "Code Review PASS, then an implementation file changes and is committed -> Unit, Code Review (and anything after) STALE_IMPLEMENTATION; Tester dispatch BLOCK until Unit, Code Review and Integration are rerun at the new fingerprint; old records unchanged."
+  - id: TS08
+    covers: [AC10, AC12]
+    scenario: "Tester and QA PASS, then an implementation file changes -> Unit, Code Review, Integration, Tester, QA STALE_IMPLEMENTATION; QA->DONE BLOCK; validator prints the rerun order."
+  - id: TS09
+    covers: [AC10]
+    scenario: "All records PASS but produced at another commit with a different implementation fingerprint -> none authorises the evaluated revision; same fingerprint at a different commit (only non-implementation paths differ) -> valid."
+  - id: TS10
+    covers: [AC08, AC17]
+    scenario: "Artifacts under /tmp, outside the repository, untracked, gitignored (factory/logs/), or with mismatched sha256 -> BLOCK; a .log / .jsonl / archive file under factory/evidence/ -> BLOCK; a record whose only PASS proof is a raw log reference -> BLOCK."
+  - id: TS11
+    covers: [AC04, AC05, AC12, AC16, AC22]
+    scenario: "Regression for the US-FACTORY-002 failure mode: fixture Story at DEV_COMPLETE with Unit PASS and Tester + QA records but no Code Review -> DEV_COMPLETE->TESTING and TESTING->QA BLOCK; the out-of-order records stay as history and never satisfy; the documented recovery path (QA->DEV_COMPLETE via DoD FAIL with reason, Code Review, Integration, Tester, QA rerun) reaches QA."
+  - id: TS12
+    covers: [AC10, AC12]
+    scenario: "Committing only factory/evidence/ records, safe/ files or classified documentation does not stale any gate; adding a file in an unclassified path stales implementation-bound gates (fail closed)."
+  - id: TS13
+    covers: [AC13, AC14]
+    scenario: "MOCK GitHub: approval by an independent login on a commit with the same fingerprint -> PASS. BLOCK for: reviewer = PR author; reviewer = a PR commit author/committer; unresolved commit login; reviewer = implementing identity; latest review COMMENTED, DISMISSED or CHANGES_REQUESTED; another reviewer's latest CHANGES_REQUESTED; approved commit missing locally or with a different fingerprint (STALE); repository record with no matching GitHub review; GitHub unreachable or no credential (NOT_EXECUTED); record written by the implementing role. Tester/QA record from the implementing role or a non-allowed role -> BLOCK; Unit/build/lint/Integration record from the Tester or QA role -> BLOCK."
+  - id: TS14
+    covers: [AC15]
+    scenario: "Integration N/A on a gate that is eligible and permitted by the fixture Story, with PO approval, reason and reference -> N/A-APPROVED; N/A without approval, reason or reference, on a non-eligible gate, or on a gate the Story does not permit -> BLOCK; a failed run, missing tool or missing configuration recorded as N/A -> BLOCK. The real US-FACTORY-003 Story definition permits no N/A."
+  - id: TS15
+    covers: [AC04]
+    scenario: "DRAFT->IN_PROGRESS BLOCK; READY->IN_PROGRESS with a depends_on Story not DONE BLOCK; ->BLOCKED without blocked_from or blocked_by BLOCK; BLOCKED->(state other than blocked_from) BLOCK; BLOCKED->blocked_from PASS; DONE->any BLOCK; each listed failure path PASS."
+  - id: TS16
+    covers: [AC03, AC21]
+    scenario: "Orchestrator on BLOCK: Story file, state file and evidence directory byte-identical before and after; no dispatch record; no invocation printed. On PASS: one transition/dispatch record written and the role invocation printed; no agent process started, no commit, merge or push. After the whole suite, git status of the real repository's safe/, factory/state/ and factory/evidence/ is unchanged."
+  - id: TS17
+    covers: [AC01, AC07]
+    scenario: "Missing, unreadable or schema-invalid workflow definition -> every command (validator, orchestrator, validate-story.sh, Jenkins stage entry point) BLOCK."
+  - id: TS18
+    covers: [AC18, AC19, AC20]
+    scenario: "git diff against the base commit: deploy.sh, build.sh, lint.sh, unit-test.sh, integration-test.sh, security-scan.sh, quality-gate.sh, build-artifact.sh, create-worktree.sh unchanged; no docker-compose.test.yml added; Jenkinsfile diff contains only the added Factory Validation stage after Checkout, every existing stage name and order unchanged."
+  - id: TS19
+    covers: [AC11, AC12]
+    scenario: "After Tester and QA PASS: changing an AC description, a test scenario, depends_on or a contract_refs file -> Tester and QA STALE_CONTRACT, Unit/Code Review/Integration still valid; changing only status, comments, YAML formatting/key order, business_value, priority, definition_of_done or open_questions -> nothing stale."
+  - id: TS20
+    covers: [AC09]
+    scenario: "External reference missing system, job, build, path or sha256 -> BLOCK; reference to a local path or an unknown system -> BLOCK; credential in the reference -> BLOCK; complete reference -> accepted locally as supporting metadata. Jenkins-stage verification with a MOCK Jenkins archive: artifact present with matching sha256 -> PASS; missing or mismatched -> QA->DONE BLOCK."
+  - id: TS21
+    covers: [AC18]
+    scenario: "Jenkins stage entry point (fixture repo): on feature/<story>-<role>, Story status unsupported by evidence -> FAIL, supported -> PASS; on develop, a DONE Story without valid AC06 evidence -> FAIL; stage runs before the Build stage so its result exists when Build fails closed."
+  - id: TS22
+    covers: [AC19]
+    scenario: "validate-story.sh: DEF-001 cases 1-3 and the unmodified template -> exit non-zero with 'DEFINITION OF READY: FAILED' and the failed rule; a fully valid READY fixture Story -> exit 0, 'DEFINITION OF READY: PASSED'; invocation interface unchanged (STORY_FILE)."
+  - id: TS23
+    covers: [AC23]
+    scenario: "Host python/python3 removed from PATH -> results unchanged; (AD-02 item 5, no copy of the uncommitted 002 runtime, is checked at independent Code Review, not by this test); Docker unavailable, invalid image reference or digest mismatch -> BLOCK, no host fallback; a dependency hash mismatch -> BLOCK; logged image reference and Python version equal the single canonical contract; exactly one runtime contract file defines a Python image (repository search)."
+  - id: TS24
+    covers: [AC05, AC13, AC24]
+    scenario: "Integration Test (REAL, not mock; run by the implementing DevOps role after Code Review PASS): the AC24 command on a disposable clone of the evaluated revision executes every AC24 step with the real components, including read-only verification of this Story's own approved PR review through the real GitHub API; writes the Integration Test record with per-step results; the real working tree, safe/ and factory/ are unchanged afterwards. GitHub unreachable -> NOT_EXECUTED, record not PASS. Needs D-006. Never N/A (AC15)."
+  - id: TS25
+    covers: [AC06, AC09, AC18]
+    scenario: "Jenkins completion check (REAL, after QA; Jenkins DoD evidence): a real Jenkins build of feature/US-FACTORY-003-devops runs the Factory Validation stage after Checkout with all existing stages unchanged; it verifies this Story's evidence and external references. Needs D-001; Jenkins PASS of the whole build also needs the I-005 decision."
+  - id: TS26
+    covers: [AC05, AC14, AC16]
+    scenario: "Gate order and producers: Integration run before independent Code Review PASS -> BLOCK; Integration record produced by CODEX_TESTER or CODEX_QA -> BLOCK and Tester dispatch BLOCK; Integration record from the implementing role after Code Review PASS -> Tester dispatch PASS; Integration N/A for a fixture copy of this Story's definition -> BLOCK."
+  - id: TS27
+    covers: [AC23]
+    scenario: "Runtime helper paths: validator run from a linked Git worktree (common Git dir outside the worktree) computes the same fingerprints as from the main checkout; validator commands cannot write any file (read-only mounts); the orchestrator can write only the Story status, factory/state/<story>.json and factory/evidence/<story>/, and an attempt to write elsewhere fails; written files are owned by the invoking host user; paths outside backend/ (safe/, factory/, scripts/) are readable."
+  - id: TS28
+    covers: [AC25]
+    scenario: "Gate commands from the workflow definition on fixture projects: byte-compile error or schema-invalid definition -> build FAIL; one static-checker finding -> lint FAIL; a failing test, a not-executed scenario or zero collected tests -> Unit Test FAIL; all clean -> PASS. The repository build.sh / lint.sh / unit-test.sh are not invoked to produce this evidence."
+
+resolved_questions:
+  - id: Q1
+    decision: "PO 2026-10-03: Code Review PASS comes from an independent reviewer; for GitHub repositories the authoritative evidence is an approved PR review associated with the implementation commit/PR; no self-approval; a repository-written record alone does not prove independence; without GitHub connectivity Code Review stays NOT EXECUTED/BLOCKED."
+    applied_in: [AC13, AC14, TS13, TS24, DEP03]
+  - id: Q2
+    decision: "PO 2026-10-03: durable structured records in factory/evidence/<story-id>/; no large raw logs in Git; large logs as CI/Jenkins artifacts referenced with integrity metadata/hash where supported; /tmp is never authoritative. Evidence interpretation approved by the PO (second review): the Git-tracked structured record is authoritative and must allow the result to be determined independently; external CI artifacts and raw logs are supporting; an external reference alone never gives PASS; the validator verifies all evidence and integrity rules."
+    applied_in: [AC08, AC09, AC17, TS10, TS20]
+  - id: Q3
+    decision: "PO 2026-10-03: Integration Test is mandatory when an applicable integration target exists; N/A for factory enablers only through the decision E mechanism; never inferred from missing tooling."
+    applied_in: [AC15, TS14, TS24]
+  - id: Q4
+    decision: "PO 2026-10-03: do not merge US-FACTORY-002 before the Factory workflow fix; isolate US-FACTORY-003 in a separate worktree from a clean develop base; do not modify the US-FACTORY-002 working tree; 002 recovered later through the correct workflow."
+    applied_in: [DEP01, DEP02, AC20]
+  - id: Q5
+    decision: "PO 2026-10-03: this Story may repair validate-story.sh / executable DoR enforcement where the central architecture needs it; DEF-001 is not closed automatically, only on its own criteria with automated tests and independent verification."
+    applied_in: [AC19, TS22]
+  - id: Q6
+    decision: "PO 2026-10-03: integrate the central validator into Jenkins so invalid state/evidence cannot progress toward completion; Jenkins stays in the QA -> DONE path; not moved before Tester."
+    applied_in: [AC06, AC18, TS21, TS25]
+  - id: Q7
+    decision: "PO 2026-10-03: prefer the pinned Python 3.12 Docker runtime; no host Python; no second runtime contract. Superseded in detail by Q10 / AD-02."
+    applied_in: [AC23, TS23, TS27]
+  - id: Q8
+    decision: "PO 2026-10-03: evidence binds to the implementation fingerprint and the acceptance/test-contract fingerprint; implementation changes invalidate the gate and all downstream evidence; material requirement/AC/test-contract/spec changes invalidate Tester/QA; non-material changes do not; classification deterministic and tested."
+    applied_in: [AC10, AC11, AC12, TS07, TS08, TS09, TS12, TS19]
+  - id: Q9
+    decision: "PO 2026-10-03: story_points 8."
+    applied_in: [story_points]
+  - id: Q10
+    decision: "PO 2026-10-03: option (a) approved, recorded as AD-02 (header). This Story owns the single canonical pinned Python 3.12 runtime contract from its own clean base; digest-pinned image; hash-checked pinned dependencies incl. YAML parser; helper supports the validator's paths; the uncommitted 002 runtime is not copied or used as baseline evidence; 002 adopts the canonical runtime on recovery."
+    applied_in: [AC20, AC23, TS18, TS23, TS27, DEP02, DEP08, architecture_reviewed]
+  - id: Q11
+    decision: "PO 2026-10-03: the implementing DevOps role produces the pre-TESTING Integration Test evidence; order DEV_COMPLETE -> Unit Test -> independent Code Review -> Integration Test -> TESTING -> Tester -> QA -> Jenkins/DoD -> DONE; the Tester never produces evidence that authorises its own dispatch; for this Story Integration Test is applicable, MUST execute and is not N/A-eligible; it exercises the real Factory components together; use integration-test.sh where compatible, otherwise an additive documented Factory command, without weakening integration-test.sh. BA analysis: not compatible (see AC24) -> additive command."
+    applied_in: [AC05, AC14, AC15, AC24, AC25, TS24, TS26, TS28, DEP09]
+
+# No open question remains (CLAUDE_BA check 2026-10-03, after PO decision on Q10/Q11).
+open_questions: []
+
+# Evidence links (Jenkins build, test report, review) are required for each true value.
+# Filled by Tester/QA/Scrum Master — never by the implementing agent alone.
+definition_of_done:
+  implementation_complete: false
+  code_review_passed: false
+  build_passed: false
+  lint_passed: false
+  unit_tests_passed: false
+  integration_tests_passed: false
+  acceptance_criteria_passed: false
+  security_scan_passed: false
+  qa_passed: false
+  documentation_updated: false
+  evidence: []
+
+# Keep this block LAST: scripts/validate-story.sh reads the 20 lines after it.
+# Keys must match safe/templates/definition-of-ready.yaml.
+# DoR re-assessment by CLAUDE_BA (manual, R-001), 2026-10-03, after PO decision on Q10/Q11.
+# Result: 7/7, open_questions empty -> DRAFT -> REFINED -> READY.
+definition_of_ready:
+  business_value_defined: true        # business_value
+  story_defined: true                 # description, FR01-FR11, NFR01-NFR07; Q1-Q11 resolved
+  acceptance_criteria_defined: true   # AC01-AC25, producers and runtime fixed (Q10, Q11)
+  dependencies_identified: true       # DEP01-DEP09; RAID I-001, I-004, I-005, I-008, I-009, D-001, D-006, R-001, R-002, DEF-001
+  architecture_reviewed: true         # AD-02 approved by the human PO 2026-10-03; design constraints AC01-AC25
+  test_scenarios_defined: true        # TS01-TS28; every AC covered
+  estimation_completed: true          # 8 points, PO Q9
