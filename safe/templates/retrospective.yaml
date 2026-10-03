@@ -1,0 +1,13 @@
+id: RETRO-XXX
+sprint: SPRINT-XXX
+date: ""
+
+went_well: []
+to_improve: []
+
+actions:
+  - id: ACT-01
+    description: ""
+    owner: ""
+    due: ""
+    status: OPEN        # OPEN | DONE | DROPPED

@@ -1,0 +1,9 @@
+# Prioritized backlog — owner: PM_PO. Order of `items` IS the priority.
+# Priority changes are decided by the human Product Owner; agents propose only.
+updated: ""          # YYYY-MM-DD
+approved_by: null    # human Product Owner name once approved
+
+items:
+  - ref: EPIC-XXX     # EPIC-* | F-* | US-* | DEF-*
+    moscow: null      # MUST | SHOULD | COULD | WONT
+    rationale: ""

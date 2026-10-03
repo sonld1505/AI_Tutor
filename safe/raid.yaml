@@ -1,0 +1,104 @@
+# RAID register — owner: SCRUM_MASTER. Template: safe/templates/raid.yaml
+risks:
+  - id: R-001
+    description: "scripts/validate-story.sh passes a Story whose definition_of_ready block is empty or missing keys (DEF-001). Until fixed, a non-ready Story can get a worktree."
+    probability: null
+    impact: null
+    mitigation: "Scrum Master checks every DoR key manually against safe/templates/definition-of-ready.yaml before setting READY. Fix tracked in DEF-001."
+    owner: "CLAUDE_SM"
+    status: OPEN
+  - id: R-002
+    description: "Nothing enforces BLOCKED or depends_on: validate-story.sh exits 0 for US-FACTORY-001 (status BLOCKED, depends_on US-FACTORY-002 not DONE; checked 2026-10-03). Once US-FACTORY-002 widens the worktree ID pattern, create-worktree.sh could give US-FACTORY-001 a worktree before US-FACTORY-002 is DONE. DEF-001 AC06 (status must be REFINED/READY) would close this, but DEF-001 has no owning Story (I-004)."
+    probability: null
+    impact: null
+    mitigation: "Scrum Master does not request a worktree for a BLOCKED Story and checks depends_on by hand before moving US-FACTORY-001 out of BLOCKED."
+    owner: "CLAUDE_SM"
+    status: OPEN
+
+assumptions: []
+
+issues:
+  - id: I-001
+    description: "No Epic/Feature/Story can be created until the human Product Owner approves SCOPE-AITUTOR.md (Playbook step [0])."
+    exceptions:
+      - "2026-10-03: human PO allowed factory Story US-FACTORY-002; redefined the same day as Enabler 'Enable Python/FastAPI support in AI Factory CI tooling' (consolidates DEF-002). Factory tooling only; no product scope."
+      - "2026-10-03: human PO requested factory validation Story US-FACTORY-001 (GET /api/health). Not a production feature."
+    blocks: []
+    owner: "HUMAN_PO"
+    status: OPEN
+  - id: I-002
+    description: "develop is at the initial commit; Phase 1 files exist only on chore/phase1-agent-factory-foundation. Worktrees cannot start from develop until it is synced (DEF-002)."
+    update_2026_10_03: >
+      SM execution-readiness check: develop (b437a0c, = origin/develop) now has AGENTS.md,
+      agents/codex/devops.md and scripts/{validate-story,unit-test,create-worktree}.sh.
+      Still missing on develop: commit f93f569 and the uncommitted management files,
+      including safe/stories/US-FACTORY-002.yaml, safe/sprints/SPRINT-001.yaml and the
+      current safe/raid.yaml (untracked/modified on chore/phase1-agent-factory-foundation).
+      The Story does not exist on any base branch. Human to commit, review and merge to develop.
+    blocks: [US-FACTORY-001, US-FACTORY-002]
+    owner: "HUMAN_PO"
+    status: OPEN
+  - id: I-003
+    description: "scripts/create-worktree.sh accepts only ^US-[0-9]+$, so US-FACTORY-* Stories cannot get a worktree. Decision by human PO 2026-10-03: keep the US-FACTORY-<number> convention; the pattern is widened to exactly US-<number> and US-FACTORY-<number> by US-FACTORY-002 AC01. Bootstrap gap: US-FACTORY-002 itself cannot get a worktree through the script it fixes; a human must decide how its worktree is created (e.g. one-time manual git worktree add, recorded)."
+    blocks: [US-FACTORY-002]
+    owner: "HUMAN_PO"
+    status: OPEN
+  - id: I-004
+    description: >
+      DEF-001 (fail-open DoR validator, HIGH) and DEF-003 (Jenkins promotion policy)
+      have no owning Story since US-FACTORY-002 was redefined on 2026-10-03.
+      Carried-over PO questions for DEF-003: where is "UAT acceptance recorded"
+      (spec §24), and what do smoke/regression run while no application exists?
+      Needs a PO decision: new factory Story or later phase.
+    blocks: []
+    owner: "HUMAN_PO"
+    status: OPEN
+  - id: I-005
+    description: >
+      DoD evidence for US-FACTORY-002: until US-FACTORY-001 adds backend/, Jenkins
+      Build and Unit Test Gate fail closed on this repository by design, so the
+      Enabler cannot show build_passed / unit_tests_passed from Jenkins, and
+      US-FACTORY-001 cannot start until US-FACTORY-002 is DONE. Failed gates may
+      not be marked acceptable by any Claude role. Needs a PO decision on
+      acceptable DoD evidence (e.g. fixture-based script tests run in Jenkins).
+    blocks: [US-FACTORY-002]
+    owner: "HUMAN_PO"
+    status: OPEN
+  - id: I-006
+    description: "Python 3.12 not available on the EC2 host (python3 = 3.14.4). CLOSED 2026-10-03: human PO approved AD-01, a pinned python:3.12 Docker image for all Python gates, local and CI; no host install."
+    blocks: []
+    owner: "HUMAN_PO"
+    status: CLOSED
+  - id: I-007
+    description: "The ubuntu user is listed in the docker group, but processes started before the group change cannot reach /var/run/docker.sock (Claude session 2026-10-03: permission denied). Codex local validation of the containerised Python gates (AD-01) needs a fresh login session for ubuntu. The jenkins user can already use Docker."
+    blocks: []
+    owner: "HUMAN_PO"
+    status: CLOSED
+    resolution: "2026-10-03, SM execution-readiness check: as ubuntu, `id` shows group docker (109), `docker ps` succeeds, `docker info` server 29.1.3. Registry pull of python:3.12 not tested (no image pulled)."
+
+dependencies:
+  - id: D-001
+    description: "Jenkins multibranch job + GitHub credential created by a human; needed for §52 evidence (US-FACTORY-001 AC05; DEF-003 AC06)."
+    from: "US-FACTORY-001, DEF-003"
+    to: "HUMAN (Jenkins admin)"
+    status: OPEN
+  - id: D-002
+    description: "Safe dry-run deploy target for spec §52 Test C (DEF-003 AC06)."
+    from: "DEF-003"
+    to: "HUMAN_PO / DEVOPS"
+    status: OPEN
+  - id: D-003
+    description: "Backend stack decision for US-FACTORY-001. RESOLVED by human PO 2026-10-03: Python + FastAPI (current baseline backend direction). Gate-script support moved to D-004."
+    from: "US-FACTORY-001"
+    to: "HUMAN_PO"
+    status: CLOSED
+  - id: D-004
+    description: "FACTORY-DEVOPS-001 (standalone DevOps task). CLOSED 2026-10-03 by human PO: replaced by Enabler Story US-FACTORY-002 (see D-005)."
+    from: "US-FACTORY-001"
+    to: "DEVOPS"
+    status: CLOSED
+  - id: D-005
+    description: "US-FACTORY-001 depends_on US-FACTORY-002 (Enabler). US-FACTORY-001 stays BLOCKED (blocked_from READY) until US-FACTORY-002 is DONE."
+    from: "US-FACTORY-001"
+    to: "US-FACTORY-002"
+    status: OPEN

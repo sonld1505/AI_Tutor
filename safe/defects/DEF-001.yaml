@@ -1,0 +1,47 @@
+id: DEF-001
+title: "validate-story.sh passes Stories whose Definition of Ready is empty, incomplete or contentless"
+
+status: OPEN
+severity: HIGH        # proposed by CLAUDE_SM; human PO may change
+found_by: CLAUDE_SM
+found_on: "2026-10-03"
+owner_role: DEVOPS
+related:
+  - scripts/validate-story.sh
+  - scripts/create-worktree.sh
+  - safe/templates/story.yaml
+  - safe/templates/definition-of-ready.yaml
+  - "commit 619c632"
+
+description: >
+  The validator only fails when the word "false" appears in the 20 lines after
+  `definition_of_ready:`. Absence of a key is treated as PASS, which violates
+  the factory rule UNKNOWN != PASS. Because create-worktree.sh relies on this
+  script, a non-ready Story can receive an engineering worktree.
+
+steps_to_reproduce:
+  - "Case 1: Story with `definition_of_ready: {}` -> STORY_FILE=<file> ./scripts/validate-story.sh"
+  - "Case 2: copy safe/templates/story.yaml, set every DoR value true, delete the `estimation_completed` line"
+  - "Case 3: copy safe/templates/story.yaml, set every value true; leave status DRAFT, AC description \"\", test_scenarios []"
+
+expected: "All three cases exit non-zero with DEFINITION OF READY: FAILED and the reason."
+actual: "All three cases exit 0 with DEFINITION OF READY: PASSED (reproduced 2026-10-03)."
+
+acceptance_criteria:
+  - "AC01: Every key in safe/templates/definition-of-ready.yaml must be present in the Story and equal to boolean true; a missing key or non-boolean value fails."
+  - "AC02: Parse YAML properly (spec §15 already plans replacing text matching); do not depend on line counts or block order."
+  - "AC03: Fail when acceptance_criteria is empty or any AC description is empty."
+  - "AC04: Fail when test_scenarios is empty."
+  - "AC05: Fail when open_questions is non-empty."
+  - "AC06: Fail unless status is REFINED or READY."
+  - "AC07: Fail when the Story file is not valid YAML."
+  - "AC08: Each failure prints which rule failed; exit code is non-zero."
+  - "AC09: The unmodified safe/templates/story.yaml still fails."
+  - "AC10: Automated tests cover cases 1–3 above plus one fully valid Story that passes."
+
+evidence:
+  - "Local run 2026-10-03 on chore/phase1-agent-factory-foundation: case1 exit=0, case2 exit=0, case3 exit=0, template exit=1."
+
+verification:
+  verified_by: null
+  evidence: []

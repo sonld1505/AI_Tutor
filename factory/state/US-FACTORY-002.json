@@ -1,0 +1,29 @@
+{
+  "story": "US-FACTORY-002",
+  "status": "READY",
+  "sprint": "SPRINT-001",
+  "agents": {
+    "devops": "feature/US-FACTORY-002-devops (planned, not created)"
+  },
+  "start_blockers": [
+    "I-002",
+    "I-003"
+  ],
+  "quality": {
+    "unit_test": "UNKNOWN",
+    "integration_test": "UNKNOWN",
+    "security": "UNKNOWN",
+    "qa": "UNKNOWN"
+  },
+  "assignment": {
+    "role": "DEVOPS",
+    "agent": "CODEX",
+    "state": "PLANNED (not active: start blockers open)"
+  },
+  "readiness_review": {
+    "date": "2026-10-03",
+    "by": "CLAUDE_SM",
+    "dor": "PASS 7/7",
+    "start": "NOT CLEARED"
+  }
+}

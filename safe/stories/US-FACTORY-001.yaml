@@ -1,0 +1,177 @@
+id: US-FACTORY-001
+
+title: "Factory validation: backend GET /api/health returns status UP"
+
+# Factory validation Story, NOT a production feature. It exists only to run one
+# small Story end to end through the AI Agent Factory workflow
+# (Story -> DoR -> worktree -> Codex -> unit test -> review -> Jenkins).
+# No Epic/Feature: product backlog is frozen until SCOPE approval (I-001);
+# the human PO requested this Story on 2026-10-03 (exception recorded on I-001).
+#
+# Decisions approved by the human PO on 2026-10-03 (resolve former Q1-Q3):
+#   D1 (ID): keep US-FACTORY-001. Factory validation Stories use US-FACTORY-<number>,
+#      separate from the product backlog (US-<number>). create-worktree.sh must
+#      accept exactly these two patterns -> US-FACTORY-002.
+#   D2 (stack): Python + FastAPI, for this Story and as the current baseline
+#      backend direction. Do not switch to Node because CI already supports it;
+#      gate scripts are extended first -> US-FACTORY-002.
+#      Python 3.12; canonical project marker backend/pyproject.toml
+#      (requirements.txt only for compatibility). Tools: pytest, pytest-cov
+#      (coverage >= 80%), ruff. Runtime: pinned python:3.12 Docker image, same for
+#      Codex local runs and Jenkins (AD-01 in US-FACTORY-002); host Python is not used.
+#   D3 (contract): GET /api/health, no authentication, HTTP 200, body exactly
+#      {"status": "UP"}; no additional fields.
+#   D4 (estimate): 2 story points.
+#   D5 (dependency): depends on Enabler US-FACTORY-002; stays BLOCKED from
+#      implementation until US-FACTORY-002 is DONE. Replaces FACTORY-DEVOPS-001.
+story_type: user
+depends_on:
+  - US-FACTORY-002
+epic: ""
+feature: ""
+
+# DRAFT | REFINED | READY | IN_PROGRESS | DEV_COMPLETE | TESTING | QA | DONE | BLOCKED
+# State machine: agents/claude/scrum-master.md
+status: BLOCKED      # own DoR passes (7/7); blocked from implementation until US-FACTORY-002 is DONE
+blocked_from: READY  # returns to READY when US-FACTORY-002 is DONE
+blocked_by:
+  - US-FACTORY-002
+priority: high       # proposed by CLAUDE_BA: first Story through the factory; human PO may change
+story_points: 2      # human PO, 2026-10-03: small endpoint + tests, also validates the factory workflow
+
+business_context: >
+  Factory Phase 1 has templates, role files, gate scripts and a Jenkinsfile,
+  but no Story has gone through the whole workflow yet (PHASE1-STATUS.md:
+  Worktree strategy OPEN, Build/lint/unit-test gate PARTIAL, Verification §52
+  OPEN). This Story is a deliberately trivial backend change used as a probe:
+  if the factory can deliver this Story, the workflow is proven.
+  It is not part of the AI Study Companion product scope. It also creates the
+  first Python/FastAPI code in backend/, following PO decision D2.
+
+business_value: >
+  Shows, with evidence, that the factory workflow works before any real
+  product Story depends on it: a READY Story gets a worktree, a Codex Backend
+  agent builds to the Story, the unit-test gate runs real pytest tests, and a
+  failing unit test stops the pipeline before any deploy stage. The value is
+  in the gate evidence, not in the endpoint.
+
+description: >
+  As the factory owner (human PO), I want the Python 3.12 / FastAPI backend to expose
+  GET /api/health, with no authentication, returning HTTP 200 and exactly the
+  JSON body {"status": "UP"}, covered by pytest unit tests that the factory
+  unit-test gate runs, so that I can watch one Story pass through every
+  factory stage and confirm that a failing unit test blocks deployment.
+  Out of scope: database, authentication, dependency checks (DB/provider
+  liveness), deployment to any real environment, any child data, and any
+  change to scripts/** or the Jenkinsfile (those belong to US-FACTORY-002,
+  Codex DevOps). The BA does not implement the endpoint; the Codex Backend
+  role does, only after US-FACTORY-002 is DONE.
+
+acceptance_criteria:
+  - id: AC01
+    description: "GET /api/health returns HTTP 200."
+  - id: AC02
+    description: "The response body is exactly the JSON object {\"status\": \"UP\"}: one field, status, with the string value \"UP\" and no other fields."
+  - id: AC03
+    description: "GET /api/health succeeds with no authentication: a request with no Authorization header, cookie or API key returns HTTP 200 with the AC02 body."
+  - id: AC04
+    description: "pytest unit tests verify AC01, AC02 and AC03. scripts/unit-test.sh discovers and runs them with pytest-cov, coverage is at least 80%, and it prints UNIT TEST GATE: PASSED. ruff lint passes on the backend code through scripts/lint.sh."
+  - id: AC05
+    description: "No deployment is allowed if unit tests fail: with one deliberately failing pytest test, scripts/unit-test.sh exits non-zero, and the Jenkins pipeline fails at 'Unit Test Gate' with no Deploy stage (DEV, STG, UAT, Production) run (spec §52 Test B). Evidence: Jenkins build link."
+
+functional_requirements:
+  - "FR01: Python 3.12 + FastAPI application under backend/, defined by backend/pyproject.toml (canonical marker), exposing route GET /api/health (PO decision D2)."
+  - "FR02: Response: status 200, Content-Type application/json, body exactly {\"status\": \"UP\"} (PO decision D3)."
+  - "FR03: The route has no authentication or authorization dependency (PO decision D3)."
+  - "FR04: The endpoint performs no I/O (no DB, cache, provider or file access); it reports only that the process is serving requests."
+  - "FR05: Unit tests use pytest (FastAPI TestClient or equivalent) and live under the Backend role's paths (backend/** or tests/unit/backend/**, agents/codex/backend.md)."
+  - "FR06: backend/pyproject.toml declares pytest, pytest-cov and ruff as development dependencies in the form US-FACTORY-002 documents, so the gate scripts find and run them. A requirements.txt may exist for compatibility only."
+
+non_functional_requirements:
+  - "NFR01 (security): the response exposes no version, hostname, environment name, configuration or stack trace; enforced by the exact-body rule in AC02."
+  - "NFR02 (security): the endpoint is unauthenticated by PO decision, so it must stay read-only and return only the fixed body; no query parameters or request body are processed."
+  - "NFR03 (secrets): the Story adds no secret, credential or .env file."
+  - "NFR04 (privacy): the endpoint handles no user data and writes no personal data to logs."
+  - "NFR05 (fail closed): build, lint and unit-test gates must really run on the backend project; no gate may return PASS without running anything."
+  - "NFR06 (honesty): this Story and its evidence are labelled factory validation; they are not claims of product capability."
+
+dependencies:
+  - "DEP01 (PREREQUISITE, blocks implementation): US-FACTORY-002 (Enabler, Codex DevOps) must be DONE: worktree ID patterns, Python 3.12 build, ruff lint, pytest + pytest-cov with 80% floor, fail-closed unit-test gate. Also in depends_on. Replaces FACTORY-DEVOPS-001 (RAID D-004, closed)."
+  - "DEP02: Worktree base branch must contain the Phase 1 files and the US-FACTORY-002 changes (RAID I-002, DEF-002): human merges to main and syncs develop."
+  - "DEP03: AC05 evidence needs a Jenkins multibranch job connected to GitHub (RAID D-001). Needed for DoD, not DoR."
+  - "DEP04: The DoR validator is fail-open (DEF-001, R-001); the Scrum Master checks this Story's DoR by hand. Fix tracked in US-FACTORY-002."
+  - "DEP05 (note): Jenkins 'Integration Test' and 'Security Gate' exit 1 by design and stay that way (US-FACTORY-002 NFR03), so no deploy stage can run yet. AC05 must be shown failing at 'Unit Test Gate' specifically, not at a later stage."
+
+components:
+  backend: true
+  frontend: false
+  android: false
+  ios: false
+  infrastructure: false   # script changes are in US-FACTORY-002, not in this Story
+
+api_impact: true          # new endpoint GET /api/health
+ui_impact: false
+data_impact: false        # no storage, no schema
+security_impact: true     # new unauthenticated, network-reachable endpoint (NFR01, NFR02)
+privacy_impact: false     # no personal or child data
+
+test_scenarios:
+  - id: TS01
+    covers: [AC01, AC04]
+    type: unit
+    scenario: "pytest: GET /api/health through FastAPI TestClient -> HTTP 200."
+  - id: TS02
+    covers: [AC02, AC04]
+    type: unit
+    scenario: "pytest: same call -> response.json() == {\"status\": \"UP\"} (exact equality, so any extra field fails); Content-Type is application/json."
+  - id: TS03
+    covers: [AC03, AC04]
+    type: unit
+    scenario: "pytest: request with no Authorization header, no cookies and no API key -> HTTP 200 and the exact AC02 body."
+  - id: TS04
+    covers: [AC01]
+    type: unit
+    scenario: "pytest: POST /api/health -> 405 Method Not Allowed (FastAPI default for a GET-only route)."
+  - id: TS05
+    covers: [AC04]
+    type: gate
+    scenario: "On the Story branch: ./scripts/lint.sh runs ruff -> PASS; ./scripts/unit-test.sh detects the Python backend, runs TS01-TS04 with pytest-cov, coverage >= 80%, prints UNIT TEST GATE: PASSED, exit 0."
+  - id: TS06
+    covers: [AC05]
+    type: pipeline-negative
+    scenario: "Temporary branch where TS02 expects \"DOWN\" -> unit-test.sh exit 1 with DEPLOYMENT FORBIDDEN; Jenkins build FAILED at 'Unit Test Gate'; stages Deploy DEV/STG/UAT/Production not executed. Record the build link, then delete the branch."
+  - id: TS07
+    covers: [AC05]
+    type: pipeline-positive
+    scenario: "Story branch with passing tests -> Jenkins passes 'Unit Test Gate' (later stages fail by design, DEP05). Record the build link."
+
+open_questions: []
+
+# Evidence links (Jenkins build, test report, review) are required for each true value.
+# Filled by Tester/QA/Scrum Master — never by the implementing agent alone.
+definition_of_done:
+  implementation_complete: false
+  code_review_passed: false
+  build_passed: false
+  lint_passed: false
+  unit_tests_passed: false
+  integration_tests_passed: false
+  acceptance_criteria_passed: false
+  security_scan_passed: false
+  qa_passed: false
+  documentation_updated: false
+  evidence: []
+
+# Keep this block LAST: scripts/validate-story.sh reads the 20 lines after it.
+# Keys must match safe/templates/definition-of-ready.yaml.
+# DoR re-assessment by CLAUDE_BA (manual, R-001), 2026-10-03.
+# Result: DoR PASS (7/7). Status BLOCKED (blocked_from READY): may not enter
+# development until US-FACTORY-002 is DONE (PO decision D5).
+definition_of_ready:
+  business_value_defined: true        # business_value
+  story_defined: true                 # decisions D1-D5; open_questions empty
+  acceptance_criteria_defined: true   # AC01-AC05, each testable; exact contract from D3
+  dependencies_identified: true       # DEP01-DEP05; depends_on US-FACTORY-002
+  architecture_reviewed: true         # stack, version, marker, tooling approved by human PO (D2); contract fixed (D3)
+  test_scenarios_defined: true        # TS01-TS07; every AC covered
+  estimation_completed: true          # 2 points, human PO (D4)

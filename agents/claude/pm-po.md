@@ -21,7 +21,14 @@ Translate Product Vision into prioritized, measurable delivery objectives.
 - safe/epics/*.yaml
 - safe/features/*.yaml
 - safe/pi-objectives/*.yaml
-- prioritized backlog
+- prioritized backlog: safe/backlog.yaml
+- roadmap: safe/roadmap.yaml (from safe/templates/roadmap.yaml)
+
+Product Vision is not duplicated here: it lives in CLAUDE_AI_Tutor.md §2
+and is changed only by the human Product Owner.
+
+Epic and Feature content comes from approved Playbook artifacts
+(docs/capstone/). See docs/factory/PLAYBOOK-SAFE-MAPPING.md.
 
 ## Rules
 
