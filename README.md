@@ -15,7 +15,7 @@ Repository **chỉ có tài liệu**: bối cảnh sản phẩm, thiết kế đ
 | `CLAUDE.md` / `AGENTS.md` | Điểm vào cho Claude Code / agent khác — trỏ về `CLAUDE_AI_Tutor.md`. |
 | `docs/GLOSSARY.md` | Thuật ngữ (bản tạm, dựng từ nội dung repo). |
 | `dev-book/` | PM AI Bootcamp: Capstone Playbook (11 bước), Project Briefs (PB-01→06), Workbook Common/BA/SA/Dev. Dùng làm **phương pháp làm việc** cho dự án. |
-| `docs/capstone/` | Artefact Capstone theo Playbook (SCOPE, SPEC, ARCH, …). |
+| `docs/capstone/` | Artefact Capstone theo Playbook: `SCOPE-AITUTOR.md`, `HLD-AITUTOR.md` (đều DRAFT). |
 | `CHANGELOG.md` | Nhật ký thay đổi. |
 
 ## Tài liệu được tham chiếu nhưng chưa có trong repo
