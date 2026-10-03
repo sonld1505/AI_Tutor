@@ -7,6 +7,9 @@ approved_by: null
 # Factory items below are not product scope (I-001 exceptions). Order and MoSCoW
 # are proposed by Claude; the human PO decides.
 items:
+  - ref: US-FACTORY-003
+    moscow: null
+    rationale: "Enabler, 8 pts (PO). Central fail-closed workflow gate validator + revision/contract-bound evidence. PO Q4: integrated before US-FACTORY-002 may merge (I-009). READY 2026-10-03 (DoR 7/7, Q1-Q11 resolved, AD-02). Start held by DEP01 (Story not yet on a base branch); TESTING needs D-006; DONE needs D-001, I-005-type decision, security scan. Position proposed by CLAUDE_BA; PO decides."
   - ref: US-FACTORY-002
     moscow: null
     rationale: "Enabler, 3 pts. Prerequisite of US-FACTORY-001 (D-005). READY (AD-01 pinned python:3.12 container). IN_PROGRESS 2026-10-03, Codex DevOps (feature/US-FACTORY-002-devops). DONE needs I-005, D-001."
