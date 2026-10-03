@@ -13,8 +13,9 @@ stories:
     type: enabler
     points: 3
     assigned_role: CODEX_DEVOPS
-    worktree_branch: feature/US-FACTORY-002-devops   # planned; not created (blockers below)
-    status: READY
+    worktree_branch: feature/US-FACTORY-002-devops   # created, based on develop d448882
+    assignment: ACTIVE       # 2026-10-03, Codex DevOps
+    status: IN_PROGRESS
     commitment: committed
   - id: US-FACTORY-001
     type: user
@@ -27,13 +28,14 @@ risks:
   - R-001   # DoR validator fail-open: SM checks DoR by hand
   - R-002   # validator does not enforce BLOCKED/depends_on: SM gate before any US-FACTORY-001 worktree
 
-# Must clear before Codex DevOps starts (READY -> IN_PROGRESS):
-blockers:
-  - I-002   # base branch for the worktree must contain Phase 1 scripts (develop has only README.md)
-  - I-003   # create-worktree.sh rejects US-FACTORY-002; PO to approve a recorded one-time bootstrap
+# Start blockers: none open. I-002 and I-003 CLOSED 2026-10-03 (SM verification below).
+blockers: []
 # I-007 CLOSED 2026-10-03 (docker ps OK as ubuntu).
 # Execution readiness review CLAUDE_SM 2026-10-03: DoR PASS 7/7, start NOT cleared
 # (I-002, I-003 open) -> US-FACTORY-002 stays READY; assignment planned, not active.
+# Start verification CLAUDE_SM 2026-10-03: develop = origin/develop = d448882; worktree
+# branch feature/US-FACTORY-002-devops at d448882, clean, Story file tracked -> I-002,
+# I-003 CLOSED; US-FACTORY-002 READY -> IN_PROGRESS; Codex DevOps assignment ACTIVE.
 # Must clear before US-FACTORY-002 can be DONE (not blocking start):
 done_blockers:
   - I-005   # acceptable DoD evidence while repo has no backend/

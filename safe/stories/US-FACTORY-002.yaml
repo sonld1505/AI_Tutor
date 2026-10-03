@@ -32,7 +32,14 @@ feature: ""
 
 # DRAFT | REFINED | READY | IN_PROGRESS | DEV_COMPLETE | TESTING | QA | DONE | BLOCKED
 # State machine: agents/claude/scrum-master.md
-status: READY        # DoR PASS 7/7 (manual, 2026-10-03). SM readiness review 2026-10-03: start held by RAID I-002, I-003 (I-007 closed)
+status: IN_PROGRESS  # READY -> IN_PROGRESS 2026-10-03 (CLAUDE_SM, on human PO instruction): start blockers I-002, I-003 closed. DONE still held by I-005, D-001
+assignment:
+  role: DEVOPS
+  agent: CODEX
+  branch: feature/US-FACTORY-002-devops
+  worktree: /home/ubuntu/AI_Tutor-worktrees/US-FACTORY-002-DEVOPS
+  base: develop @ d448882 (= origin/develop)
+  state: ACTIVE  # 2026-10-03
 blocked_from: null
 blocked_by: []
 priority: high       # prerequisite of US-FACTORY-001

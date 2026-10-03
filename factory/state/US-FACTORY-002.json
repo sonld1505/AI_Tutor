@@ -1,14 +1,11 @@
 {
   "story": "US-FACTORY-002",
-  "status": "READY",
+  "status": "IN_PROGRESS",
   "sprint": "SPRINT-001",
   "agents": {
-    "devops": "feature/US-FACTORY-002-devops (planned, not created)"
+    "devops": "feature/US-FACTORY-002-devops (active, /home/ubuntu/AI_Tutor-worktrees/US-FACTORY-002-DEVOPS)"
   },
-  "start_blockers": [
-    "I-002",
-    "I-003"
-  ],
+  "start_blockers": [],
   "quality": {
     "unit_test": "UNKNOWN",
     "integration_test": "UNKNOWN",
@@ -18,12 +15,24 @@
   "assignment": {
     "role": "DEVOPS",
     "agent": "CODEX",
-    "state": "PLANNED (not active: start blockers open)"
+    "branch": "feature/US-FACTORY-002-devops",
+    "state": "ACTIVE"
   },
   "readiness_review": {
     "date": "2026-10-03",
     "by": "CLAUDE_SM",
     "dor": "PASS 7/7",
     "start": "NOT CLEARED"
+  },
+  "done_blockers": [
+    "I-005",
+    "D-001"
+  ],
+  "start_verification": {
+    "date": "2026-10-03",
+    "by": "CLAUDE_SM",
+    "develop": "d448882 = origin/develop",
+    "worktree": "clean, on feature/US-FACTORY-002-devops, 0 commits ahead of develop",
+    "start": "CLEARED"
   }
 }

@@ -9,7 +9,7 @@ approved_by: null
 items:
   - ref: US-FACTORY-002
     moscow: null
-    rationale: "Enabler, 3 pts. Prerequisite of US-FACTORY-001 (D-005). READY (AD-01 pinned python:3.12 container). Committed to SPRINT-001, Codex DevOps. Start needs I-002, I-003, I-007; DONE needs I-005, D-001."
+    rationale: "Enabler, 3 pts. Prerequisite of US-FACTORY-001 (D-005). READY (AD-01 pinned python:3.12 container). IN_PROGRESS 2026-10-03, Codex DevOps (feature/US-FACTORY-002-devops). DONE needs I-005, D-001."
   - ref: US-FACTORY-001
     moscow: null
     rationale: "Factory validation, 2 pts. DoR PASS; BLOCKED until US-FACTORY-002 is DONE."
