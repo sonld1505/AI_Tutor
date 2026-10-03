@@ -1,0 +1,16 @@
+# Business value scores are decided by the human Product Owner, not by an agent.
+id: PI-XXX
+name: ""
+
+business_objectives: []
+
+committed_objectives:
+  - id: OBJ-01
+    description: ""
+    business_value: null
+
+uncommitted_objectives: []
+
+dependencies: []
+
+risks: []

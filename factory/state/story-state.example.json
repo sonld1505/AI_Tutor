@@ -1,0 +1,11 @@
+{
+  "story": "US-XXX",
+  "status": "DRAFT",
+  "agents": {},
+  "quality": {
+    "unit_test": "UNKNOWN",
+    "integration_test": "UNKNOWN",
+    "security": "UNKNOWN",
+    "qa": "UNKNOWN"
+  }
+}

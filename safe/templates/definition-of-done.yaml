@@ -1,0 +1,14 @@
+definition_of_done:
+  implementation_complete: true
+  code_review_passed: true
+  build_passed: true
+  lint_passed: true
+  unit_tests_passed: true
+  integration_tests_passed: true
+  acceptance_criteria_passed: true
+  security_scan_passed: true
+  qa_passed: true
+  documentation_updated: true
+
+required_result:
+  all: true
