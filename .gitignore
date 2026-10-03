@@ -1,0 +1,45 @@
+# Secrets
+.env
+.env.*
+*.pem
+*.key
+
+# Agent/runtime logs
+factory/logs/*
+!factory/logs/.gitkeep
+
+# Node
+node_modules/
+dist/
+coverage/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Java
+target/
+.gradle/
+build/
+
+# Android
+local.properties
+
+# iOS/macOS
+DerivedData/
+*.xcuserdata/
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.*

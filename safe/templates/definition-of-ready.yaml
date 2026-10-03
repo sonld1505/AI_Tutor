@@ -1,0 +1,11 @@
+definition_of_ready:
+  business_value_defined: true
+  story_defined: true
+  acceptance_criteria_defined: true
+  dependencies_identified: true
+  architecture_reviewed: true
+  test_scenarios_defined: true
+  estimation_completed: true
+
+required_result:
+  all: true

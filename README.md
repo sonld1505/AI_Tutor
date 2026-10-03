@@ -17,6 +17,13 @@ Repository **chỉ có tài liệu**: bối cảnh sản phẩm, thiết kế đ
 | `dev-book/` | PM AI Bootcamp: Capstone Playbook (11 bước), Project Briefs (PB-01→06), Workbook Common/BA/SA/Dev. Dùng làm **phương pháp làm việc** cho dự án. |
 | `docs/capstone/` | Artefact Capstone theo Playbook: `SCOPE-AITUTOR.md`, `HLD-AITUTOR.md` (đều DRAFT). |
 | `CHANGELOG.md` | Nhật ký thay đổi. |
+| `docs/factory/` | Spec Factory Phase 1 (SAFe-inspired, Claude PM/BA/SM + Codex engineering + Jenkins). |
+| `context/` | File điều hướng bối cảnh cho agent (product, architecture, business rules, glossary) — trỏ về nguồn gốc. |
+| `agents/claude/`, `agents/codex/` | Định nghĩa vai trò: Claude PM/PO, BA, Scrum Master; Codex Backend, Frontend, Android, iOS, Tester, QA, DevOps. |
+| `safe/` | Artefact SAFe: `epics/`, `features/`, `stories/`, `pi-objectives/`, `sprints/` (đang trống) và `templates/` (Epic, Feature, Story, PI, Sprint, DoR, DoD). |
+| `factory/` | `config/`, `orchestrator/`, `state/`, `logs/` — chưa có orchestrator (Phase 1 có giám sát). |
+| `scripts/`, `Jenkinsfile`, `Makefile`, `jenkins/README.md` | Quality gate **fail-closed**: NO UNIT TEST PASS = NO DEPLOY. Integration, security, artifact và deploy hiện **cố ý trả lỗi** cho tới khi được hiện thực. |
+| `backend/`, `frontend/`, `android/`, `ios/`, `tests/`, `infrastructure/`, `jenkins/` | Khung thư mục rỗng; chưa có code. |
 
 ## Tài liệu được tham chiếu nhưng chưa có trong repo
 

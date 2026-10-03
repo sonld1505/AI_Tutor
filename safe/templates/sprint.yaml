@@ -1,0 +1,16 @@
+id: SPRINT-XXX
+pi: PI-XXX
+
+goal: ""
+
+start_date: ""
+end_date: ""
+
+stories: []
+
+risks: []
+blockers: []
+
+metrics:
+  committed_points: 0
+  completed_points: 0

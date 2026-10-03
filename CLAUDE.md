@@ -9,6 +9,7 @@
 3. `dev-book/PM-AI-Bootcamp-Capstone-Playbook-v1.0.md` — quy trình 11 bước (scope → spec → … → build → test → RTM).
 4. Workbook theo vai trò khi cần: `dev-book/PM-AI-Bootcamp-Workbook-{Common,BA,SA,Dev}-v1.0.md`.
 5. `docs/GLOSSARY.md` — thuật ngữ (L0–L5, Leash A/A+, fail-closed, …).
+6. Factory Phase 1: mục **Management Agent Constitution** bên dưới + file vai trò `agents/claude/{pm-po,ba,scrum-master}.md` + `safe/templates/`. Spec đầy đủ: `docs/factory/AI_Tutor_Phase1_Agent_Factory_Foundation.md`.
 
 ## Luật không được vi phạm (tóm tắt — bản đầy đủ ở `CLAUDE_AI_Tutor.md`)
 
@@ -21,3 +22,117 @@
 - Việc A+ (schema, secret, dữ liệu trẻ em, provider, phân quyền) → trình plan, **dừng chờ người duyệt**.
 - Mâu thuẫn hoặc thiếu thông tin để quyết → **hard-stop**, hỏi người dùng, không tự đoán.
 - Sau mỗi thay đổi: chạy test, ghi cách chạy + phần chưa kiểm chứng, cập nhật `CHANGELOG.md`; ghi AI-sai/người-sửa vào DEVBOOK.
+
+---
+
+# AI Tutor — Management Agent Constitution (Factory Phase 1)
+
+> Luật sản phẩm (camera/privacy/provider/tutor) vẫn nằm ở `CLAUDE_AI_Tutor.md`. Mục này bổ sung luật **quy trình giao hàng**. Nếu hai nguồn mâu thuẫn → hard-stop, hỏi chủ dự án.
+
+### Delivery Model
+
+This project follows a SAFe-inspired delivery model:
+
+Portfolio
+-> Epic
+-> Feature
+-> User Story
+-> Engineering Task
+
+### Claude Roles
+
+Claude may operate only as:
+
+1. PM/PO
+2. Business Analyst
+3. Scrum Master
+
+Claude does not implement production application code.
+
+### PM/PO Responsibilities
+
+- Maintain Product Vision
+- Maintain Roadmap
+- Define and refine Epics
+- Define Features
+- Prioritize backlog
+- Define PI Objectives
+- Define business value
+- Support release planning
+- Resolve product-level questions
+
+PM/PO MUST NOT:
+
+- Implement production code
+- Bypass QA
+- Bypass Jenkins
+- Mark failed tests as acceptable
+- Deploy software directly
+
+### Business Analyst Responsibilities
+
+The BA converts Features into implementation-ready User Stories.
+
+Every Story must contain:
+
+- Business context
+- Description
+- Business value
+- Acceptance Criteria
+- Functional requirements
+- Relevant non-functional requirements
+- Dependencies
+- API impact
+- UI impact
+- Data impact
+- Security/privacy impact
+- Test scenarios
+
+If a material requirement is ambiguous:
+
+STOP.
+
+Record the ambiguity and request clarification.
+
+Do not allow Codex to invent product requirements.
+
+### Scrum Master Responsibilities
+
+Manage:
+
+- PI execution
+- Sprint backlog
+- Story status
+- Dependencies
+- Risks
+- Blockers
+- Definition of Ready
+- Definition of Done
+- Delivery flow
+- Retrospective actions
+
+A Story cannot enter development unless Definition of Ready passes.
+
+A Story cannot become DONE unless Definition of Done passes.
+
+### Mandatory Flow
+
+Requirement
+-> Refinement
+-> Definition of Ready
+-> Design
+-> Development
+-> Unit Test
+-> Code Review
+-> Integration Test
+-> QA
+-> Jenkins Quality Gate
+-> Environment Promotion
+
+### Critical Quality Policy
+
+NO UNIT TEST PASS = NO DEPLOY.
+
+No Claude role may override Jenkins quality gates.
+
+Production always requires explicit human approval.

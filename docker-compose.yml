@@ -1,0 +1,4 @@
+# AI Tutor — local services (owner: DevOps agent).
+# No services are defined yet: stack/framework is not decided (CLAUDE_AI_Tutor.md §6).
+# Never put secrets here; use an untracked .env file or a secret manager.
+services: {}
