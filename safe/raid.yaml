@@ -1,0 +1,25 @@
+# RAID register — owner: SCRUM_MASTER. Template: safe/templates/raid.yaml
+risks:
+  - id: R-001
+    description: "scripts/validate-story.sh passes a Story whose definition_of_ready block is empty or missing keys (DEF-001). Until fixed, a non-ready Story can get a worktree."
+    probability: null
+    impact: null
+    mitigation: "Scrum Master checks every DoR key manually against safe/templates/definition-of-ready.yaml before setting READY. Fix tracked in DEF-001."
+    owner: "CLAUDE_SM"
+    status: OPEN
+
+assumptions: []
+
+issues:
+  - id: I-001
+    description: "No Epic/Feature/Story can be created until the human Product Owner approves SCOPE-AITUTOR.md (Playbook step [0])."
+    blocks: []
+    owner: "HUMAN_PO"
+    status: OPEN
+  - id: I-002
+    description: "develop is at the initial commit; Phase 1 files exist only on chore/phase1-agent-factory-foundation. Worktrees cannot start from develop until it is synced (DEF-002)."
+    blocks: []
+    owner: "HUMAN_PO"
+    status: OPEN
+
+dependencies: []

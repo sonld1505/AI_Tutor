@@ -1,0 +1,41 @@
+id: DEF-002
+title: "create-worktree.sh can create a worktree from a base branch that lacks the factory foundation"
+
+status: OPEN
+severity: MEDIUM      # proposed by CLAUDE_SM; human PO may change
+found_by: CLAUDE_SM
+found_on: "2026-10-03"
+owner_role: DEVOPS
+related:
+  - scripts/create-worktree.sh
+  - "branch develop (at 2d8ecc6, contains only README.md)"
+
+description: >
+  create-worktree.sh validates the Story in the current checkout, then creates
+  the worktree from `develop` by default. Today `develop` contains only
+  README.md: no AGENTS.md, role files, Story files or gate scripts. A Codex
+  agent started there cannot follow its mandatory reading list and cannot run
+  the gates. It also validates the Story file from the current checkout rather
+  than the copy on the base branch the engineer will work from.
+
+steps_to_reproduce:
+  - "git ls-tree --name-only develop  -> README.md only"
+  - "Read scripts/create-worktree.sh: BASE defaults to develop; no content check on BASE"
+
+expected: "Worktree creation refuses a base branch that lacks AGENTS.md, agents/codex/<role>.md, scripts/unit-test.sh and the Story file, and validates the Story as it exists on the base branch."
+actual: "No such check; worktree would be created from a branch with none of these files."
+
+acceptance_criteria:
+  - "AC01: Script fails, naming the missing paths, if the base branch lacks AGENTS.md, agents/codex/<role>.md, scripts/validate-story.sh, scripts/unit-test.sh or safe/stories/<id>.yaml."
+  - "AC02: DoR validation runs against the Story content on the base branch."
+  - "AC03: Automated test covers a base branch missing the files (fail) and a complete one (pass)."
+
+evidence:
+  - "git ls-tree --name-only develop on 2026-10-03 printed only README.md."
+
+# Separate human action (not part of this defect's fix): merge the Phase 1 branch
+# to main via PR and sync develop. Tracked in docs/factory/PHASE1-STATUS.md.
+
+verification:
+  verified_by: null
+  evidence: []

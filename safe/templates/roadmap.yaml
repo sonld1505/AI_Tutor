@@ -1,0 +1,11 @@
+# Roadmap — owner: PM_PO. Milestones are targets, not commitments or results.
+# Dates and scope require human Product Owner approval.
+updated: ""
+approved_by: null
+
+horizons:
+  - name: ""          # e.g. PI-001
+    target_window: "" # e.g. 2026-Q4, or N/A
+    epics: []
+    exit_criteria: []
+    assumptions: []

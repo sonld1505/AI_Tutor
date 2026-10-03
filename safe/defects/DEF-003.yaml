@@ -1,0 +1,43 @@
+id: DEF-003
+title: "Jenkinsfile promotion stages do not enforce the spec's promotion policy"
+
+status: OPEN
+severity: MEDIUM      # proposed by CLAUDE_SM; latent while deploy.sh always exits 1
+found_by: CLAUDE_SM
+found_on: "2026-10-03"
+owner_role: DEVOPS
+related:
+  - Jenkinsfile
+  - scripts/deploy.sh
+  - "docs/factory/AI_Tutor_Phase1_Agent_Factory_Foundation.md §22, §24, §49"
+
+description: >
+  The Jenkinsfile copied from spec §25 contradicts spec §22/§24:
+  (1) Production runs on `main` and builds its own artifact instead of
+  promoting the same immutable artifact that passed UAT;
+  (2) STG and UAT both run in the same `release/*` build with no gate,
+  smoke test or regression between them;
+  (3) Production does not check that UAT acceptance was recorded;
+  (4) no smoke stage after any deployment (§49 marks smoke Required for DEV+).
+  Harmless today because deploy.sh always exits 1, but it must be fixed
+  before deploy.sh is enabled.
+
+steps_to_reproduce:
+  - "Read Jenkinsfile stages 'Build Immutable Artifact', 'Deploy STG', 'Deploy UAT', 'Production Approval', 'Deploy Production'."
+
+expected: "Pipeline promotes one artifact by git SHA through DEV -> STG -> UAT -> PROD, with smoke after each deploy, regression before UAT, recorded UAT acceptance and human approval before PROD."
+actual: "Each branch builds its own artifact; STG/UAT run back-to-back; PROD needs only the input step."
+
+acceptance_criteria:
+  - "AC01: Production deploys an artifact identified by the SHA that passed UAT; it never rebuilds."
+  - "AC02: A smoke-test stage runs after every deploy and fails the pipeline on failure."
+  - "AC03: UAT deploy requires STG smoke PASS and regression PASS."
+  - "AC04: Production requires recorded UAT acceptance and the human input step; absence of either blocks."
+  - "AC05: The gate order before any deploy stays Build -> Lint -> Unit Test -> Integration -> Security -> Artifact (NO UNIT TEST PASS = NO DEPLOY)."
+  - "AC06: Spec §52 negative tests A, B, C are executed and their Jenkins build links recorded as evidence."
+
+evidence: []
+
+verification:
+  verified_by: null
+  evidence: []

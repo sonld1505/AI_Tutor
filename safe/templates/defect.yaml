@@ -1,0 +1,26 @@
+id: DEF-XXX
+title: ""
+
+# OPEN | ASSIGNED | FIXED | VERIFIED | CLOSED | REJECTED
+status: OPEN
+severity: null        # CRITICAL | HIGH | MEDIUM | LOW
+found_by: ""          # role, e.g. CLAUDE_SM, CODEX_TESTER, HUMAN
+found_on: ""          # YYYY-MM-DD
+owner_role: ""        # codex role that must fix it, e.g. DEVOPS
+related: []           # US-* / file paths / commit SHAs
+
+description: ""
+
+steps_to_reproduce: []
+
+expected: ""
+actual: ""
+
+acceptance_criteria: []
+
+evidence: []
+
+# A defect is VERIFIED only by someone other than the fixer, with evidence.
+verification:
+  verified_by: null
+  evidence: []

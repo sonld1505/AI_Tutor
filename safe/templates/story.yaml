@@ -5,9 +5,14 @@ title: ""
 epic: ""
 feature: ""
 
+# DRAFT | REFINED | READY | IN_PROGRESS | DEV_COMPLETE | TESTING | QA | DONE | BLOCKED
+# State machine: agents/claude/scrum-master.md
 status: DRAFT
+blocked_from: null   # state to return to when status is BLOCKED; null otherwise
 priority: medium
 story_points: null
+
+business_context: ""
 
 business_value: ""
 
@@ -31,7 +36,8 @@ components:
   infrastructure: false
 
 api_impact: false
-database_impact: false
+ui_impact: false
+data_impact: false
 security_impact: false
 privacy_impact: false
 
@@ -39,11 +45,28 @@ test_scenarios: []
 
 open_questions: []
 
+# Evidence links (Jenkins build, test report, review) are required for each true value.
+# Filled by Tester/QA/Scrum Master — never by the implementing agent alone.
+definition_of_done:
+  implementation_complete: false
+  code_review_passed: false
+  build_passed: false
+  lint_passed: false
+  unit_tests_passed: false
+  integration_tests_passed: false
+  acceptance_criteria_passed: false
+  security_scan_passed: false
+  qa_passed: false
+  documentation_updated: false
+  evidence: []
+
+# Keep this block LAST: scripts/validate-story.sh reads the 20 lines after it.
+# Keys must match safe/templates/definition-of-ready.yaml.
 definition_of_ready:
   business_value_defined: false
   story_defined: false
   acceptance_criteria_defined: false
   dependencies_identified: false
-  test_scenarios_defined: false
   architecture_reviewed: false
-  estimated: false
+  test_scenarios_defined: false
+  estimation_completed: false

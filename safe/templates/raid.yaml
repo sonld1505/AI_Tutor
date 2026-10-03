@@ -1,0 +1,30 @@
+# RAID register — owner: SCRUM_MASTER. Risks, Assumptions, Issues/blockers, Dependencies.
+# Do not invent probability/impact numbers; use null until assessed by a human.
+risks:
+  - id: R-XXX
+    description: ""
+    probability: null   # LOW | MEDIUM | HIGH
+    impact: null        # LOW | MEDIUM | HIGH
+    mitigation: ""
+    owner: ""
+    status: OPEN        # OPEN | MITIGATED | CLOSED
+
+assumptions:
+  - id: A-XXX
+    description: ""
+    source: ""
+    validated: false
+
+issues:
+  - id: I-XXX
+    description: ""
+    blocks: []          # US-* / F-* ids
+    owner: ""
+    status: OPEN
+
+dependencies:
+  - id: D-XXX
+    description: ""
+    from: ""
+    to: ""
+    status: OPEN
