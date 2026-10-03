@@ -158,7 +158,7 @@ dependencies:
         - "The exact agent identity and its credentials are intentionally NOT defined yet; they must be configured before the first implementation commit. No bot account or credential is invented."
         - "Until that identity is configured, implementation may be inspected/executed, but NO implementation commit may be created."
         - "AC13: the reviewer GitHub login must differ from the GitHub identity of every implementation commit author."
-      note: "2026-10-03: the repository-shared Git config (/home/ubuntu/AI_Tutor/.git/config, used by every worktree) is set to sonld1505 <sonld150521@gmail.com> for the US-FACTORY-003 management commit only. It must be changed before any implementation commit."
+      note: "2026-10-03 (updated): extensions.worktreeConfig is enabled; the shared Git config has no user identity and user.useConfigOnly=true, so a worktree without its own identity cannot commit. Only the management worktree (US-FACTORY-003-MGMT) has the human identity sonld1505 in its config.worktree. No agent identity exists yet."
     from: "US-FACTORY-003 (Code Review and Integration Test, i.e. before TESTING; first implementation commit), every later Story's implementation commits and Code Review gate"
     to: "HUMAN_PO (GitHub admin)"
     status: OPEN
