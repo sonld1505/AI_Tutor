@@ -205,6 +205,13 @@ issues:
       the PR head changes, and the PO re-approves the new head before TS24; or (b) an explicit, recorded
       PO contract amendment. Note: committing records moves the PR head, which invalidates the current
       approval under the PO's resume instruction.
+    po_decision_2026_10_04: "Option (a): follow the contract; no contract amendment. Approval on 36f95d5 is historical only."
+    progress_2026_10_04: >
+      Recovery paused before any gate record. Build, lint and Unit Test records must come from CODEX_DEVOPS
+      running the canonical Docker commands (AC05/AC14/AC25), but the Codex sandbox cannot reach Docker
+      (DEVBOOK #11). PO decision: stop until an admin gives the Codex sandbox scoped Docker access; no
+      unsandboxed run and no host run labelled as CODEX_DEVOPS. PR #8 head still 36f95d5; no records
+      created; Story still IN_PROGRESS.
     blocks: [US-FACTORY-003]
     owner: "HUMAN_PO (decision) / CLAUDE_SM (coordination)"
     status: OPEN
