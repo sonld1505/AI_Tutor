@@ -139,7 +139,13 @@ issues:
       1d0f261, 12f48cb and 010f250 on that branch are bot-authored management commits. They are kept as
       history (no rewrite).
     correction_2026_10_04: "After the PO's reconciliation instruction, US-FACTORY-004-MGMT config.worktree was also restored to sonld1505 (worktree scope; core.sshCommand removed). The implementation worktree and the global config were not changed."
-    status: OPEN   # both management worktrees corrected; REPOSITORY-SETTINGS.md section 3 / R-003 text vs D-006 needs a PO decision before that branch merges
+    po_decision_2026_10_04: >
+      D-006 stays authoritative: sonld1505 = PO, independent human reviewer and management commit identity;
+      sonldfkr2911 = implementation/automation identity, never silently the management author. REPOSITORY-SETTINGS.md
+      section 3 and the R-003 mitigation were amended to conform to D-006 on management/factory-v2-stabilization. The
+      five historical bot-authored management commits are NOT rewritten; they are kept as audit history. Future
+      management commits use sonld1505 unless a later PO decision explicitly changes D-006.
+    status: OPEN   # identity restored and documents aligned; closes when the management branches merge with the amended text
   - id: I-010
     description: >
       US-FACTORY-003 R3-02 (MAJOR, contract-level, round-3 pre-review 2026-10-04): develop-mode
