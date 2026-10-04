@@ -1,0 +1,84 @@
+id: US-FACTORY-007
+
+title: "Minimum Viable Factory: PO merge gate, PR decision package and required CI check"
+
+# Lean MVF scope (PO-approved 2026-10-04). Replaces the heavyweight draft (release-readiness engine,
+# decision-package generator, settings verifier, post-merge verifier: removed/deferred).
+story_type: enabler
+depends_on: []
+epic: ""
+feature: ""
+
+status: IN_PROGRESS   # lean DEV; PR template delivered by the Lean migration PR; protection + CI check need human actions
+blocked_from: null
+blocked_by: []
+priority: high
+story_points: 1   # Lean MVF size; PO may adjust
+
+business_context: "Factory Lean migration approved by the human PO on 2026-10-04 (Minimum Viable Factory, then freeze and move to product)."
+
+business_value: "Every merge into develop/main is a deliberate, informed PO decision that the Factory cannot bypass."
+
+description: "PR template with the decision package fields; branch protection and merge-commit-only settings (human, docs/factory/REPOSITORY-SETTINGS.md); Jenkins CI as a required status check once D-001 exists; review threshold rule (Critical/Major = 0) in the Lean constitution."
+
+acceptance_criteria:
+  - id: AC01
+    description: ".github/pull_request_template.md contains Story, revision, scope, SA decision, review verdict, targeted tests, CI result, risks, blockers, recommended action and the merge-commit-only instruction."
+  - id: AC02
+    description: "develop and main are protected (admins included, 1 approving review, no force push), squash/rebase merges disabled, verified read-only (RAID R-003)."
+  - id: AC03
+    description: "The Jenkins status check is required on develop/main once the multibranch job exists (D-001)."
+  - id: AC04
+    description: "The host's default SSH key can no longer push as the PO unattended (RAID R-003)."
+
+functional_requirements: []
+
+non_functional_requirements: []
+
+dependencies: []
+
+components: {backend: false, frontend: false, android: false, ios: false, infrastructure: true}
+api_impact: false
+ui_impact: false
+data_impact: false
+security_impact: true
+privacy_impact: false
+
+test_scenarios:
+  - id: TS01
+    covers: [AC02]
+    scenario: "Read-only GitHub API check of protection and merge settings matches REPOSITORY-SETTINGS.md section 8."
+  - id: TS02
+    covers: [AC04]
+    scenario: "ssh -T -o BatchMode=yes git@github.com from the host does not authenticate as sonld1505."
+  - id: TS03
+    covers: [AC03]
+    scenario: "A PR without the passing Jenkins check cannot be merged (after D-001)."
+  - id: TS04
+    covers: [AC01]
+    scenario: "PR template contains every decision-package field."
+
+open_questions: []
+
+definition_of_done:
+  implementation_complete: false
+  code_review_passed: false
+  build_passed: false
+  lint_passed: false
+  unit_tests_passed: false
+  integration_tests_passed: false
+  acceptance_criteria_passed: false
+  security_scan_passed: false
+  qa_passed: false
+  documentation_updated: false
+  evidence: []
+
+# Keep this block LAST: scripts/validate-story.sh reads the 20 lines after it.
+definition_of_ready:
+  business_value_defined: true
+  story_defined: true
+  acceptance_criteria_defined: true
+  dependencies_identified: true
+  architecture_reviewed: true
+  test_scenarios_defined: true
+  estimation_completed: true

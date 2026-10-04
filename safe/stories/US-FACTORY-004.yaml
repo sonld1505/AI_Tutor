@@ -1,0 +1,77 @@
+id: US-FACTORY-004
+
+title: "Minimum Viable Factory: Solution Architect authority and Lean constitution (docs only)"
+
+# Lean MVF scope (PO-approved Lean migration 2026-10-04). Replaces the heavyweight 2026-10-04 draft
+# (E1-E10 machinery, SA Gate code, path tripwire: removed/deferred). Docs only, no validator code.
+# Ordering: the PO instructed the constitution update as migration Step 2, so this docs Story lands
+# before US-FACTORY-003 is merged; it changes no 003 code and none of 003's contract_refs.
+story_type: enabler
+depends_on: []
+epic: ""
+feature: ""
+
+status: IN_PROGRESS   # lean DEV; delivered by the Lean migration PR (PO decision 2026-10-04)
+blocked_from: null
+blocked_by: []
+priority: high
+story_points: 1   # Lean MVF size; PO may adjust
+
+business_context: "Factory Lean migration approved by the human PO on 2026-10-04 (Minimum Viable Factory, then freeze and move to product)."
+
+business_value: "Normal technical decisions are made by the SA without PO round-trips; the PO only sees product, legal, budget, credential and release questions."
+
+description: "Add the SA role file, Lean constitution sections in CLAUDE.md and AGENTS.md (authority, lean flow, review cap with SA root-cause options A-E, test policy, Human Fast-Path, fail-closed scope, factory freeze) and an ADR template."
+
+acceptance_criteria:
+  - id: AC01
+    description: "agents/claude/solution-architect.md defines what the SA decides, when Claude invokes it (only when useful), the post-review-cap options A-E, the PO escalation list and the must-not list."
+  - id: AC02
+    description: "CLAUDE.md contains the Lean constitution; AGENTS.md contains the Lean rules and the role list incl. AI/ML and DevOps/Cloud."
+  - id: AC03
+    description: "docs/architecture/adr/ADR-TEMPLATE.md exists and states when an ADR is warranted."
+  - id: AC04
+    description: "No gate is weakened: NO UNIT TEST PASS = NO DEPLOY, human approval for merge/production and the fail-closed scope remain stated."
+
+functional_requirements: []
+
+non_functional_requirements: []
+
+dependencies: []
+
+components: {backend: false, frontend: false, android: false, ios: false, infrastructure: true}
+api_impact: false
+ui_impact: false
+data_impact: false
+security_impact: false
+privacy_impact: false
+
+test_scenarios:
+  - id: TS01
+    covers: [AC01, AC02, AC03, AC04]
+    scenario: "Independent review of the docs diff confirms AC01-AC04 and no contradiction with CLAUDE_AI_Tutor.md product rules."
+
+open_questions: []
+
+definition_of_done:
+  implementation_complete: false
+  code_review_passed: false
+  build_passed: false
+  lint_passed: false
+  unit_tests_passed: false
+  integration_tests_passed: false
+  acceptance_criteria_passed: false
+  security_scan_passed: false
+  qa_passed: false
+  documentation_updated: false
+  evidence: []
+
+# Keep this block LAST: scripts/validate-story.sh reads the 20 lines after it.
+definition_of_ready:
+  business_value_defined: true
+  story_defined: true
+  acceptance_criteria_defined: true
+  dependencies_identified: true
+  architecture_reviewed: true
+  test_scenarios_defined: true
+  estimation_completed: true

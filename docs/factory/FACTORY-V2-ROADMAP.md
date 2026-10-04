@@ -111,3 +111,17 @@ These are inputs for refining US-FACTORY-004..007. The PO decides them in each S
    sketch but not in this decision. Confirm it during US-FACTORY-005 refinement.
 5. **Orchestration defect carried into US-FACTORY-006:** DEF-004 (orchestrator and agent state not observable outside the
    session, no durable completion result).
+
+## 9. Lean amendment (human PO, 2026-10-04): supersedes sections 2–8 where they conflict
+
+- **Minimum Viable Factory (MVF), then freeze.** 003 is completed in Lean mode (one final fix + one independent
+  verification + CI + PO PR approval). 004 and 005 are docs only (SA role, Lean constitution, one-page role files).
+  006 is a supervised run wrapper plus a status command. 007 is the PR decision template, branch protection and a
+  required Jenkins check. Everything else (Delivery DAG, SA Gate machinery, E1–E10 enforcement, readiness engine,
+  post-merge verifier) is **deferred until a product Story needs it**.
+- **Authority:** PO = product, priority, acceptance, budget/legal/privacy, accounts/admin, credentials, production, final
+  merge. Claude = orchestration. SA = all normal technical decisions. Engineering = implementation. Validation =
+  independent verification.
+- **Flow:** requirement → triage → SA if useful → engineering → targeted tests → independent review (one fix, one
+  re-review, then SA) → CI → PO PR approval → merge.
+- After the MVF works, the next work is AI Tutor product development (needs SCOPE approval, I-001).

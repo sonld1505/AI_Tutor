@@ -1,0 +1,85 @@
+id: US-FACTORY-006
+
+title: "Minimum Viable Factory: supervised run wrapper and factory status command"
+
+# Lean MVF scope (PO-approved 2026-10-04). Replaces the heavyweight draft (Delivery DAG, scheduler,
+# domain fingerprints, journal hash chain, failure-fingerprint classes: deferred until a product Story
+# needs parallel multi-domain work). Closes DEF-004.
+story_type: enabler
+depends_on: [US-FACTORY-003]
+epic: ""
+feature: ""
+
+status: READY   # lean TODO; starts after US-FACTORY-003 is merged (same implementing role)
+blocked_from: null
+blocked_by: []
+priority: high
+story_points: 2   # Lean MVF size; PO may adjust
+
+business_context: "Factory Lean migration approved by the human PO on 2026-10-04 (Minimum Viable Factory, then freeze and move to product)."
+
+business_value: "Long-running agent and test runs are never mistaken for hangs or duplicated, and anyone can see status without inspecting processes or chat."
+
+description: "A small DevOps/Cloud script that runs a command with a timeout, writes a log under factory/logs/<story>/<role>/, a heartbeat (log growth / CPU time) and a status file with PID, process start time and exit code; plus a status command listing runs as RUNNING+PROGRESSING, RUNNING+STALLED, COMPLETED, FAILED or INTERRUPTED."
+
+acceptance_criteria:
+  - id: AC01
+    description: "The run wrapper enforces a configurable timeout (process group terminated) and writes log, PID, process start time, heartbeat and exit code."
+  - id: AC02
+    description: "The status command derives PROGRESSING vs STALLED from progress signals and a configurable stall window; a long progressing run is never reported as hung."
+  - id: AC03
+    description: "A run whose process is gone but whose exit code/result exists is reported COMPLETED (DEF-004 case); no process and no result is INTERRUPTED; starting the same run id twice while it is alive is refused."
+  - id: AC04
+    description: "No secrets in logs or status files (credential patterns redacted)."
+
+functional_requirements: []
+
+non_functional_requirements: []
+
+dependencies: []
+
+components: {backend: false, frontend: false, android: false, ios: false, infrastructure: true}
+api_impact: false
+ui_impact: false
+data_impact: false
+security_impact: false
+privacy_impact: false
+
+test_scenarios:
+  - id: TS01
+    covers: [AC02]
+    scenario: "MOCK long-running process emitting output past the stall window -> PROGRESSING, not killed."
+  - id: TS02
+    covers: [AC01, AC02]
+    scenario: "MOCK silent process -> STALLED; past the timeout -> process group terminated, FAILED timeout."
+  - id: TS03
+    covers: [AC03]
+    scenario: "Process killed externally after writing its result -> COMPLETED; without result -> INTERRUPTED; duplicate start refused."
+  - id: TS04
+    covers: [AC04]
+    scenario: "Credential pattern printed by a MOCK process -> redacted in the log."
+
+open_questions: []
+
+definition_of_done:
+  implementation_complete: false
+  code_review_passed: false
+  build_passed: false
+  lint_passed: false
+  unit_tests_passed: false
+  integration_tests_passed: false
+  acceptance_criteria_passed: false
+  security_scan_passed: false
+  qa_passed: false
+  documentation_updated: false
+  evidence: []
+
+# Keep this block LAST: scripts/validate-story.sh reads the 20 lines after it.
+definition_of_ready:
+  business_value_defined: true
+  story_defined: true
+  acceptance_criteria_defined: true
+  dependencies_identified: true
+  architecture_reviewed: true
+  test_scenarios_defined: true
+  estimation_completed: true

@@ -14,6 +14,40 @@ risks:
     mitigation: "Scrum Master does not request a worktree for a BLOCKED Story and checks depends_on by hand before moving US-FACTORY-001 out of BLOCKED."
     owner: "CLAUDE_SM"
     status: OPEN
+  - id: R-003
+    description: >
+      The PO human merge/release gate is not technically enforced. Checked 2026-10-04: GitHub
+      reports develop and main as not protected (unauthenticated REST read), and the EC2 host's
+      default SSH key authenticates as the PO login sonld1505 (used for management pushes, e.g.
+      dbe7278..b779eef). Any Factory process with access to that key could push or merge into
+      develop/main as the PO, bypassing review and the human gate. Repository merge-method settings
+      (squash/rebase) are not verifiable without a token (UNVERIFIED).
+    probability: null
+    impact: null
+    mitigation: "Human/admin: apply docs/factory/REPOSITORY-SETTINGS.md (merge commits only, protection incl. admins, required review, later required Jenkins check); Factory commits (management and implementation) use the bot identity sonldfkr2911, never the PO key; PO key removed from unattended use on the host. Until then agents must not push to develop/main (convention only). US-FACTORY-007 Q4 / AC15."
+    owner: "HUMAN_PO"
+    status: OPEN
+  - id: R-004
+    description: "Platform feasibility of V2 engineering roles on the current host (G-19, G-20, G-21): iOS needs macOS/Xcode (host is Linux); Android emulator tests unrealistic on t3.large without KVM; AI/ML has no permitted provider for children and no evaluation datasets."
+    probability: null
+    impact: null
+    mitigation: "SA ADRs during US-FACTORY-005 refinement (runner/device-farm/unit-only); macOS runner or device farm cost is a PO decision (E5); provider verification by PO (CLAUDE_AI_Tutor.md §10)."
+    owner: "CLAUDE_SA (interim) / HUMAN_PO"
+    status: OPEN
+  - id: R-005
+    description: "Single EC2 host holds Jenkins, Docker, all agent worktrees and (planned) the 006 runtime state store; no backup; management work may be committed but unpushed (G-26)."
+    probability: null
+    impact: null
+    mitigation: "Push management work after each phase (identity per G-14); host backup/snapshot policy (PO, cost); 006 design keeps authoritative state in Git."
+    owner: "HUMAN_PO"
+    status: OPEN
+  - id: R-006
+    description: "Human separation of duties: sonld1505 is PO, the only AC13 reviewer and approver, and was the identity used for Claude management commits (G-23)."
+    probability: null
+    impact: null
+    mitigation: "Management identity (REPOSITORY-SETTINGS.md §3); keep Factory identities off the approver list; consider a second human reviewer."
+    owner: "HUMAN_PO"
+    status: OPEN
 
 assumptions: []
 
@@ -24,6 +58,10 @@ issues:
       - "2026-10-03: human PO allowed factory Story US-FACTORY-002; redefined the same day as Enabler 'Enable Python/FastAPI support in AI Factory CI tooling' (consolidates DEF-002). Factory tooling only; no product scope."
       - "2026-10-03: human PO requested factory validation Story US-FACTORY-001 (GET /api/health). Not a production feature."
       - "2026-10-03: human PO created Enabler US-FACTORY-003 (central fail-closed Factory workflow gate validator) after the US-FACTORY-002 out-of-order Tester/QA run. Factory tooling only; no product scope. Recorded by CLAUDE_BA on PO instruction."
+      - "2026-10-04: human PO started Enabler US-FACTORY-004 (Solution Architect Technical Authority, Factory V2), contract-first. Factory tooling only; no product scope. Recorded by CLAUDE_BA on PO instruction."
+      - "2026-10-04: human PO started Enabler US-FACTORY-005 (Domain Engineering Agents, Factory V2), contract-first. Factory tooling only; no product scope. Recorded by CLAUDE_BA on PO instruction."
+      - "2026-10-04: human PO started Enabler US-FACTORY-006 (Dynamic Multi-Agent Delivery Orchestration, Factory V2), contract-first. Factory tooling only; no product scope. Recorded by CLAUDE_BA on PO instruction."
+      - "2026-10-04: human PO started Enabler US-FACTORY-007 (Quality, Governance and Release Pipeline, Factory V2), contract-first. Factory tooling only; no product scope. Recorded by CLAUDE_BA on PO instruction."
     blocks: []
     owner: "HUMAN_PO"
     status: OPEN
@@ -122,10 +160,35 @@ issues:
       so the first later implementation merge (planned: US-FACTORY-002 recovery, I-009) makes the
       develop Factory Validation stage fail permanently. Needs a PO decision; options and the
       recommendation are in docs/factory/reviews/US-FACTORY-003-R3-02-po-decision-brief-2026-10-04.md.
-      Every option except G changes AC text, which needs an explicit PO exception to the Factory V2
-      "do not re-contract US-FACTORY-003" directive. Not sent to Codex. Recorded by CLAUDE_SM.
+      2026-10-04 Lean mode (PO): technical/contract-consistency decision delegated to the SA; no PO
+      decision needed. SA decision recorded as ADR-0001 when issued; closes when the round-4 fix is verified.
     blocks: [US-FACTORY-003]
+    owner: "CLAUDE_SA"
+    status: OPEN
+  - id: I-011
+    description: >
+      Story state drift (G-16, A3): US-FACTORY-003 was implemented (42021fe, 0790d2f, 233b1e9) while
+      its Story file said READY, and the bootstrap-note AC08 evidence for build/lint/Unit Test was never
+      produced. 2026-10-04: CLAUDE_SM corrected the status to IN_PROGRESS in the management branch
+      (dated correction, recorded late). Remaining: produce the AC08 records from round 4 onward; sync
+      the correction to the feature branch through develop; DEV_COMPLETE only via the validator.
+    blocks: []
+    owner: "CLAUDE_SM"
+    status: OPEN
+  - id: I-012
+    description: "No security scanner (G-12): scripts/security-scan.sh exits 1, so DoD security_scan_passed can never be true for any Story (G-15). Technical choice by the SA (Lean mode); decision recorded in ADR/infra notes when issued."
+    blocks: []
+    owner: "CLAUDE_SA (interim)"
+    status: OPEN
+  - id: I-013
+    description: "No approved cost envelope for Factory/agent compute or external services (G-24). US-FACTORY-004 E5 treats any new cost as a PO escalation until an envelope exists."
+    blocks: []
     owner: "HUMAN_PO"
+    status: OPEN
+  - id: I-014
+    description: "Management branches not merged to develop (management/US-FACTORY-003-recovery-status b779eef; management/factory-v2-stabilization). The A3 status correction and Lean constitution reach the feature branch only after a management PR is merged and develop is merged into the feature branch (merge commit)."
+    blocks: []
+    owner: "CLAUDE_SM (PR) / HUMAN_PO (approve + merge)"
     status: OPEN
 
 dependencies:

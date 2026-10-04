@@ -1,0 +1,73 @@
+id: US-FACTORY-005
+
+title: "Minimum Viable Factory: one-page engineering role files (docs only)"
+
+# Lean MVF scope (PO-approved 2026-10-04). Replaces the heavyweight draft (13-field roles, ownership
+# enforcement in the validator, test-weakening detector: deferred until a product Story needs them).
+story_type: enabler
+depends_on: []
+epic: ""
+feature: ""
+
+status: IN_PROGRESS   # lean DEV; delivered by the Lean migration PR
+blocked_from: null
+blocked_by: []
+priority: high
+story_points: 1   # Lean MVF size; PO may adjust
+
+business_context: "Factory Lean migration approved by the human PO on 2026-10-04 (Minimum Viable Factory, then freeze and move to product)."
+
+business_value: "Each engineering specialisation has a short, clear role file and is activated only when a Story needs it."
+
+description: "Keep the existing one-page Backend, Frontend, Android, iOS role files; add agents/codex/ai-ml.md; reword DevOps as DevOps/Cloud (not the generic application developer). Path-ownership CI check deferred (demand-driven)."
+
+acceptance_criteria:
+  - id: AC01
+    description: "agents/codex/ai-ml.md exists with ownership, responsibilities and hard limits (no real provider for children without a PO decision; MOCK labelling; keys server-side)."
+  - id: AC02
+    description: "agents/codex/devops.md states the DevOps/Cloud scope and that application code belongs to the domain roles."
+  - id: AC03
+    description: "AGENTS.md lists the six specialisations and states that specialists are activated only when needed."
+
+functional_requirements: []
+
+non_functional_requirements: []
+
+dependencies: []
+
+components: {backend: false, frontend: false, android: false, ios: false, infrastructure: true}
+api_impact: false
+ui_impact: false
+data_impact: false
+security_impact: false
+privacy_impact: false
+
+test_scenarios:
+  - id: TS01
+    covers: [AC01, AC02, AC03]
+    scenario: "Independent review of the docs diff confirms AC01-AC03."
+
+open_questions: []
+
+definition_of_done:
+  implementation_complete: false
+  code_review_passed: false
+  build_passed: false
+  lint_passed: false
+  unit_tests_passed: false
+  integration_tests_passed: false
+  acceptance_criteria_passed: false
+  security_scan_passed: false
+  qa_passed: false
+  documentation_updated: false
+  evidence: []
+
+# Keep this block LAST: scripts/validate-story.sh reads the 20 lines after it.
+definition_of_ready:
+  business_value_defined: true
+  story_defined: true
+  acceptance_criteria_defined: true
+  dependencies_identified: true
+  architecture_reviewed: true
+  test_scenarios_defined: true
+  estimation_completed: true

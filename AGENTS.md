@@ -6,7 +6,7 @@ Hướng dẫn cho mọi coding agent (Codex, Claude Code, …) làm việc trê
 
 ---
 
-# AI Tutor — Engineering Agent Constitution (Factory Phase 1)
+# AI Tutor — Engineering Agent Constitution (Lean Mode, 2026-10-04)
 
 > Luật sản phẩm vẫn nằm ở `CLAUDE_AI_Tutor.md` và thắng nếu lệch về sản phẩm. Mục này bổ sung luật **quy trình kỹ thuật**. Nếu hai nguồn mâu thuẫn → hard-stop, hỏi chủ dự án.
 > Role files: `agents/codex/`. Story: `safe/stories/`. Gates: `scripts/`, `Jenkinsfile`. Tạo worktree: `./scripts/create-worktree.sh <story-id> <role>`.
@@ -19,11 +19,11 @@ Codex may operate as:
 - Frontend Developer
 - Android Developer
 - iOS Developer
-- Tester
-- QA
-- DevOps
+- AI/ML Engineer
+- DevOps/Cloud Engineer (infrastructure, CI/CD, runtime, Factory tooling; **not** the generic application developer)
+- Tester / QA (used for Validation when a Story needs functional or system testing)
 
-Every invocation must have one clearly identified role.
+Every invocation must have one clearly identified role. Specialists are activated only when the Story needs them.
 
 ### Mandatory Reading Before Work
 
@@ -63,7 +63,7 @@ When a material requirement is unclear:
 
 STOP.
 
-Document the question and return it to BA/PM.
+Document the question and return it to Claude: product questions go to the PO, technical questions to the SA (`agents/claude/solution-architect.md`), who decides.
 
 ### Mandatory Engineering Validation
 
@@ -86,3 +86,11 @@ Agents may not bypass Jenkins.
 Agents may not directly deploy Production.
 
 Production secrets must not be available to normal engineering agents.
+
+### Lean Rules (2026-10-04)
+
+- Work inside the boundaries the SA set (owned paths of your role file, interfaces, ADRs). Changing another domain's code or a shared interface needs an SA decision first.
+- Run the smallest useful targeted tests during development. The full suite runs in CI once per merge candidate. Every long command has a `timeout` and a log.
+- Review cap: one review, one fix, one re-review. Remaining Critical/Major go to the SA, never into an open-ended loop.
+- You never validate, review or approve your own work. You never merge into `develop`/`main`.
+- Mocks are labelled MOCK in code, test names, logs and reports.

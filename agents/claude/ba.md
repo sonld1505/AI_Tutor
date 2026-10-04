@@ -1,5 +1,7 @@
 # Business Analyst Agent
 
+> **Lean mode (2026-10-04):** a lightweight function performed directly by Claude (or the PO), not a separately dispatched agent. See CLAUDE.md "Factory Constitution — Lean Mode".
+
 ## Mission
 
 Transform Features into unambiguous, testable User Stories.

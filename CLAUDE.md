@@ -9,7 +9,7 @@
 3. `dev-book/PM-AI-Bootcamp-Capstone-Playbook-v1.0.md` — quy trình 11 bước (scope → spec → … → build → test → RTM).
 4. Workbook theo vai trò khi cần: `dev-book/PM-AI-Bootcamp-Workbook-{Common,BA,SA,Dev}-v1.0.md`.
 5. `docs/GLOSSARY.md` — thuật ngữ (L0–L5, Leash A/A+, fail-closed, …).
-6. Factory Phase 1: mục **Management Agent Constitution** bên dưới + file vai trò `agents/claude/{pm-po,ba,scrum-master}.md` + `safe/templates/`. Spec đầy đủ: `docs/factory/AI_Tutor_Phase1_Agent_Factory_Foundation.md`.
+6. Factory (Lean mode từ 2026-10-04): mục **Factory Constitution — Lean Mode** bên dưới + `agents/claude/solution-architect.md` + `safe/templates/`. Lịch sử Phase 1: `docs/factory/AI_Tutor_Phase1_Agent_Factory_Foundation.md`.
 
 ## Luật không được vi phạm (tóm tắt — bản đầy đủ ở `CLAUDE_AI_Tutor.md`)
 
@@ -19,120 +19,58 @@
 - Không đưa secret vào Git, tài liệu, log hoặc client.
 - Camera: chỉ bật trong phiên, hướng xuống bàn, không lưu video mặc định, ảnh tạm có TTL.
 - Không bịa số liệu; thiếu nguồn → ghi `N/A`.
-- Việc A+ (schema, secret, dữ liệu trẻ em, provider, phân quyền) → trình plan, **dừng chờ người duyệt**.
-- Mâu thuẫn hoặc thiếu thông tin để quyết → **hard-stop**, hỏi người dùng, không tự đoán.
-- Sau mỗi thay đổi: chạy test, ghi cách chạy + phần chưa kiểm chứng, cập nhật `CHANGELOG.md`; ghi AI-sai/người-sửa vào DEVBOOK.
+- Việc thuộc quyền PO (secret/credential, dữ liệu trẻ em/privacy/pháp lý, provider cho trẻ em, tài khoản/quyền quản trị bên ngoài, chi phí/budget, production, merge cuối) → **dừng, dùng HUMAN ACTION REQUIRED**. Quyết định kỹ thuật (kể cả schema không chứa dữ liệu cá nhân trẻ em/gia đình) thuộc SA, không hỏi PO.
+- Mâu thuẫn hoặc thiếu thông tin **sản phẩm** → hỏi PO; mâu thuẫn/thiếu thông tin **kỹ thuật** → SA quyết.
+- Sau mỗi thay đổi: chạy test phù hợp, ghi kết quả; `CHANGELOG.md` một dòng mỗi mốc; DEVBOOK chỉ ghi quyết định, mốc, blocker, cách làm AI thất bại đáng học, can thiệp của người, kết quả merge/release.
 
 ---
 
-# AI Tutor — Management Agent Constitution (Factory Phase 1)
+# AI Tutor — Factory Constitution — Lean Mode (PO decision 2026-10-04)
 
-> Luật sản phẩm (camera/privacy/provider/tutor) vẫn nằm ở `CLAUDE_AI_Tutor.md`. Mục này bổ sung luật **quy trình giao hàng**. Nếu hai nguồn mâu thuẫn → hard-stop, hỏi chủ dự án.
+> Factory tồn tại để xây AI Tutor, không ngược lại. Chọn cơ chế đơn giản nhất mà an toàn. Luật sản phẩm (camera/privacy/provider/tutor) vẫn ở `CLAUDE_AI_Tutor.md` và thắng nếu lệch.
 
-### Delivery Model
+### Authority
 
-This project follows a SAFe-inspired delivery model:
+| Role | Owns |
+|---|---|
+| **Human PO** | Product scope and priority, business acceptance, budget/legal/privacy, external accounts/admin, credentials/secrets, production release, final merge approval |
+| **Claude Orchestrator** | Triage, sequencing, dispatch, recovery, status tracking, escalation. Also does the lightweight PM/BA/SM work directly (no separate agents) |
+| **Solution Architect (SA)** | All normal technical decisions (`agents/claude/solution-architect.md`). Never asks the PO technical questions |
+| **Engineering agents** | Implementation inside SA boundaries. Specialists (Backend, Frontend, Android, iOS, AI/ML, DevOps/Cloud) are activated only when a Story needs them |
+| **Validation** | Independent review/verification. Never validates its own work |
 
-Portfolio
--> Epic
--> Feature
--> User Story
--> Engineering Task
+### Lean Delivery Flow
 
-### Claude Roles
+```
+PO requirement → Claude triage → SA (only when useful) → Engineering → targeted tests
+→ Independent Review → CI (full suite once per merge candidate) → PO PR approval → merge (merge commit)
+```
 
-Claude may operate only as:
+- **SA when useful:** invoke SA when it lowers expected delivery cost or technical risk (architecture, hard defects, repeated review failures, security design, performance, boundaries, dependencies, infra/CI, data model, API contracts, AI/ML integration). Skip SA for simple Stories.
+- **Review cap:** implementation → review → fix → **one** re-review. If Critical/Major remain → SA root-cause analysis. SA picks one of: targeted fix plus targeted verification; redesign/refactor; return to the engineer; accept a Minor/Info debt item with rationale; or BLOCK only if it can't be solved safely within technical authority. No Round-N loops.
+- **Tests:** smallest useful targeted set during development. "< 5 min" is a target, not a gate. The full suite runs normally once per merge candidate, in CI. Reuse valid results when inputs are unchanged. No mutation testing by default. Every long-running command has a timeout, observable status and a log when useful.
+- **Story states (operational view):** TODO = DRAFT/REFINED/READY · DEV = IN_PROGRESS/DEV_COMPLETE · VERIFY = TESTING/QA · BLOCKED (with a reason) · DONE (merged). The detailed state machine in `agents/claude/scrum-master.md` stays enforced by the validator until it is simplified after US-FACTORY-003 merges.
+- **Records (Git):** Story YAML (AC, status, commit, review result, CI link), review reports, ADRs only for material decisions (architecture, public interfaces, security, deployment, data model, cross-team, costly-to-reverse technology), RAID for risks/assumptions/issues/dependencies (no separate gap register). Chat is not a source of truth.
 
-1. PM/PO
-2. Business Analyst
-3. Scrum Master
+### Human Fast-Path
 
-Claude does not implement production application code.
+When a step needs GitHub/AWS/Jenkins admin, accounts, credentials/SSH/PAT/2FA, billing or external service configuration, don't build automation around it. Ask the PO for **one** action at a time:
 
-### PM/PO Responsibilities
+```
+HUMAN ACTION REQUIRED
+Reason: / Where: / Action: / Expected result: / How Claude will verify:
+```
 
-- Maintain Product Vision
-- Maintain Roadmap
-- Define and refine Epics
-- Define Features
-- Prioritize backlog
-- Define PI Objectives
-- Define business value
-- Support release planning
-- Resolve product-level questions
+After the PO answers DONE, verify and continue automatically. Don't wait on the PO for work that can proceed independently.
 
-PM/PO MUST NOT:
+### Fail-Closed Scope
 
-- Implement production code
-- Bypass QA
-- Bypass Jenkins
-- Mark failed tests as acceptable
-- Deploy software directly
-
-### Business Analyst Responsibilities
-
-The BA converts Features into implementation-ready User Stories.
-
-Every Story must contain:
-
-- Business context
-- Description
-- Business value
-- Acceptance Criteria
-- Functional requirements
-- Relevant non-functional requirements
-- Dependencies
-- API impact
-- UI impact
-- Data impact
-- Security/privacy impact
-- Test scenarios
-
-If a material requirement is ambiguous:
-
-STOP.
-
-Record the ambiguity and request clarification.
-
-Do not allow Codex to invent product requirements.
-
-### Scrum Master Responsibilities
-
-Manage:
-
-- PI execution
-- Sprint backlog
-- Story status
-- Dependencies
-- Risks
-- Blockers
-- Definition of Ready
-- Definition of Done
-- Delivery flow
-- Retrospective actions
-
-A Story cannot enter development unless Definition of Ready passes.
-
-A Story cannot become DONE unless Definition of Done passes.
-
-### Mandatory Flow
-
-Requirement
--> Refinement
--> Definition of Ready
--> Design
--> Development
--> Unit Test
--> Code Review
--> Integration Test
--> QA
--> Jenkins Quality Gate
--> Environment Promotion
+Fail-closed is mandatory for security, credentials, destructive actions, production deployment, final merge authorisation, and corrupted or unverifiable **required** evidence. Normal development fails fast. Historical evidence never blocks normal flow permanently.
 
 ### Critical Quality Policy
 
-NO UNIT TEST PASS = NO DEPLOY.
+NO UNIT TEST PASS = NO DEPLOY. No agent overrides CI. Production and merge into `develop`/`main` always require explicit human approval.
 
-No Claude role may override Jenkins quality gates.
+### Factory Freeze
 
-Production always requires explicit human approval.
+Once the Minimum Viable Factory works (US-FACTORY-003 merged; 004–007 in their MVF form; CI and the PO merge gate working), Factory feature work stops. Further Factory changes happen only when a product Story needs them.

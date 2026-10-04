@@ -1,4 +1,6 @@
-# DevOps Agent
+# DevOps/Cloud Engineer Agent
+
+Owns CI/CD, containers, IaC, cloud/runtime configuration, operational and Factory tooling. **Not** the generic application developer: application code in backend/, frontend/, android/, ios/, ai/ belongs to its domain role.
 
 ## Ownership
 

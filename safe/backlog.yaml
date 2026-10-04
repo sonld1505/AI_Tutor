@@ -9,19 +9,19 @@ approved_by: null
 items:
   - ref: US-FACTORY-003
     moscow: null
-    rationale: "Enabler, 8 pts (PO). Central fail-closed workflow gate validator + revision/contract-bound evidence. PO Q4: integrated before US-FACTORY-002 may merge (I-009). READY 2026-10-03 (DoR 7/7, Q1-Q11 resolved, AD-02). Start held by DEP01 (Story not yet on a base branch); TESTING needs D-006; DONE needs D-001, I-005-type decision, security scan. Position proposed by CLAUDE_BA; PO decides."
+    rationale: "Enabler, 8 pts. Central fail-closed validator. Lean mode (PO 2026-10-04): one final fix (R3-01/R3-02 by SA) + one independent verification + CI + PO PR approval. Status DEV (IN_PROGRESS)."
   - ref: US-FACTORY-004
     moscow: null
-    rationale: "Factory V2 (human PO 2026-10-04, docs/factory/FACTORY-V2-ROADMAP.md): Solution Architect Technical Authority. PLANNED, no Story file. Proposed at US-FACTORY-003 safe completion checkpoint; implemented only after 003 reaches its required state."
+    rationale: "Lean MVF (PO 2026-10-04): SA role + Lean constitution, docs only; delivered by the Lean migration PR."
   - ref: US-FACTORY-005
     moscow: null
-    rationale: "Factory V2: Domain Engineering Agents. PLANNED, no Story file. After 004."
+    rationale: "Lean MVF: one-page role files incl. AI/ML, DevOps/Cloud; docs only; delivered by the Lean migration PR."
   - ref: US-FACTORY-006
     moscow: null
-    rationale: "Factory V2: Dynamic Multi-Agent Delivery Orchestration (durable state, heartbeat, recovery without rerun). PLANNED, no Story file. Carries DEF-004. After 005."
+    rationale: "Lean MVF: supervised run wrapper + status command (closes DEF-004); after US-FACTORY-003 merge. DAG/scheduler deferred."
   - ref: US-FACTORY-007
     moscow: null
-    rationale: "Factory V2: Quality, Governance and Release Pipeline. PLANNED, no Story file. After 006."
+    rationale: "Lean MVF: PR decision template (delivered), branch protection + required Jenkins check (human fast-path, R-003, D-001)."
   - ref: US-FACTORY-002
     moscow: null
     rationale: "Enabler, 3 pts. Prerequisite of US-FACTORY-001 (D-005). READY (AD-01 pinned python:3.12 container). IN_PROGRESS 2026-10-03, Codex DevOps (feature/US-FACTORY-002-devops). DONE needs I-005, D-001."

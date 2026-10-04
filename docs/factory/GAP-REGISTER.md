@@ -18,3 +18,6 @@
 | G-11 | Chưa có validator DoD, chưa có schema YAML | Engineering | Spec xếp vào Phase 2 (§54) | DEFERRED |
 | G-12 | Chưa có secret scanner chuyên dụng | Engineering | Thuộc gate security (`security-scan.sh`), Codex DevOps | OPEN |
 | G-13 | Mọi mục CI/CD/Verification §51 | Engineering + người | Xem `PHASE1-STATUS.md` | OPEN |
+
+
+> **2026-10-04 (Lean mode, PO decision):** this register is frozen. New gaps, risks and issues go to `safe/raid.yaml` only (no duplicate gap records). Open Phase-1 gaps above stay tracked through their RAID/defect items.

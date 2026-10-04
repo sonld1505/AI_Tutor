@@ -81,6 +81,15 @@ title: "Enforce the mandatory Factory workflow with a central fail-closed gate v
 #              C2 AC13 internal 'latest review' vs 'latest non-comment review', C3 TS12 vs AC11/TS19
 #              (safe/ material keys / contract_refs). AC13 clause (1), TS12, TS13 reworded to GitHub
 #              review semantics; no scope change. Status stays READY; DoR 7/7 unchanged.
+#   2026-10-04 SM CORRECTION (gap A3 / G-16, recorded late by CLAUDE_SM): the Story was implemented
+#              while this file still said READY. Evidence: implementation commits by the implementing
+#              identity on feature/US-FACTORY-003-devops: 42021fe (2026-10-04T02:17:52Z, initial),
+#              0790d2f (rework 2), 233b1e9 (rework 3); three independent pre-reviews (FAIL).
+#              Status set to IN_PROGRESS (the truthful state). NOT DEV_COMPLETE: the bootstrap note
+#              (dependencies) requires build/lint/Unit Test evidence in AC08 format under
+#              factory/evidence/US-FACTORY-003/, and none exists at 233b1e9. DEV_COMPLETE follows only
+#              after those records exist and the validator accepts IN_PROGRESS -> DEV_COMPLETE.
+#              Non-material key: the acceptance-contract fingerprint is unchanged (AC11).
 #
 # Reconciliation with the specification (CLAUDE_BA, 2026-10-03):
 #   - Decision C matches CLAUDE.md / spec §5 Mandatory Flow and the spec §1 diagram
@@ -101,7 +110,7 @@ feature: ""
 
 # DRAFT | REFINED | READY | IN_PROGRESS | DEV_COMPLETE | TESTING | QA | DONE | BLOCKED
 # State machine: agents/claude/scrum-master.md
-status: READY        # 2026-10-03 DRAFT -> REFINED -> READY (DoR 7/7, open_questions empty); not started: DEP01
+status: IN_PROGRESS  # 2026-10-04 SM correction (A3/G-16): READY -> IN_PROGRESS recorded late; implementation started no later than 42021fe (2026-10-04T02:17:52Z)
 blocked_from: null
 blocked_by: []
 priority: high       # proposed by CLAUDE_BA; PO Q4 orders this Story before US-FACTORY-002's merge
