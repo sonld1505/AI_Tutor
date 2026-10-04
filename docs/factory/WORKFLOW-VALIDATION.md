@@ -49,7 +49,7 @@ The Story file, state JSON and evidence directory must exist. Provisioning and
 committing those real management records belongs to the Scrum Master/human, not
 this implementation. No write occurs on validation BLOCK. On PASS the command
 records an event and prints the dispatch invocation; a human starts the agent.
-It never launches an agent, commits, merges, pushes or deploys. Uncommitted Story
+It never launches an agent, commits, merges, pushes or deploys. Uncommitted Story or state
 edits are rejected rather than overwritten. Orchestration requires the evaluated
 revision to equal HEAD. Transitions edit only the single top-level status value,
 re-parse to verify that nothing else changed, and preserve comments and key order.
@@ -85,7 +85,8 @@ contents since introduction. A record's `source_commit` must strictly precede it
 introduction. Every prerequisite must have been introduced at or before that source
 snapshot, and its own prerequisite chain must be valid. The source tree thus hashes
 the exact committed prerequisite records available to the producer. A prerequisite
-added later cannot repair an earlier out-of-order run, even with backdated or future
+added later cannot repair an earlier committed out-of-order record with its declared
+source snapshot, even with backdated or future
 record timestamps. Records committed together cannot authorise one another.
 The latest record is the unique introduction descendant of all earlier records for
 that gate; incomparable branches or duplicate records in one commit BLOCK rather
@@ -97,6 +98,27 @@ as inconsistent; a later claimed timestamp alone never proves ordering. The
 server-reviewed commit must itself contain valid Unit evidence.
 This provides ordering through committed snapshots and the server-reviewed snapshot,
 without claiming caller-controlled wall-clock values prove execution order.
+The source snapshot is a producer declaration, not an execution attestation. A
+producer who commits a record late and falsely declares a later valid snapshot
+cannot be detected from Git ancestry alone; this mechanism does not prove the
+wall-clock order of unrecorded runs.
+
+The human PO's 2026-10-04 evidence provenance policy requires **merge commits only**
+for Factory branch integration: `git merge --no-ff`, GitHub "Merge pull request",
+and updates merging develop into a feature branch preserve implementation commits
+and evidence introductions. Squash merge and rebase merge are prohibited.
+GitHub administrators must disable the squash/rebase merge options in repository
+settings and retain merge commits; changing those settings is a human admin action.
+Jenkins must fetch complete history, including both merge parents, rather than a
+shallow checkout. This implementation changes no GitHub setting or Git configuration.
+The validator traces each record through every parent in the evaluated commit graph.
+An unchanged record inherited from one or both merge parents keeps its unique
+original introduction. Any content rewrite (including a merge resolution), deletion
+and re-addition, or multiple independent introductions is INVALID. Missing source
+commits, lost source ancestry after squash/cherry-pick/rebase, ambiguous introductions
+and shallow history BLOCK with a reason naming the merge-commit-only policy.
+Git cannot identify the command used to create an otherwise indistinguishable
+graph; enforcement fails closed when record provenance cannot be established.
 Historical stale
 records remain available but do not authorise a transition. Raw local execution
 logs belong under gitignored `factory/logs/<story>/<role>/`, never in evidence.
@@ -154,6 +176,12 @@ Failed execution/missing tools/configuration are not N/A. US-FACTORY-003 allows 
 status and evidence; other branches validate DONE Stories.
 IN_PROGRESS checks readiness content and dependencies without applying the READY-only
 admission status rule; the next DEV_COMPLETE transition still needs build/lint/Unit.
+On feature branches, historical records are checked for integrity at their source
+revision, separately from the gates required to support the current status.
+STALE_IMPLEMENTATION/STALE_CONTRACT, superseded records and well-formed non-PASS
+history for unrequired gates do not fail a supported status. INVALID records still
+fail, even when superseded or unrelated to that status. Stale evidence never
+authorises a required gate or transition. Develop-mode DONE validation is unchanged.
 External references are
 read from the Jenkins archive at `JENKINS_URL` (HTTPS, no credential-bearing URL).
 Missing/inaccessible/mismatched archives block completion. This mechanism has not

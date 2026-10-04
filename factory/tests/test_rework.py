@@ -1,5 +1,6 @@
 """MOCK review regressions, confined to disposable repositories."""
 import copy
+import importlib.util
 import json
 import os
 import shutil
@@ -163,6 +164,31 @@ class ReworkTests(unittest.TestCase):
         with self.assertRaisesRegex(Block, 'self-approval'):
             self.f.review(STORY, record)
 
+    def test_TS13_MOCK_unlisted_collaborator_matching_identity(self):
+        self.x.all_gates()
+        record = next(r for r in self.f.records(STORY) if r['gate'] == 'Code Review')
+        record['producer_identity'] = 'MOCK_unlisted_collaborator'
+        def response(r):
+            pr, commits, reviews = self.x.mock_github(r)
+            reviews[0]['user']['login'] = record['producer_identity']
+            self.assertEqual(reviews[0]['author_association'], 'COLLABORATOR')
+            return pr, commits, reviews
+        self.f.github = response
+        with self.assertRaisesRegex(Block, '^review unapproved reviewer$'):
+            self.f.review(STORY, record)
+        # Mutation proof in a disposable scratch copy only: every other check
+        # passes, so deleting the allow-list check defeats the assertion above.
+        source = Path(__file__).resolve().parents[1] / 'engine.py'
+        original = source.read_text()
+        check = "        require(login in {x.casefold() for x in policy['approved_reviewers']}, 'review unapproved reviewer')\n"
+        self.assertEqual(original.count(check), 1)
+        scratch = self.x.root / 'MOCK-mutant-engine.py'
+        scratch.write_text(original.replace(check, ''))
+        spec = importlib.util.spec_from_file_location('MOCK_mutant_engine', scratch)
+        mutant = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mutant)
+        mutant.Factory(self.x.root, github=response).review(STORY, record)
+
     def test_TS21_MOCK_in_progress_status_and_next_transition(self):
         self.x.s['status'] = 'IN_PROGRESS'
         self.x.save()
@@ -198,6 +224,17 @@ class ReworkTests(unittest.TestCase):
             orchestrate(previous, args)
         self.assertEqual(before, {p: p.read_bytes() for p in before})
 
+    def test_TS16_MOCK_uncommitted_state_refused_without_writes(self):
+        state = self.x.root / f'factory/state/{STORY}.json'
+        value = json.loads(state.read_text())
+        value['implementing_identity'] = 'MOCK_uncommitted_claim'
+        state.write_text(json.dumps(value))
+        before = {p: p.read_bytes() for p in self.x.root.rglob('*') if p.is_file() and '.git' not in p.parts}
+        args = Namespace(story=STORY, action='transition', source='READY', target='IN_PROGRESS', reason=None, role=None, identity=None)
+        with self.assertRaisesRegex(Block, 'uncommitted state changes'):
+            orchestrate(self.f, args)
+        self.assertEqual(before, {p: p.read_bytes() for p in before})
+
     def test_TS14_MOCK_na_ineligible_not_permitted_and_failed(self):
         self.x.all_gates()
         record = next(r for r in self.f.records(STORY) if r['gate'] == 'Integration Test')
@@ -225,7 +262,19 @@ class ReworkTests(unittest.TestCase):
         (self.x.root / f'factory/state/{story}.json').write_text((self.x.root / f'factory/state/{STORY}.json').read_text())
         self.x.commit()
         record = next(r for r in self.f.records(STORY) if r['gate'] == 'Integration Test')
+        self.assertTrue(self.f.ancestor(record['source_commit'], record['_introduced'], strict=True))
+        self.assertEqual(self.f.record(STORY, 'Integration Test', record), 'PASS')
+        # This is a new candidate for another fixture Story, not a rewrite of
+        # the loaded record. Its later source snapshot needs its own later
+        # introduction; reserved metadata must be derived from that Git path.
+        record = {k: v for k, v in record.items() if not k.startswith('_')}
         record.update(story_id=story, result='N/A', source_commit=self.x.git('rev-parse', 'HEAD').decode().strip(), acceptance_contract_fingerprint=self.f.contract(story), execution_status='NOT_APPLICABLE', po_approval={'identity': 'MOCK_PO', 'date': '2026-10-03'}, reason='MOCK attempted waiver', decision_reference=record['artifacts'][0])
+        directory = self.x.root / f'factory/evidence/{story}'
+        directory.mkdir()
+        (directory / 'MOCK-na-candidate.json').write_text(json.dumps(record))
+        self.x.commit()
+        record = self.f.records(story)[0]
+        self.assertTrue(self.f.ancestor(record['source_commit'], record['_introduced'], strict=True))
         with self.assertRaisesRegex(Block, 'N/A not permitted'):
             self.f.record(story, 'Integration Test', record)
         fixture['na_permitted'] = ['Integration Test']
@@ -233,6 +282,15 @@ class ReworkTests(unittest.TestCase):
         self.x.commit()
         with self.assertRaisesRegex(Block, 'N/A not permitted'):
             self.f.record(story, 'Integration Test', record)
+
+    def test_TS11_MOCK_hash_object_linear_history_provenance_passes(self):
+        self.x.all_gates()
+        graph = self.x.git('rev-list', '--parents', 'HEAD').decode().splitlines()
+        self.assertTrue(all(len(line.split()) <= 2 for line in graph))
+        for record in self.f.records(STORY):
+            self.assertTrue(self.f.ancestor(record['source_commit'], record['_introduced'], strict=True))
+            self.assertEqual(self.f.record(STORY, record['gate'], record), 'PASS')
+            self.assertEqual(self.f.gate(STORY, record['gate']), ('PASS', []))
 
     def test_TS13_MOCK_adapter_rejects_github_commit_cap(self):
         from remotes import GitHub

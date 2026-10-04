@@ -10,6 +10,8 @@ import yaml
 
 from policy import contract_change_reason, latest_non_comment_reviews
 
+PROVENANCE_POLICY = 'merge-commit-only policy requires preserved implementation/evidence ancestry; no squash/rebase or shallow history'
+
 
 class Block(Exception):
     pass
@@ -45,6 +47,7 @@ class Factory:
         self._gate_cache = {}
         self._prior_cache = {}
         self._provenance_cache = {}
+        self._history_cache = {}
         self.workflow = parse(self.blob('factory/workflow.yaml'))
         self.schema()
 
@@ -152,17 +155,39 @@ class Factory:
         return errors
 
     def introduced(self, path):
-        """Unique first introduction, with immutable contents, in this Git history."""
+        """Trace immutable blobs across every parent, including true merges."""
         revision = self.git('rev-parse', self.revision).decode().strip()
         key = (revision, path)
         if key in self._provenance_cache:
             return self._provenance_cache[key]
-        additions = self.git('log', '--full-history', '--diff-filter=A', '--format=%H', revision, '--', path).decode().splitlines()
-        require(len(additions) == 1, 'INVALID ambiguous evidence introduction')
+        policy = PROVENANCE_POLICY
+        require(self.git('rev-parse', '--is-shallow-repository').strip() == b'false', f'INVALID {policy}')
+        if revision not in self._history_cache:
+            graph = {}
+            trees = {}
+            for line in self.git('rev-list', '--parents', revision).decode().splitlines():
+                commit, *parents = line.split()
+                graph[commit] = parents
+                trees[commit] = {}
+                for entry in self.git('ls-tree', '-rz', commit, '--', 'factory/evidence/').split(b'\0'):
+                    if entry:
+                        meta, name = entry.split(b'\t', 1)
+                        trees[commit][name.decode()] = meta
+            self._history_cache[revision] = graph, trees
+        graph, trees = self._history_cache[revision]
+        expected = trees[revision].get(path)
+        require(expected is not None, 'INVALID missing evidence blob')
+        additions = []
+        for commit, parents in graph.items():
+            present = trees[commit].get(path)
+            inherited = [trees[parent].get(path) for parent in parents]
+            require(present in (None, expected), 'INVALID evidence history rewritten; append a new record')
+            require(present is not None or not any(inherited), 'INVALID evidence history rewritten; record deleted')
+            if present is not None and not any(inherited):
+                require(len(parents) <= 1, f'INVALID ambiguous merge introduction; {policy}')
+                additions.append(commit)
+        require(len(additions) == 1, f'INVALID ambiguous evidence introduction; {policy}')
         introduction = additions[0]
-        require(self.blob(path, introduction) == self.blob(path), 'INVALID evidence rewritten; append a new record')
-        changes = self.git('log', '--full-history', '--format=%H', revision, '--', path).decode().splitlines()
-        require(changes == additions, 'INVALID evidence history rewritten')
         self._provenance_cache[key] = introduction
         return introduction
 
@@ -170,7 +195,7 @@ class Factory:
         if strict and earlier == later:
             return False
         result = subprocess.run(['git', '-C', str(self.root), 'merge-base', '--is-ancestor', earlier, later], capture_output=True)
-        require(result.returncode in (0, 1), 'INVALID ancestry unavailable')
+        require(result.returncode in (0, 1), f'INVALID ancestry unavailable; {PROVENANCE_POLICY}')
         return result.returncode == 0
 
     def records(self, story):
@@ -264,7 +289,12 @@ class Factory:
         for field in ('story_id', 'gate', 'result', 'producer_role', 'producer_identity', 'timestamp', 'source_commit', 'implementation_fingerprint', 'artifacts'):
             require(r.get(field) not in (None, '', []), f'INVALID {gate} field {field}')
         require(re.fullmatch('[a-f0-9]{40}', r['source_commit']) is not None, 'INVALID source commit')
-        self.git('cat-file', '-e', r['source_commit'] + '^{commit}')
+        try:
+            self.git('cat-file', '-e', r['source_commit'] + '^{commit}')
+        except Block:
+            raise Block(f'INVALID source commit unavailable; {PROVENANCE_POLICY}') from None
+        if '_introduced' in r:
+            require(self.ancestor(r['source_commit'], r['_introduced'], strict=True), f'INVALID execution snapshot provenance; {PROVENANCE_POLICY}')
         require(r['story_id'] == story and r['gate'] == gate, 'INVALID Story/gate record')
         require(isinstance(r["timestamp"], str) and "T" in r["timestamp"], "INVALID UTC timestamp")
         timestamp = datetime.datetime.fromisoformat(r["timestamp"].replace("Z", "+00:00"))
@@ -289,7 +319,8 @@ class Factory:
         artifact_factory = Factory(self.root, r['source_commit'], github=self.github, archive=self.archive) if history else self
         for a in r['artifacts']:
             artifact_factory.artifact(a)
-        if allow_nonpass and r["result"] in ("FAIL", "NOT_EXECUTED", "UNKNOWN", "PENDING_PO"):
+        nonpass_results = ('FAIL', 'NOT_EXECUTED', 'UNKNOWN', 'PENDING_PO') if allow_nonpass is True else (allow_nonpass or ())
+        if r['result'] in nonpass_results:
             require(isinstance(r.get("checks"), dict) and r["checks"], "INVALID structured checks")
             return r["result"]
         if r['result'] == 'N/A':
@@ -297,15 +328,15 @@ class Factory:
             require(config['na'] and gate in s.get('na_permitted', []) and story != 'US-FACTORY-003', 'N/A not permitted')
             require(r.get('po_approval', {}).get('identity') and r['po_approval'].get('date') and r.get('reason') and r.get('decision_reference'), 'N/A approval incomplete')
             require(r.get('execution_status') == 'NOT_APPLICABLE', 'N/A failed or missing execution')
-            self.artifact(r['decision_reference'])
+            artifact_factory.artifact(r['decision_reference'])
             return 'N/A-APPROVED'
         require(r['result'] == 'PASS', f'{r["result"]} result not PASS')
         require(isinstance(r.get('checks'), dict) and r['checks'] and all(x == 'PASS' for x in r['checks'].values()), 'INVALID structured checks')
         if gate in ('Tester', 'QA'):
-            expected = {a['id'] for a in self.story(story)['acceptance_criteria']}
+            expected = {a['id'] for a in self.story(story, r['source_commit'] if history else None)['acceptance_criteria']}
             require(set(r.get('ac_results', {})) == expected and all(x == 'PASS' for x in r['ac_results'].values()), 'INVALID per-AC results')
         if gate == 'Unit Test':
-            expected = {t['id'] for t in self.story(story)['test_scenarios']} - {'TS24', 'TS25'}
+            expected = {t['id'] for t in self.story(story, r['source_commit'] if history else None)['test_scenarios']} - {'TS24', 'TS25'}
             require(set(r.get('ts_results', {})) == expected and all(x == 'PASS' for x in r['ts_results'].values()), 'INVALID per-TS results')
         if gate == 'Code Review' and not history:
             self.review(story, r)
@@ -313,21 +344,28 @@ class Factory:
             require(r['checks'].get('Factory Validation') == 'PASS', 'Jenkins Factory Validation missing')
         return 'PASS'
 
-    def prior_record_valid(self, story, gate, record):
-        key = (gate, repr(record))
+    def prior_record_valid(self, story, gate, record, history=False):
+        key = (gate, repr(record), history)
         if key in self._prior_cache:
             return self._prior_cache[key]
-        result = self._prior_record_valid(story, gate, record)
+        result = self._prior_record_valid(story, gate, record, history)
         self._prior_cache[key] = result
         return result
 
-    def _prior_record_valid(self, story, gate, record):
+    def _prior_record_valid(self, story, gate, record, history=False):
         try:
-            require(self.ancestor(record['source_commit'], record['_introduced'], strict=True), 'INVALID execution snapshot provenance')
-            self.record(story, gate, record)
+            require(self.ancestor(record['source_commit'], record['_introduced'], strict=True), f'INVALID execution snapshot provenance; {PROVENANCE_POLICY}')
+            self.record(story, gate, record, history=history)
             for parent in self.workflow["gates"][gate]["prerequisites"]:
                 earlier = [r for r in self.records(story) if r.get("gate") == parent and self.precedes(r, record)]
-                if not any(self.prior_record_valid(story, parent, r) for r in earlier):
+                if history:
+                    # Historical PASS must have had fresh prerequisites at its
+                    # declared execution snapshot, rather than at today's tip.
+                    config = self.workflow['gates'][parent]
+                    earlier = [r for r in earlier if
+                               (not config['implementation'] or r['implementation_fingerprint'] == self.implementation(record['source_commit'])) and
+                               (not config['contract'] or r.get('acceptance_contract_fingerprint') == self.contract(story, record['source_commit']))]
+                if not any(self.prior_record_valid(story, parent, r, history=history) for r in earlier):
                     return False
             return True
         except (Block, ValueError, KeyError, TypeError):
@@ -379,7 +417,7 @@ class Factory:
             return 'MISSING', errors + ['missing evidence']
         try:
             r = self.latest_record(candidates)
-            require(self.ancestor(r['source_commit'], r['_introduced'], strict=True), 'INVALID execution snapshot provenance')
+            require(self.ancestor(r['source_commit'], r['_introduced'], strict=True), f'INVALID execution snapshot provenance; {PROVENANCE_POLICY}')
             state = self.record(story, gate, r)
             for parent in self.workflow['gates'][gate]['prerequisites']:
                 prior = [x for x in self.records(story) if x.get('gate') == parent]

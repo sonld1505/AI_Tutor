@@ -46,6 +46,7 @@ def orchestrate(factory, args):
     s = factory.story(args.story)
     state_path = factory.path(f'factory/state/{args.story}.json')
     require(state_path.is_file(), 'state target must exist')
+    require(state_path.read_bytes() == factory.blob(f'factory/state/{args.story}.json'), 'BLOCK uncommitted state changes')
     state = json.loads(state_path.read_text())
     if args.action == 'dispatch' and args.role in factory.workflow['implementing_roles']:
         require(args.identity, 'implementing identity required')
@@ -116,13 +117,24 @@ def jenkins(factory, branch):
             if 'gate' in record:
                 try:
                     require(record['gate'] in factory.workflow['gates'], 'unknown gate')
-                    factory.record(story, record["gate"], record, allow_nonpass=True, history=True)
+                    nonpass = ('FAIL', 'NOT_EXECUTED', 'UNKNOWN', 'PENDING_PO', 'PARTIAL', 'PASS WITH BLOCKERS') if match else True
+                    state = factory.record(story, record["gate"], record, allow_nonpass=nonpass, history=True)
+                    if match and state in ('PASS', 'N/A-APPROVED'):
+                        require(factory.prior_record_valid(story, record['gate'], record, history=True), f"INVALID {record['gate']}: out-of-order historical record")
                 except (Block, ValueError, KeyError, TypeError) as e:
                     errors.append(str(e))
+        # Status preconditions above decide which gates must currently PASS.
+        # History is validated at its source snapshot; STALE and well-formed
+        # non-PASS results do not invalidate a supported earlier status.
         for gate in {r["gate"] for r in factory.records(story) if "gate" in r}:
-            state, reasons = factory.gate(story, gate)
-            if state not in ("PASS", "N/A-APPROVED"):
-                errors.extend(f"{gate}: {state} {reason}" for reason in reasons)
+            try:
+                factory.latest_record([r for r in factory.records(story) if r.get('gate') == gate])
+            except Block as e:
+                errors.append(str(e))
+            if not match:
+                state, reasons = factory.gate(story, gate)
+                if state not in ('PASS', 'N/A-APPROVED'):
+                    errors.extend(f'{gate}: {state} {reason}' for reason in reasons)
         external = [a for r in factory.records(story) for a in r.get('artifacts', []) if 'system' in a]
         require(not external or factory.archive is not None, 'NOT_EXECUTED Jenkins archive verification unavailable')
     return errors
