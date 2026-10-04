@@ -160,6 +160,25 @@ dependencies:
         - "AC13: the reviewer GitHub login must differ from the GitHub identity of every implementation commit author."
       note: "2026-10-03 (updated): extensions.worktreeConfig is enabled; the shared Git config has no user identity and user.useConfigOnly=true, so a worktree without its own identity cannot commit. Only the management worktree (US-FACTORY-003-MGMT) has the human identity sonld1505 in its config.worktree. No agent identity exists yet."
       verification_2026_10_04: "Claude orchestrator re-checked: gh is not logged in; the only GitHub credential on EC2 is ~/.ssh/id_ed25519, which authenticates as sonld1505 (human PO). No agent GitHub account, Git identity or API token exists. US-FACTORY-003 implementation and local gates are complete and uncommitted (build/lint/unit/validate-story exit=0); the first implementation commit and Code Review are held at this item."
+      implementation_identity:   # approved by the human PO 2026-10-04
+        github_login: sonldfkr2911
+        git_name: "AI Tutor Agent"
+        git_email: "337536168+sonldfkr2911@users.noreply.github.com"
+        role: "Implementation identity only (Claude/Codex implementation commits and pushes). Never PO, management or reviewer."
+        credential: "Dedicated SSH key on EC2 (outside Git; key material never recorded). Host alias github-ai-tutor-agent; PO verified ssh -T -> sonldfkr2911."
+        scope: "Worktree-scoped config (config.worktree) of US-FACTORY-003-devops only: user.name, user.email, core.sshCommand (dedicated key, IdentitiesOnly=yes). Shared/global config and origin URL unchanged."
+      resolution_2026_10_04: >
+        RESOLVED by the human PO 2026-10-04 after a 12/12 PASS verification matrix (D006-01..12):
+        implementation worktree author/committer = AI Tutor Agent; SSH auth with the dedicated key
+        resolves to sonldfkr2911 (only that key offered/accepted); read access to sonld1505/AI_Tutor via
+        that key (ls-remote; repository is public, so read access alone does not prove collaborator
+        rights); management worktree still sonld1505; origin unchanged; no global/system/shared identity
+        or core.sshCommand; implementation working tree, HEAD a3fb006 and stash@{0} unchanged; no commit,
+        push, PR or merge during D-006; no key material in repository files. Identity isolation is
+        sourced from worktree scope (git config --show-scope). Write access NOT yet proven at
+        resolution: the first PO-approved push of feature/US-FACTORY-003-devops is that evidence.
+        The independent reviewer remains sonld1505; AC13 still requires an approved GitHub PR review
+        by sonld1505 (a login different from sonldfkr2911).
     from: "US-FACTORY-003 (Code Review and Integration Test, i.e. before TESTING; first implementation commit), every later Story's implementation commits and Code Review gate"
     to: "HUMAN_PO (GitHub admin)"
-    status: OPEN
+    status: RESOLVED   # 2026-10-04 human PO; write-access evidence pending first approved push
