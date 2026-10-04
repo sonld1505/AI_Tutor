@@ -25,6 +25,12 @@ pipeline {
             }
         }
 
+        stage('Factory Validation') {
+            steps {
+                sh './scripts/factory-jenkins.sh'
+            }
+        }
+
         stage('Build') {
             steps {
                 sh './scripts/build.sh'
