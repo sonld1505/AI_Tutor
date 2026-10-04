@@ -35,38 +35,51 @@ class FactoryTests(unittest.TestCase):
         self.assertEqual(self.f.transition(STORY, 'QA', 'DONE'), [])
 
     def test_TS02_MOCK_missing_review(self):
-        for g in ('build', 'lint', 'Unit Test'):
-            self.x.record(g)
-        self.x.s['status'] = 'DEV_COMPLETE'
+        for gate in ('build', 'lint', 'Unit Test', 'Validation'):
+            self.x.record(gate)
+        self.x.s['status'] = 'QA'
         self.x.save()
-        for role in ('Integration Test', 'CODEX_TESTER'):
-            self.assertTrue(any('Code Review: MISSING' in reason for reason in self.f.dispatch(STORY, role)))
-        self.assertTrue(any('Code Review: MISSING' in reason for reason in self.f.transition(STORY, 'DEV_COMPLETE', 'TESTING')))
+        self.assertTrue(any('Jenkins: MISSING' in e for e in self.f.dispatch(STORY, 'Code Review')))
+        self.x.record('Jenkins')
+        self.x.s['status'] = 'QA'
+        self.x.save()
+        self.assertEqual(self.f.dispatch(STORY, 'Code Review'), [])
+        self.assertTrue(any('Code Review: MISSING' in reason for reason in self.f.dispatch(STORY, 'Integration Test')))
+        self.assertTrue(any('Code Review: MISSING' in reason for reason in self.f.transition(STORY, 'QA', 'DONE')))
 
-    def test_TS03_MOCK_missing_tester(self):
-        for g in ('build', 'lint', 'Unit Test', 'Code Review', 'Integration Test'):
-            self.x.record(g)
+    def test_TS03_MOCK_missing_validation(self):
+        for gate in ('build', 'lint', 'Unit Test'):
+            self.x.record(gate)
         self.x.s['status'] = 'TESTING'
         self.x.save()
-        self.assertTrue(self.f.dispatch(STORY, 'CODEX_QA'))
-        self.assertTrue(self.f.transition(STORY, 'TESTING', 'QA'))
-
-    def test_TS04_MOCK_tester_without_review(self):
-        self.x.record('Tester')
-        self.assertGate('Tester', 'INVALID')
-        self.x.s['status'] = 'TESTING'
+        self.assertEqual(self.f.dispatch(STORY, 'CODEX_QA'), [])
+        self.assertTrue(any('Validation: MISSING' in e for e in self.f.transition(STORY, 'TESTING', 'QA')))
+        self.x.s['status'] = 'QA'
         self.x.save()
-        self.assertTrue(self.f.dispatch(STORY, 'CODEX_QA'))
+        self.assertTrue(any('Validation: MISSING' in e for e in self.f.dispatch(STORY, 'Code Review')))
+
+    def test_TS04_MOCK_review_before_validation(self):
+        for gate in ('build', 'lint', 'Unit Test', 'Code Review'):
+            self.x.record(gate)
+        self.assertGate('Code Review', 'INVALID')
+        self.assertIn('review out-of-order reviewed snapshot', self.f.gate(STORY, 'Code Review')[1])
+        self.x.s['status'] = 'QA'
+        self.x.save()
+        self.assertTrue(any('Validation: MISSING' in e for e in self.f.dispatch(STORY, 'Code Review')))
+        self.assertTrue(self.f.dispatch(STORY, 'Integration Test'))
+        self.assertTrue(self.f.transition(STORY, 'QA', 'DONE'))
 
     def test_TS05_MOCK_completion_blockers(self):
-        for gate in self.f.workflow['gates']:
-            if gate != 'Jenkins':
-                self.x.record(gate)
+        for gate in ('build', 'lint', 'Unit Test', 'Validation'):
+            self.x.record(gate)
         self.x.s['status'] = 'QA'
         self.x.save()
         errors = self.f.transition(STORY, 'QA', 'DONE')
-        self.assertEqual(errors, ['Jenkins: MISSING missing evidence'])
-        self.x.record('Jenkins')
+        self.assertIn('Jenkins: MISSING missing evidence', errors)
+        self.assertTrue(any('Code Review: MISSING' in e for e in errors))
+        self.assertTrue(any('Integration Test: MISSING' in e for e in errors))
+        for gate in ('Jenkins', 'Code Review', 'Integration Test'):
+            self.x.record(gate)
         self.assertEqual(self.f.transition(STORY, 'QA', 'DONE'), [])
         self.x.s['definition_of_done']['implementation_complete'] = False
         self.x.save()
@@ -78,9 +91,12 @@ class FactoryTests(unittest.TestCase):
         self.x.s['definition_of_done']['evidence'] = evidence
         self.x.save()
         self.assertEqual(self.f.transition(STORY, 'QA', 'DONE'), [])
-        self.x.record('QA', ac_results={})
-        self.assertEqual(self.f.transition(STORY, 'QA', 'DONE'), ['QA: INVALID INVALID per-AC results'])
-        self.x.record('QA')
+        self.x.record('Validation', ac_results={})
+        self.assertEqual(self.f.transition(STORY, 'QA', 'DONE'), [
+            'Validation: INVALID INVALID per-AC results',
+            'Code Review: INVALID Validation: INVALID INVALID per-AC results',
+            'Integration Test: INVALID Code Review: INVALID Validation: INVALID INVALID per-AC results'])
+        self.x.record('Validation')
         self.assertEqual(self.f.transition(STORY, 'QA', 'DONE'), [])
         self.x.s['blocked_by'] = ['MOCK blocker']
         self.x.save()
@@ -121,7 +137,7 @@ class FactoryTests(unittest.TestCase):
         errors = self.f.transition(STORY, 'QA', 'DONE')
         self.assertTrue(errors)
         self.assertTrue(all('STALE_IMPLEMENTATION' in error for error in errors), errors)
-        for gate in ('Unit Test', 'Code Review', 'Integration Test', 'Tester', 'QA'):
+        for gate in ('Unit Test', 'Code Review', 'Integration Test', 'Validation'):
             self.assertGate(gate, 'STALE_IMPLEMENTATION')
         self.assertEqual(self.f.rerun_order(STORY), list(self.f.workflow['gates']))
         import subprocess
@@ -140,7 +156,7 @@ class FactoryTests(unittest.TestCase):
         self.assertGate('Code Review')
 
     def test_TS10_MOCK_artifact_durability(self):
-        for path in ('/tmp/a', '../a', 'factory/logs/a', 'missing.md'):
+        for path in ('/tmp/a', '../a', 'factory/logs/a', 'missing.md'):  # nosec B108 -- MOCK rejected absolute path; no file is created.
             with self.assertRaises(Block):
                 self.f.artifact({'path': path, 'sha256': '0' * 64})
         artifact = f'factory/evidence/{STORY}/summary.md'
@@ -169,37 +185,24 @@ class FactoryTests(unittest.TestCase):
             self.f.records(STORY)
 
     def test_TS11_MOCK_recovery_path(self):
-        for gate in ('build', 'lint', 'Unit Test', 'Tester', 'QA'):
+        for gate in ('build', 'lint', 'Unit Test', 'Jenkins', 'Code Review', 'Integration Test'):
             self.x.record(gate)
-        self.x.s['status'] = 'DEV_COMPLETE'
-        self.x.save()
-        self.assertTrue(self.f.transition(STORY, 'DEV_COMPLETE', 'TESTING'))
-        self.x.s['status'] = 'TESTING'
-        self.x.save()
-        self.assertTrue(self.f.transition(STORY, 'TESTING', 'QA'))
         self.x.s['status'] = 'QA'
         self.x.save()
-        self.assertEqual(self.f.transition(STORY, 'QA', 'DEV_COMPLETE', 'DoD FAIL: MOCK missing review'), [])
-        self.x.s['status'] = 'DEV_COMPLETE'
-        self.x.save()
-        self.assertTrue(self.f.transition(STORY, 'DEV_COMPLETE', 'TESTING'))
+        self.assertTrue(self.f.dispatch(STORY, 'Integration Test'))
         history = {p: p.read_bytes() for p in (self.x.root / f'factory/evidence/{STORY}').glob('*.json')}
-        for gate in ('Code Review', 'Integration Test'):
-            self.x.record(gate)
-        self.assertGate('Tester', 'INVALID')
-        self.assertGate('QA', 'INVALID')
-        self.assertEqual(self.f.transition(STORY, 'DEV_COMPLETE', 'TESTING'), [])
+        self.assertEqual(self.f.transition(STORY, 'QA', 'TESTING', 'DoD FAIL: MOCK review before validation'), [])
         self.x.s['status'] = 'TESTING'
         self.x.save()
-        self.assertTrue(self.f.transition(STORY, 'TESTING', 'QA'))
-        self.assertTrue(self.f.dispatch(STORY, 'CODEX_QA'))
-        self.x.record('Tester')
-        self.assertEqual(self.f.transition(STORY, 'TESTING', 'QA'), [])
         self.assertEqual(self.f.dispatch(STORY, 'CODEX_QA'), [])
-        self.x.record('QA')
+        self.x.record('Validation')
+        self.assertEqual(self.f.transition(STORY, 'TESTING', 'QA'), [])
         self.x.s['status'] = 'QA'
         self.x.save()
-        self.assertGate('QA')
+        self.x.record('Code Review')
+        self.x.record('Integration Test')
+        self.assertEqual(self.f.transition(STORY, 'QA', 'DONE'), [])
+        self.assertEqual(jenkins(self.f, f'feature/{STORY}-devops'), [])
         self.assertEqual(history, {p: p.read_bytes() for p in history})
 
     def test_TS12_MOCK_classified_paths(self):
@@ -239,7 +242,8 @@ class FactoryTests(unittest.TestCase):
                     self.x.commit()
                 self.assertEqual(implementation, self.f.implementation())
                 for gate in self.f.workflow['gates']:
-                    self.assertGate(gate, 'STALE_CONTRACT' if gate in ('Tester', 'QA') else 'PASS')
+                    expected = 'STALE_CONTRACT' if gate == 'Validation' else ('INVALID' if gate in ('Code Review', 'Integration Test') else 'PASS')
+                    self.assertGate(gate, expected)
                 self.x.all_gates()
 
     def test_TS13_MOCK_independence(self):
@@ -342,13 +346,15 @@ class FactoryTests(unittest.TestCase):
         self.x.all_gates()
         self.x.s['description'] = 'MOCK revised contract'
         self.x.save()
-        self.assertGate('Tester', 'STALE_CONTRACT')
-        self.assertGate('QA', 'STALE_CONTRACT')
-        self.assertGate('Integration Test')
+        self.assertGate('Validation', 'STALE_CONTRACT')
+        self.assertGate('Code Review', 'INVALID')
+        self.assertGate('Integration Test', 'INVALID')
+        self.assertGate('Unit Test')
+        self.assertGate('Jenkins')
         self.x.s['description'] = 'MOCK contract'
         self.x.s.update(priority='low', business_value='MOCK non-material', open_questions=['MOCK'])
         self.x.save()
-        self.assertGate('QA')
+        self.assertGate('Validation')
 
     def test_TS20_MOCK_external_archive(self):
         a = {'system': 'jenkins', 'job': 'MOCK-job', 'build': 1, 'path': 'MOCK-summary.json', 'sha256': digest(b'MOCK archive')}
@@ -413,13 +419,16 @@ class FactoryTests(unittest.TestCase):
         self.assertEqual(definitions, ['factory/runtime/contract.env'])
 
     def test_TS26_MOCK_producer_order(self):
-        self.x.s['status'] = 'DEV_COMPLETE'
+        self.x.s['status'] = 'QA'
         self.x.save()
         for gate in ('build', 'lint', 'Unit Test'):
             self.x.record(gate)
         self.assertTrue(self.f.dispatch(STORY, 'Integration Test'))
+        self.assertTrue(any('Validation: MISSING' in e for e in self.f.dispatch(STORY, 'Code Review')))
+        self.assertTrue(any('Jenkins: MISSING' in e for e in self.f.dispatch(STORY, 'Code Review')))
         self.x.record('Integration Test')
         self.assertGate('Integration Test', 'INVALID')
+        self.x.review_ready()
         self.x.record('Code Review')
         self.x.record('Integration Test')
         r = next(r for r in self.f.records(STORY) if r['gate'] == 'Integration Test')
@@ -428,11 +437,10 @@ class FactoryTests(unittest.TestCase):
                 self.f.record(STORY, 'Integration Test', dict(r, producer_role=role))
             self.x.record('Integration Test', producer_role=role)
             self.assertGate('Integration Test', 'INVALID')
-            self.assertTrue(self.f.dispatch(STORY, 'CODEX_TESTER'))
+            self.assertTrue(self.f.transition(STORY, 'QA', 'DONE'))
         self.x.record('Integration Test')
-        self.x.s['status'] = 'DEV_COMPLETE'
-        self.x.save()
-        self.assertEqual(self.f.dispatch(STORY, 'CODEX_TESTER'), [])
+        self.assertEqual(self.f.dispatch(STORY, 'Integration Test'), [])
+        self.assertEqual(self.f.transition(STORY, 'QA', 'DONE'), [])
 
     def test_TS27_MOCK_linked_worktree(self):
         linked = self.x.root / 'linked'
@@ -489,12 +497,12 @@ class FactoryTests(unittest.TestCase):
         import subprocess
         root = Path(__file__).resolve().parents[2]
         base = '05004fc5d3ed1022fea2695f62c9d6d54dc233c5'
-        for name in ('deploy', 'build', 'lint', 'unit-test', 'integration-test', 'security-scan', 'quality-gate', 'build-artifact', 'create-worktree'):
+        for name in ('deploy', 'build', 'lint', 'unit-test', 'integration-test', 'quality-gate', 'build-artifact', 'create-worktree'):
             path = f'scripts/{name}.sh'
             original = subprocess.run(['git', '-C', str(root), 'show', f'{base}:{path}'], capture_output=True, check=True).stdout
             self.assertEqual(original, (root / path).read_bytes())
         original = subprocess.run(['git', '-C', str(root), 'show', f'{base}:Jenkinsfile'], capture_output=True, check=True).stdout.decode()
-        stage = "        stage('Factory Validation') {\n            steps {\n                sh './scripts/factory-jenkins.sh'\n            }\n        }\n\n"
+        stage = "        stage('Factory Validation') {\n            steps {\n                withCredentials([string(credentialsId: 'factory-github-token', variable: 'FACTORY_GITHUB_TOKEN')]) {\n                    sh './scripts/factory-jenkins.sh'\n                }\n            }\n        }\n\n"
         current = (root / 'Jenkinsfile').read_text()
         self.assertEqual(current.count(stage), 1)
         self.assertEqual(current.replace(stage, ''), original)
@@ -523,10 +531,13 @@ class FactoryTests(unittest.TestCase):
 
     def test_TS05_MOCK_remaining_completion_rules(self):
         self.x.all_gates()
-        qa = next(r for r in self.f.records(STORY) if r['gate'] == 'QA')
+        qa = next(r for r in self.f.records(STORY) if r['gate'] == 'Validation')
         for ac in ({}, {'AC01': 'FAIL'}, {'AC01': 'PASS', 'AC02': 'PASS'}):
             with self.assertRaisesRegex(Block, 'per-AC'):
-                self.f.record(STORY, 'QA', dict(qa, ac_results=ac))
+                self.f.record(STORY, 'Validation', dict(qa, ac_results=ac))
+        for findings in ({'critical': 1, 'major': 0}, {'critical': 0, 'major': 1}, {'critical': False, 'major': 0}):
+            with self.assertRaisesRegex(Block, 'Critical and Major'):
+                self.f.record(STORY, 'Validation', dict(qa, findings=findings))
         self.x.s['status'] = 'QA'
         self.x.s['depends_on'] = ['US-998']
         dependency = dict(self.x.s, id='US-998', status='READY', depends_on=[])
@@ -573,9 +584,9 @@ class FactoryTests(unittest.TestCase):
         self.f.github = self.x.mock_github
         with self.assertRaises(Block):
             self.f.review(STORY, dict(record, review_id=200))
-        for gate in ('build', 'lint', 'Unit Test', 'Integration Test', 'Tester', 'QA'):
+        for gate in ('build', 'lint', 'Unit Test', 'Integration Test', 'Validation'):
             r = next(r for r in self.f.records(STORY) if r['gate'] == gate)
-            wrong_roles = ('CODEX_DEVOPS', 'UNKNOWN') if gate in ('Tester', 'QA') else ('CODEX_TESTER', 'CODEX_QA')
+            wrong_roles = ('CODEX_DEVOPS', 'UNKNOWN') if gate in ('Validation',) else ('CODEX_TESTER', 'CODEX_QA')
             for wrong in wrong_roles:
                 with self.assertRaisesRegex(Block, 'wrong producer'):
                     self.f.record(STORY, gate, dict(r, producer_role=wrong))
@@ -658,7 +669,7 @@ class FactoryTests(unittest.TestCase):
 
     def test_TS20_MOCK_external_reference_credentials(self):
         a = {'system': 'jenkins', 'job': 'MOCK-job', 'build': 1, 'path': 'MOCK.json', 'sha256': digest(b'MOCK archive')}
-        for changes in ({'system': 'unknown'}, {'path': '/tmp/a'}, {'path': '../a'}, {'job': 'MOCK@invalid'}, {'sha256': 'invalid'}):
+        for changes in ({'system': 'unknown'}, {'path': '/tmp/a'}, {'path': '../a'}, {'job': 'MOCK@invalid'}, {'sha256': 'invalid'}):  # nosec B108 -- MOCK rejected absolute path; no file is created.
             with self.assertRaises(Block):
                 self.f.external(dict(a, **changes))
         self.f.archive = lambda artifact: b'MOCK wrong archive'
@@ -806,7 +817,7 @@ class FactoryTests(unittest.TestCase):
         self.x.all_gates()
         reference.write_text('MOCK changed contract reference')
         self.x.commit()
-        state, reasons = self.f.gate(STORY, 'Tester')
+        state, reasons = self.f.gate(STORY, 'Validation')
         self.assertEqual(state, 'STALE_CONTRACT')
         self.assertTrue(all('STALE_CONTRACT' in reason for reason in reasons))
 
@@ -830,17 +841,18 @@ class FactoryTests(unittest.TestCase):
         with self.assertRaisesRegex(Block, 'unknown role'):
             self.f.dispatch(STORY, 'IMPLEMENTER')
         self.x.all_gates()
-        self.x.s['status'] = 'DEV_COMPLETE'
+        self.x.s['status'] = 'QA'
         state_path = self.x.root / f'factory/state/{STORY}.json'
         state = json.loads(state_path.read_text())
-        state['status'] = 'DEV_COMPLETE'
+        state['status'] = 'QA'
+        self.x.s['status'] = 'QA'
         state_path.write_text(json.dumps(state))
         self.x.save()
         args = Namespace(story=STORY, action='dispatch', role='Code Review', source=None, target=None, reason=None, identity=None)
         output = io.StringIO()
         with contextlib.redirect_stdout(output):
             orchestrate(self.f, args)
-        self.assertIn('Request an independent GitHub PR review', output.getvalue())
+        self.assertIn('Request the PO GitHub PR approval', output.getvalue())
         self.assertNotIn('Act as Code Review', output.getvalue())
 
     def test_TS06_MOCK_missing_or_wrong_gate_command_blocks(self):
@@ -851,3 +863,129 @@ class FactoryTests(unittest.TestCase):
         del self.f.workflow['commands'][STORY]
         with self.assertRaisesRegex(Block, 'NOT_EXECUTED gate command missing'):
             self.f.record(STORY, 'build', r)
+
+    def test_TS21_MOCK_factory_stage_runs_in_order_fail_fast(self):
+        import shutil
+        import subprocess
+        source = Path(__file__).resolve().parents[2]
+        scripts = self.x.root / 'scripts'
+        scripts.mkdir()
+        shutil.copyfile(source / 'scripts/factory-jenkins.sh', scripts / 'factory-jenkins.sh')
+        log = self.x.root / 'MOCK-stage-argv.txt'
+        for name in ('factory-runtime.sh', 'security-scan.sh'):
+            stub = scripts / name
+            stub.write_text('#!/bin/bash\nset -eu\nstep=${1:-security}\nprintf "%s\\n" "$*" >> "$MOCK_STAGE_LOG"\n[[ "$step" != "${MOCK_FAIL_STEP:-}" ]]\n')
+            stub.chmod(0o755)
+        environment = dict(os.environ, MOCK_STAGE_LOG=str(log), BRANCH_NAME=f'feature/{STORY}-devops')
+        for failed, expected in (('', ['jenkins', 'build', 'lint', 'unit', 'security']), ('lint', ['jenkins', 'build', 'lint'])):
+            with self.subTest(failed=failed):
+                log.write_text('')
+                environment['MOCK_FAIL_STEP'] = failed
+                result = subprocess.run(['bash', str(scripts / 'factory-jenkins.sh')], cwd=self.x.root, env=environment, capture_output=True)
+                self.assertEqual(result.returncode == 0, not failed, result.stdout + result.stderr)
+                entries = log.read_text().splitlines()
+                self.assertEqual([line.split()[0] if line else 'security' for line in entries], expected)
+                self.assertEqual(entries[0], f'jenkins --branch feature/{STORY}-devops')
+                self.assertEqual(b'FACTORY CI PASS' in result.stdout, not failed)
+
+    def test_TS18_MOCK_security_scan_pinned_and_fail_closed(self):
+        import shutil
+        import subprocess
+        source = Path(__file__).resolve().parents[2]
+        scripts = self.x.root / 'scripts'
+        (scripts / 'security').mkdir(parents=True)
+        runtime = self.x.root / 'factory/runtime'
+        runtime.mkdir()
+        helper = scripts / 'security-scan.sh'
+        shutil.copyfile(source / 'scripts/security-scan.sh', helper)
+        pins = scripts / 'security/scanners.env'
+        shutil.copyfile(source / 'scripts/security/scanners.env', pins)
+        shutil.copyfile(source / 'factory/runtime/contract.env', runtime / 'contract.env')
+        shutil.copyfile(source / 'factory/runtime/security-requirements.txt', runtime / 'security-requirements.txt')
+        original = pins.read_text()
+        images = dict(line.split('=', 1) for line in original.splitlines())
+        bins = self.x.root / 'MOCK-scanner-bin'
+        bins.mkdir()
+        log = self.x.root / 'MOCK-scanner-argv.txt'
+        docker = bins / 'docker'
+        docker.write_text('''#!/bin/bash
+set -eu
+printf '%s\\n' "$*" >> "$MOCK_SCAN_LOG"
+if [[ "$1" == image ]]; then
+    image=${@: -1}
+    if [[ ${MOCK_SCAN_FAIL:-} == digest ]]; then echo MOCK-mismatched; else printf '%s@%s\\n' "${image%%:*}" "${image##*@}"; fi
+    exit 0
+fi
+if [[ "$1" == pull && ${MOCK_SCAN_FAIL:-} == pull ]]; then exit 1; fi
+if [[ "$1" == run ]]; then
+    case ${MOCK_SCAN_FAIL:-} in
+        gitleaks) [[ "$*" != *gitleaks* ]] || exit 1 ;;
+        trivy) [[ "$*" != *aquasec/trivy* ]] || exit 1 ;;
+        bandit) [[ "$*" != *bandit* ]] || exit 1 ;;
+    esac
+fi
+exit 0
+''')
+        docker.chmod(0o755)
+        no_docker = self.x.root / 'MOCK-no-docker-bin'
+        no_docker.mkdir()
+        for command in ('bash', 'git'):
+            (no_docker / command).symlink_to(shutil.which(command))
+        environment = dict(os.environ, PATH=str(bins) + ':' + os.environ['PATH'], MOCK_SCAN_LOG=str(log))
+        for failure in ('', 'gitleaks', 'trivy', 'bandit', 'pull', 'digest', 'unpinned', 'missing docker'):
+            with self.subTest(failure=failure):
+                log.write_text('')
+                pins.write_text(original if failure != 'unpinned' else original.replace(images['GITLEAKS_IMAGE'], 'zricethezav/gitleaks:v8.30.1'))
+                environment['MOCK_SCAN_FAIL'] = failure
+                environment['PATH'] = str(no_docker) if failure == 'missing docker' else str(bins) + ':' + os.environ['PATH']
+                result = subprocess.run(['bash', str(helper)], cwd=self.x.root, env=environment, capture_output=True)
+                self.assertEqual(result.returncode == 0, not failure, result.stdout + result.stderr)
+                self.assertEqual(b'SECURITY SCAN PASSED' in result.stdout, not failure)
+                invocations = log.read_text()
+                if not failure:
+                    for image in images.values():
+                        self.assertIn(image, invocations)
+                    self.assertIn('git /repo --redact', invocations)
+                    self.assertIn('--scanners vuln,misconfig,secret', invocations)
+                    self.assertIn('--require-hashes', invocations)
+                    self.assertIn('python -m bandit -r factory scripts -ll -ii', invocations)
+
+    def test_TS28_MOCK_integration_coordinator_stage_lifecycle(self):
+        import shutil
+        import subprocess
+        source = Path(__file__).resolve().parents[2]
+        scripts = self.x.root / 'scripts'
+        scripts.mkdir()
+        coordinator = scripts / 'factory-integration.sh'
+        shutil.copyfile(source / 'scripts/factory-integration.sh', coordinator)
+        stage = scripts / 'factory-jenkins.sh'
+        stage.write_text('#!/bin/bash\nprintf "stage\\n" >> "$MOCK_COORDINATOR_LOG"\nexit "${MOCK_STAGE_EXIT:-0}"\n')
+        self.x.commit()
+        helper = scripts / 'factory-runtime.sh'
+        helper.write_text('''#!/bin/bash
+set -eu
+printf '%s\\n' "$FACTORY_INTEGRATION_PHASE" >> "$MOCK_COORDINATOR_LOG"
+if [[ "$FACTORY_INTEGRATION_PHASE" == prepare ]]; then
+    [[ "${MOCK_PREPARE_EXIT:-0}" == 0 ]] || exit "$MOCK_PREPARE_EXIT"
+    clone="$FACTORY_INTEGRATION_DIRECTORY/fixture/repo"
+    git clone --quiet "$PWD" "$clone"
+    printf '%s\\n%s\\n' "$clone" "$(git -C "$clone" rev-parse HEAD)" > "$FACTORY_INTEGRATION_DIRECTORY/stage-input"
+    printf '%s' "$clone" > "$MOCK_CLONE_PATH"
+else
+    clone=$(cat "$MOCK_CLONE_PATH")
+    exit "$(cat "$clone/factory/logs/integration-stage.exit")"
+fi
+''')
+        helper.chmod(0o755)
+        log = self.x.root / 'MOCK-coordinator-log'
+        clone_path = self.x.root / 'MOCK-clone-path'
+        environment = dict(os.environ, MOCK_COORDINATOR_LOG=str(log), MOCK_CLONE_PATH=str(clone_path))
+        for prepare_exit, stage_exit, expected in ((0, 0, ['prepare', 'stage', 'complete']), (0, 37, ['prepare', 'stage', 'complete']), (19, 0, ['prepare'])):
+            with self.subTest(prepare=prepare_exit, stage=stage_exit):
+                log.write_text('')
+                environment.update(MOCK_PREPARE_EXIT=str(prepare_exit), MOCK_STAGE_EXIT=str(stage_exit))
+                result = subprocess.run(['bash', str(coordinator), 'integration', '--story', STORY], cwd=self.x.root, env=environment, capture_output=True)
+                self.assertEqual(result.returncode, prepare_exit or stage_exit, result.stdout + result.stderr)
+                self.assertEqual(log.read_text().splitlines(), expected)
+                if not prepare_exit:
+                    shutil.rmtree(Path(clone_path.read_text()).parents[1])

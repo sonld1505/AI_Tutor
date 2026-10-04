@@ -12,12 +12,23 @@ keys, external systems, N/A eligibility and Factory commands. Missing/unreadable
 or invalid definitions block every entry point. Unknown evidence is never PASS.
 
 Normal flow is DRAFT → REFINED → READY → IN_PROGRESS → DEV_COMPLETE → TESTING →
-QA → DONE. Implementation requires DoR and DONE dependencies. DEV_COMPLETE needs
-build, lint and Unit Test. Code Review requires Unit Test; Integration requires
-Unit Test and independent Code Review; Tester dispatch requires all three; QA
-requires Tester as well. Jenkins is a completion gate after QA. DONE additionally
-requires every AC PASS in QA, DoD true with evidence per key, no blockers and DONE
-dependencies. The workflow contains the supervised failure-return rules.
+QA → DONE. Lean view: TODO={DRAFT,REFINED,READY}, DEV={IN_PROGRESS,DEV_COMPLETE},
+VERIFY={TESTING,QA}. The state machine and failure paths remain unchanged.
+
+| Gate | Producer | Prerequisites |
+|---|---|---|
+| build / lint | Implementer | None |
+| Unit Test | Implementer | build, lint |
+| Validation | Independent CODEX_QA | Unit Test |
+| Jenkins | Jenkins Factory Validation composite | Revision-bound CI execution |
+| Code Review | PO GitHub PR approval (GITHUB) | Unit Test, Validation, Jenkins |
+| Integration Test | Implementer | Unit Test, Code Review |
+
+DEV_COMPLETE needs build, lint and Unit Test. DEV_COMPLETE → TESTING needs Unit
+Test; Validation dispatch happens in TESTING. TESTING → QA needs Validation PASS.
+Code Review and Integration requests happen in QA. Integration runs once after
+the PO approval. DONE needs all five completion gates, every AC PASS in Validation,
+zero Critical/Major findings, DoD true with evidence, no blockers and DONE dependencies.
 
 Run from the repository root, using the single runtime:
 
@@ -62,7 +73,8 @@ summaries are allowed; raw logs, JSONL, archives and fixture trees are rejected.
 Record fields are `story_id`, `gate`, `result`, `producer_role`, `producer_identity`,
 UTC `timestamp`, full `source_commit`, `implementation_fingerprint`,
 `acceptance_contract_fingerprint` for contract gates, `checks`, `artifacts` and
-`ac_results`/`ts_results` when applicable. Every implementing-role record
+`ac_results`/`ts_results` when applicable. Validation requires all AC results PASS and
+`findings: {critical: 0, major: 0}`; both counts must be integers (booleans rejected). Every implementing-role record
 must include the exact Story-specific workflow `command`, including Integration
 Test and N/A records. Other Stories require explicit command bindings; missing
 bindings return NOT_EXECUTED rather than guessing commands. Local artifacts use relative `path`
@@ -95,7 +107,7 @@ objects or ambiguous provenance BLOCK. Review IDs and `review_submitted_at` are
 immutable references to the GitHub server response; the latter must match server
 `submitted_at`. A review record claiming creation before server submission BLOCKs
 as inconsistent; a later claimed timestamp alone never proves ordering. The
-server-reviewed commit must itself contain valid Unit evidence.
+server-reviewed commit must itself contain valid Unit Test, Validation and Jenkins evidence.
 This provides ordering through committed snapshots and the server-reviewed snapshot,
 without claiming caller-controlled wall-clock values prove execution order.
 The source snapshot is a producer declaration, not an execution attestation. A
@@ -133,7 +145,7 @@ paths count as implementation. Acceptance-contract fingerprints canonicalise
 parsed material Story YAML keys with sorted keys and add Git object IDs for sorted
 `contract_refs`. Formatting/comments and all non-material keys are ignored.
 Implementation changes stale all bound gates and their dependents. Contract
-changes stale Tester and QA and their dependents. Rerun in prerequisite order.
+changes stale Validation and its dependents. Rerun in prerequisite order.
 
 Code Review requires real read-only GitHub API verification at evaluation time.
 The workflow pins repository `sonld1505/AI_Tutor` and the approved independent human
@@ -163,7 +175,7 @@ Commit completeness reference: [GitHub list-commits documentation](https://docs.
 non-comment review controls approval and change requests; later comments withdraw
 neither. Comment-only and dismissed reviews supply no approval. Any reviewer's
 latest non-comment CHANGES_REQUESTED blocks review. Material Story keys and
-contract_refs changes produce STALE_CONTRACT for Tester/QA and downstream gates;
+contract_refs changes produce STALE_CONTRACT for Validation and downstream gates;
 non-material classified changes stale nothing. Unclassified paths remain
 implementation changes and fail closed.
 
@@ -172,16 +184,39 @@ reason, verified durable decision reference and execution_status NOT_APPLICABLE.
 Failed execution/missing tools/configuration are not N/A. US-FACTORY-003 allows none.
 
 `Factory Validation` is the only Jenkinsfile addition, immediately after Checkout.
-`factory-jenkins.sh` calls the same CLI. Feature branches validate the named Story's
-status and evidence; other branches validate DONE Stories.
-IN_PROGRESS checks readiness content and dependencies without applying the READY-only
-admission status rule; the next DEV_COMPLETE transition still needs build/lint/Unit.
-On feature branches, historical records are checked for integrity at their source
-revision, separately from the gates required to support the current status.
-STALE_IMPLEMENTATION/STALE_CONTRACT, superseded records and well-formed non-PASS
-history for unrequired gates do not fail a supported status. INVALID records still
-fail, even when superseded or unrelated to that status. Stale evidence never
-authorises a required gate or transition. Develop-mode DONE validation is unchanged.
+It binds Secret text credential `factory-github-token` to `FACTORY_GITHUB_TOKEN`
+with `withCredentials`; missing credentials fail closed. The human admin supplies
+read-only Metadata, Contents and Pull requests permissions for this repository.
+`factory-jenkins.sh` runs validator → canonical build → lint → full Factory unit
+suite → security scan, fail-fast with pipefail. Each step logs to
+`factory/logs/factory-<step>.log`, archived by the existing post step. It prints
+`FACTORY CI PASS` only after all steps pass. For Factory Stories this composite
+is CI PASS (I-005); existing backend stages still fail closed and prohibit deployment.
+The Jenkins record lists only passing composite checks and truthfully records the
+overall pipeline result in `pipeline_result`, with archived stage artifacts.
+
+Feature branches validate the named Story's incoming-edge prerequisites at the tip.
+IN_PROGRESS checks readiness content without READY-only admission status. Both modes
+validate every record's integrity; integrity-invalid records fail even if superseded.
+Integrity-valid out-of-order records remain append-only and print HISTORY notices,
+never authorising a gate. A required latest out-of-order record still blocks.
+Both modes accept only FAIL, NOT_EXECUTED, UNKNOWN, PENDING_PO, PARTIAL and
+PASS WITH BLOCKERS as well-formed non-authorising non-PASS history.
+DONE is evaluated at its unique non-root, non-merge introduction from QA; removal,
+multiple introductions or shallow ancestry fail closed. Feature mode also checks tip
+freshness. GitHub/archive verification runs on feature branches and on a DONE Story's
+arrival (snapshot absent from the first parent); earlier integrated Stories have
+snapshot preconditions and current record integrity rechecked offline (ADR-0001 D1–D4).
+
+G-12 uses `scripts/security/scanners.env` version-and-digest pins for gitleaks and
+trivy, plus hash-locked `factory/runtime/security-requirements.txt` for bandit in
+the unchanged AD-02 image. The scan clones full history for gitleaks, scans the
+working tree with trivy (vulnerabilities/misconfigurations/secrets, HIGH/CRITICAL),
+and runs bandit on factory/scripts at MEDIUM severity and confidence or higher.
+Missing Docker/pins, pull/digest mismatch, scanner failures/findings or DB download
+failures return nonzero. Reports are `factory/logs/security-*.json` and are archived,
+never committed. Only all three passing prints `SECURITY SCAN PASSED`.
+
 External references are
 read from the Jenkins archive at `JENKINS_URL` (HTTPS, no credential-bearing URL).
 Missing/inaccessible/mismatched archives block completion. This mechanism has not
@@ -194,10 +229,10 @@ The additive Integration command is registered as `factory_integration`:
 ./scripts/factory-runtime.sh integration --story US-FACTORY-003 --revision HEAD
 ```
 
-It refuses to begin before Unit Test and real independent Code Review PASS. In a
+It refuses to begin before Unit Test and the PO PR approval (Code Review) PASS. In a
 disposable local clone it exercises schema load, supervised dispatch PASS/BLOCK and
 a READY → IN_PROGRESS transition,
-the evidence writer, shell DoR delegation, local Jenkins entry, both fingerprints
+the evidence writer, shell DoR delegation, shell Jenkins validator entry (the full host composite is covered separately), both fingerprints
 and stale detection after fixture Git object commits. Its GitHub check verifies
 the actual Story's review through the real API. No MOCK adapters are used. The
 output is retained in a host-owned disposable `/tmp/factory-integration-output.*`
@@ -230,8 +265,26 @@ is supplied to TS27; missing or failed probes fail the unit command. No probe wr
 to the real repository. Direct in-container unit entry without this host probe report
 fails TS27 instead of skipping it.
 
-After out-of-order execution: return via an explicit failure path, for example
-QA → DEV_COMPLETE with `DoD FAIL: missing independent review`; retain previous
-records; rerun Unit Test, independent Code Review, Integration, Tester and QA in
-workflow order. Jenkins/DoD then decide DONE. Nothing converts missing, stale,
-failed, pending or not-executed evidence into deploy permission.
+After out-of-order execution: return via an AC04 failure path, for example
+QA → TESTING with `DoD FAIL: <reason>`; retain records and rerun Validation →
+Jenkins → PO approval → Integration in order. Retained out-of-order records appear
+as HISTORY notices without failing the stage. Stale or failed evidence never authorises DONE.
+
+Human admin settings remain UNVERIFIED: merge commits only, "Dismiss stale approvals"
+OFF and "Require approval of the most recent push" OFF. Evidence commits follow
+approval; implementation changes still make Code Review STALE. Jenkins multibranch
+job, required Factory Validation status, credential and registry/package access
+are human administration prerequisites and have not been configured here.
+
+
+### Integration coordination
+
+The documented `factory-runtime.sh integration --story <id>` command delegates to
+`factory-integration.sh`. Host Bash coordinates prepare and complete phases in
+the canonical runtime with the same disposable output directory. Between them it
+runs the real Jenkins composite on the prepared clone, with a 30-minute timeout.
+Completion requires matching source/clone revisions and stage exit zero. Failed
+steps remain non-PASS. Partial output is retained for diagnosis and never
+authorises a gate until promoted through the evidence writer and committed.
+Real TS24 executes once after the PO approval; MOCK lifecycle regressions only
+verify coordination and failure propagation.

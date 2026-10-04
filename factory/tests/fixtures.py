@@ -70,11 +70,11 @@ class Fixture:
 
     def record(self, gate, **updates):
         self.serial += 1
-        role = {'Code Review': 'GITHUB', 'Tester': 'CODEX_TESTER', 'QA': 'CODEX_QA', 'Jenkins': 'JENKINS'}.get(gate, 'CODEX_DEVOPS')
+        role = {'Code Review': 'GITHUB', 'Validation': 'CODEX_QA', 'Jenkins': 'JENKINS'}.get(gate, 'CODEX_DEVOPS')
         identity = 'MOCK_reviewer' if gate == 'Code Review' else ('MOCK_implementer' if role == 'CODEX_DEVOPS' else 'MOCK_' + role)
         timestamp = (datetime.datetime(2026, 10, 3, tzinfo=datetime.UTC) + datetime.timedelta(seconds=self.serial)).isoformat().replace('+00:00', 'Z')
         artifact = f'factory/evidence/{STORY}/summary.md'
-        r = {'story_id': STORY, 'gate': gate, 'result': 'PASS', 'producer_role': role, 'producer_identity': identity, 'timestamp': timestamp, 'source_commit': self.git('rev-parse', 'HEAD').decode().strip(), 'implementation_fingerprint': self.f.implementation(), 'acceptance_contract_fingerprint': self.f.contract(STORY), 'checks': {'MOCK check': 'PASS'}, 'artifacts': [{'path': artifact, 'sha256': digest(self.f.blob(artifact))}], 'review_id': 1, 'ac_results': {'AC01': 'PASS'}, 'ts_results': {'TS01': 'PASS'}}
+        r = {'story_id': STORY, 'gate': gate, 'result': 'PASS', 'producer_role': role, 'producer_identity': identity, 'timestamp': timestamp, 'source_commit': self.git('rev-parse', 'HEAD').decode().strip(), 'implementation_fingerprint': self.f.implementation(), 'acceptance_contract_fingerprint': self.f.contract(STORY), 'checks': {'MOCK check': 'PASS'}, 'artifacts': [{'path': artifact, 'sha256': digest(self.f.blob(artifact))}], 'review_id': 1, 'ac_results': {'AC01': 'PASS'}, 'findings': {'critical': 0, 'major': 0}, 'ts_results': {'TS01': 'PASS'}}
         if gate == 'Jenkins':
             r['checks']['Factory Validation'] = 'PASS'
         if gate == 'Code Review':
@@ -86,6 +86,10 @@ class Fixture:
         path.write_text(json.dumps(r))
         self.commit()
         return copy.deepcopy(r), path
+
+    def review_ready(self):
+        for gate in ('build', 'lint', 'Unit Test', 'Validation', 'Jenkins'):
+            self.record(gate)
 
     def all_gates(self):
         for gate in self.f.workflow['gates']:

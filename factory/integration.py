@@ -1,6 +1,7 @@
 """REAL Factory integration workload. No MOCK adapters or synthetic PASS gates."""
 import datetime
 import json
+import os
 import py_compile
 import subprocess
 import tempfile
@@ -25,8 +26,8 @@ def commit_fixture(root):
     return commit
 
 
-def execute_components(factory, story, steps):
-    from cli import jenkins, orchestrate, write_record
+def prepare_components(factory, story, steps, continuation):
+    from cli import jenkins, orchestrate
     require(not factory.preconditions(story, factory.workflow['dispatch']['Integration Test']['prerequisites']), 'Integration prerequisites BLOCK')
     # Verify the Story's own approved review through the REAL injected production adapter.
     review = factory.latest_record([r for r in factory.records(story) if r.get('gate') == 'Code Review'])
@@ -66,7 +67,7 @@ def execute_components(factory, story, steps):
     commit_fixture(clone)
     f = Factory(clone)
     steps['orchestrator dispatch PASS'] = 'PASS'
-    args.role = 'CODEX_TESTER'
+    args.role = 'CODEX_QA'
     before = story_path.read_bytes(), state_path.read_bytes(), sorted(p.name for p in evidence.iterdir())
     try:
         orchestrate(f, args)
@@ -79,9 +80,31 @@ def execute_components(factory, story, steps):
     require(result.returncode == 0 and result.stdout.rstrip().endswith(b'DEFINITION OF READY: PASSED'), 'DoR shell delegation FAIL')
     steps['validate-story.sh delegation'] = 'PASS'
     require(not jenkins(f, f'feature/{fixture_id}-devops'), 'Jenkins local entry FAIL')
-    stage = subprocess.run(['bash', str(clone / 'scripts/factory-jenkins.sh')], cwd=clone, env={**__import__('os').environ, 'BRANCH_NAME': f'feature/{fixture_id}-devops'}, capture_output=True)
-    require(stage.returncode == 0, 'Jenkins shell entry FAIL')
+    continuation.write_text(json.dumps({'story': story, 'source_revision': revision,
+        'clone': str(clone), 'fixture_revision': f.revision, 'steps': steps}))
+    (continuation.parent / 'stage-input').write_text(f'{clone}\n{f.revision}\n')
+    return None
+
+
+def complete_components(factory, story, continuation):
+    from cli import orchestrate, write_record
+    data = json.loads(continuation.read_text())
+    require(data['story'] == story and data['source_revision'] == factory.revision,
+            'INVALID Integration continuation source')
+    clone = Path(data['clone']).resolve()
+    require(clone.is_relative_to(continuation.parent.resolve()), 'INVALID Integration clone location')
+    f = Factory(clone)
+    require(f.revision == data['fixture_revision'], 'INVALID Integration clone changed during stage')
+    require((clone / 'factory/logs/integration-stage.exit').read_text().strip() == '0',
+            'Jenkins shell entry FAIL')
+    steps = data['steps']
     steps['Jenkins stage entry point'] = 'PASS'
+    fixture_id = 'US-987654'
+    story_path = clone / f'safe/stories/{fixture_id}.yaml'
+    evidence = clone / f'factory/evidence/{fixture_id}'
+    proof = evidence / 'summary.md'
+    s = f.story(fixture_id)
+    revision = data['source_revision']
     args = Namespace(story=fixture_id, action='transition', role=None, identity=None, source='READY', target='IN_PROGRESS', reason=None)
     orchestrate(f, args)
     commit_fixture(clone)
@@ -89,8 +112,9 @@ def execute_components(factory, story, steps):
     require(f.story(fixture_id)['status'] == 'IN_PROGRESS', 'orchestrator transition FAIL')
     s['status'] = 'IN_PROGRESS'
     steps['orchestrator transition PASS'] = 'PASS'
-    for index, source in enumerate((clone / 'factory').rglob('*.py')):
-        py_compile.compile(str(source), cfile=f'/tmp/integration-{index}.pyc', doraise=True)
+    with tempfile.TemporaryDirectory(prefix='factory-integration-compile-') as compiled:
+        for index, source in enumerate((clone / 'factory').rglob('*.py')):
+            py_compile.compile(str(source), cfile=str(Path(compiled) / f'{index}.pyc'), doraise=True)
     write_record(f, fixture_id, {'story_id': fixture_id, 'gate': 'build', 'result': 'PASS', 'producer_role': 'CODEX_DEVOPS', 'producer_identity': 'integration_fixture', 'command': f.command(fixture_id, 'build'), 'checks': {'byte-compilation': 'PASS', 'schema': 'PASS'}, 'artifacts': [{'path': str(proof.relative_to(clone)), 'sha256': digest(proof.read_bytes())}]})
     commit_fixture(clone)
     f = Factory(clone)
@@ -125,8 +149,16 @@ def run(factory, story):
     require(not factory.preconditions(story, prerequisites), 'Integration prerequisites BLOCK')
     required_steps = ('own GitHub approved review', 'workflow schema', 'orchestrator dispatch PASS', 'orchestrator BLOCK without writes', 'validate-story.sh delegation', 'Jenkins stage entry point', 'orchestrator transition PASS', 'evidence writer', 'both fingerprints and stale detection after commit')
     steps = {step: "NOT_EXECUTED" for step in required_steps}
+    phase = os.environ.get('FACTORY_INTEGRATION_PHASE')
+    directory = os.environ.get('FACTORY_INTEGRATION_DIRECTORY')
+    require(phase in ('prepare', 'complete') and directory, 'NOT_EXECUTED Integration host coordinator required')
+    continuation = Path(directory) / 'continuation.json'
     try:
-        return execute_components(factory, story, steps)
+        if phase == 'prepare':
+            return prepare_components(factory, story, steps, continuation)
+        data = json.loads(continuation.read_text())
+        steps = data['steps']
+        return complete_components(factory, story, continuation)
     except (Block, OSError, ValueError, KeyError, TypeError, AssertionError, subprocess.SubprocessError, py_compile.PyCompileError, yaml.YAMLError) as error:
         output_dir = Path(tempfile.mkdtemp(prefix='factory-integration-failed-'))
         result = 'NOT_EXECUTED' if isinstance(error, Block) and 'NOT_EXECUTED' in str(error) else 'FAIL'

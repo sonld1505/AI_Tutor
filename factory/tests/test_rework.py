@@ -29,19 +29,20 @@ class ReworkTests(unittest.TestCase):
     def test_TS17_MOCK_uncommitted_policy_cannot_weaken_gates(self):
         for gate in ('build', 'lint', 'Unit Test'):
             self.x.record(gate)
-        self.x.s['status'] = 'DEV_COMPLETE'
+        self.x.s['status'] = 'TESTING'
         self.x.save()
-        before = self.f.transition(STORY, 'DEV_COMPLETE', 'TESTING')
+        before = self.f.transition(STORY, 'TESTING', 'QA')
+        self.assertTrue(before)
         workflow = copy.deepcopy(self.f.workflow)
-        workflow['transitions']['DEV_COMPLETE->TESTING'] = ['Unit Test']
-        workflow['dispatch']['CODEX_TESTER']['prerequisites'] = ['Unit Test']
+        workflow['transitions']['TESTING->QA'] = ['Unit Test']
+        workflow['dispatch']['Code Review']['prerequisites'] = ['Unit Test']
         path = self.x.root / 'factory/workflow.yaml'
         path.write_text(yaml.safe_dump(workflow))
         evaluated = Factory(self.x.root)
-        self.assertEqual(evaluated.transition(STORY, 'DEV_COMPLETE', 'TESTING'), before)
-        self.assertTrue(evaluated.dispatch(STORY, 'CODEX_TESTER'))
+        self.assertEqual(evaluated.transition(STORY, 'TESTING', 'QA'), before)
+        self.assertTrue(evaluated.preconditions(STORY, evaluated.workflow['dispatch']['Code Review']['prerequisites']))
         cli = Path(__file__).resolve().parents[1] / 'cli.py'
-        result = subprocess.run([sys.executable, str(cli), 'can-transition', '--root', str(self.x.root), '--workflow', str(path), '--story', STORY, '--from', 'DEV_COMPLETE', '--to', 'TESTING'], capture_output=True)
+        result = subprocess.run([sys.executable, str(cli), 'can-transition', '--root', str(self.x.root), '--workflow', str(path), '--story', STORY, '--from', 'TESTING', '--to', 'QA'], capture_output=True)
         self.assertNotEqual(result.returncode, 0)
         self.assertIn(b'unrecognized arguments: --workflow', result.stderr)
 
@@ -58,30 +59,30 @@ class ReworkTests(unittest.TestCase):
             with self.subTest(future=future):
                 fixture = Fixture()
                 try:
-                    for gate in ('build', 'lint', 'Unit Test'):
+                    for gate in ('build', 'lint'):
                         fixture.record(gate)
-                    early, path = fixture.record('Tester', timestamp='2099-01-01T00:00:00Z' if future else '2026-10-03T12:00:00Z')
+                    early, path = fixture.record('Validation', timestamp='2099-01-01T00:00:00Z' if future else '2026-10-03T12:00:00Z')
                     immutable = path.read_bytes()
-                    for gate in ('Code Review', 'Integration Test'):
-                        if future:
-                            fixture.record(gate)
-                        else:
-                            fixture.record(gate, timestamp='2026-10-02T00:00:00Z')
+                    fixture.record('Unit Test', timestamp='2026-10-02T00:00:00Z')
+                    if not future:
+                        fixture.record('Jenkins')
+                        fixture.record('Code Review', timestamp='2026-10-02T00:00:00Z')
+                        self.assertEqual(fixture.f.gate(STORY, 'Code Review')[0], 'INVALID')
                     fixture.s['status'] = 'TESTING'
                     fixture.save()
-                    self.assertEqual(fixture.f.gate(STORY, 'Tester')[0], 'INVALID')
+                    self.assertEqual(fixture.f.gate(STORY, 'Validation')[0], 'INVALID')
                     self.assertTrue(fixture.f.transition(STORY, 'TESTING', 'QA'))
-                    self.assertTrue(fixture.f.dispatch(STORY, 'CODEX_QA'))
-                    self.assertEqual(path.read_bytes(), immutable)
-                    if not future:
-                        self.assertEqual(fixture.f.gate(STORY, 'Code Review')[0], 'INVALID')
-                        for gate in ('Code Review', 'Integration Test'):
-                            fixture.record(gate)
-                    fixture.record('Tester', timestamp='2026-10-01T00:00:00Z')
-                    self.assertEqual(fixture.f.gate(STORY, 'Tester'), ('PASS', []))
-                    self.assertEqual(fixture.f.transition(STORY, 'TESTING', 'QA'), [])
                     self.assertEqual(fixture.f.dispatch(STORY, 'CODEX_QA'), [])
-                    self.assertEqual(early['gate'], 'Tester')
+                    self.assertEqual(path.read_bytes(), immutable)
+                    fixture.record('Validation', timestamp='2026-10-01T00:00:00Z')
+                    self.assertEqual(fixture.f.gate(STORY, 'Validation'), ('PASS', []))
+                    self.assertEqual(fixture.f.transition(STORY, 'TESTING', 'QA'), [])
+                    if not future:
+                        fixture.record('Code Review')
+                        fixture.record('Integration Test')
+                        self.assertEqual(fixture.f.gate(STORY, 'Code Review'), ('PASS', []))
+                        self.assertEqual(fixture.f.gate(STORY, 'Integration Test'), ('PASS', []))
+                    self.assertEqual(early['gate'], 'Validation')
                 finally:
                     fixture.close()
 
@@ -241,13 +242,13 @@ class ReworkTests(unittest.TestCase):
         record.update(result='N/A', po_approval={'identity': 'MOCK_PO', 'date': '2026-10-03'}, reason='MOCK no integration target', decision_reference=record['artifacts'][0], execution_status='NOT_APPLICABLE')
         with self.assertRaisesRegex(Block, 'N/A not permitted'):
             self.f.record(STORY, 'Integration Test', record)
-        self.x.s['na_permitted'] = ['Integration Test', 'Tester']
+        self.x.s['na_permitted'] = ['Integration Test', 'Validation']
         self.x.save()
         self.assertEqual(self.f.record(STORY, 'Integration Test', record), 'N/A-APPROVED')
-        tester = next(r for r in self.f.records(STORY) if r['gate'] == 'Tester')
+        tester = next(r for r in self.f.records(STORY) if r['gate'] == 'Validation')
         tester.update({k: v for k, v in record.items() if k in ('result', 'po_approval', 'reason', 'decision_reference', 'execution_status')})
         with self.assertRaisesRegex(Block, 'N/A not permitted'):
-            self.f.record(STORY, 'Tester', tester)
+            self.f.record(STORY, 'Validation', tester)
         for status in ('FAIL', 'MISSING_TOOL', 'MISSING_CONFIGURATION'):
             with self.assertRaisesRegex(Block, 'failed or missing execution'):
                 self.f.record(STORY, 'Integration Test', dict(record, execution_status=status))
@@ -314,9 +315,9 @@ class ReworkTests(unittest.TestCase):
         self.assertEqual(jenkins(self.f, f'feature/{STORY}-devops'), [])
         self.assertEqual(history, {p: p.read_bytes() for p in history})
 
-    def test_TS13_MOCK_tester_and_qa_require_independent_identity(self):
+    def test_TS13_MOCK_validation_requires_independent_identity(self):
         self.x.all_gates()
-        for gate in ('Tester', 'QA'):
+        for gate in ('Validation',):
             record = next(r for r in self.f.records(STORY) if r['gate'] == gate)
             with self.assertRaisesRegex(Block, 'independent identity'):
                 self.f.record(STORY, gate, dict(record, producer_identity='mock_IMPLEMENTER'))
@@ -339,7 +340,7 @@ class ReworkTests(unittest.TestCase):
         self.x.all_gates()
         self.x.s['description'] += ' MOCK contract change'
         self.x.save()
-        self.assertEqual(self.f.rerun_order(STORY), ['Tester', 'QA'])
+        self.assertEqual(self.f.rerun_order(STORY), ['Validation', 'Code Review', 'Integration Test'])
 
     def test_TS23_MOCK_container_exit_status_propagates_all_subcommands(self):
         source = Path(__file__).resolve().parents[2]
@@ -365,6 +366,7 @@ class ReworkTests(unittest.TestCase):
             for status in (0, 1, 37, 127):
                 with self.subTest(command=command, status=status):
                     environment['FACTORY_MOCK_CONTAINER_EXIT'] = str(status)
+                    environment['FACTORY_INTEGRATION_PHASE'] = 'prepare' if command == 'integration' else ''
                     arguments = ['--write', STORY, command] if command in ('orchestrate', 'write-evidence') else [command]
                     result = subprocess.run(['bash', str(helper), *arguments], cwd=self.x.root, env=environment, capture_output=True)
                     self.assertEqual(result.returncode, status, result.stdout + result.stderr)

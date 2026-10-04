@@ -11,6 +11,11 @@ import yaml
 from policy import contract_change_reason, latest_non_comment_reviews
 
 PROVENANCE_POLICY = 'merge-commit-only policy requires preserved implementation/evidence ancestry; no squash/rebase or shallow history'
+# Well-formed non-PASS results accepted as non-authorising history (AC07 vocabulary).
+HISTORY_NONPASS = ('FAIL', 'NOT_EXECUTED', 'UNKNOWN', 'PENDING_PO', 'PARTIAL', 'PASS WITH BLOCKERS')
+COMPLETION = 'INVALID DONE completion snapshot'
+# The single independent Validation gate (ADR-0001 D4): independent identity, per-AC results, zero Critical/Major.
+INDEPENDENT_GATES = ('Validation',)
 
 
 class Block(Exception):
@@ -39,11 +44,12 @@ def parse(data):
 
 
 class Factory:
-    def __init__(self, root, revision='HEAD', github=None, archive=None):
+    def __init__(self, root, revision='HEAD', github=None, archive=None, verify_review=True):
         self.root = Path(root).resolve()
         self.revision = self.git('rev-parse', '--verify', revision + '^{commit}').decode().strip()
         self.github = github
         self.archive = archive
+        self.verify_review = verify_review
         self._gate_cache = {}
         self._prior_cache = {}
         self._provenance_cache = {}
@@ -304,7 +310,7 @@ class Factory:
         require(r['producer_role'] in roles, 'wrong producer')
         if 'IMPLEMENTER' in config['producers']:
             require(r['producer_identity'] == producer_state['implementing_identity'], 'wrong producer identity')
-        if gate in ('Tester', 'QA'):
+        if gate in INDEPENDENT_GATES:
             require(r['producer_identity'].casefold() != self.identity(story, r['source_commit'] if history else None)['implementing_identity'].casefold(), 'wrong producer independent identity')
         require(r['implementation_fingerprint'] == self.implementation(r['source_commit']), 'INVALID source fingerprint')
         if config['implementation'] and not history:
@@ -332,13 +338,15 @@ class Factory:
             return 'N/A-APPROVED'
         require(r['result'] == 'PASS', f'{r["result"]} result not PASS')
         require(isinstance(r.get('checks'), dict) and r['checks'] and all(x == 'PASS' for x in r['checks'].values()), 'INVALID structured checks')
-        if gate in ('Tester', 'QA'):
+        if gate in INDEPENDENT_GATES:
             expected = {a['id'] for a in self.story(story, r['source_commit'] if history else None)['acceptance_criteria']}
             require(set(r.get('ac_results', {})) == expected and all(x == 'PASS' for x in r['ac_results'].values()), 'INVALID per-AC results')
+            findings = r.get('findings')
+            require(isinstance(findings, dict) and all(type(findings.get(k)) is int and findings[k] == 0 for k in ('critical', 'major')), 'INVALID Validation verdict: Critical and Major findings must be 0')
         if gate == 'Unit Test':
             expected = {t['id'] for t in self.story(story, r['source_commit'] if history else None)['test_scenarios']} - {'TS24', 'TS25'}
             require(set(r.get('ts_results', {})) == expected and all(x == 'PASS' for x in r['ts_results'].values()), 'INVALID per-TS results')
-        if gate == 'Code Review' and not history:
+        if gate == 'Code Review' and not history and self.verify_review:
             self.review(story, r)
         if gate == 'Jenkins':
             require(r['checks'].get('Factory Validation') == 'PASS', 'Jenkins Factory Validation missing')
@@ -475,9 +483,10 @@ class Factory:
         s = self.story(story)
         require(s['status'] == source and source != 'DONE', 'INVALID source state')
         if target == 'BLOCKED':
-            require(s.get('blocked_from') == source and s.get('blocked_by'), 'BLOCKED requires blocked_from and blocked_by')
+            require(source in self.pre_done() and s.get('blocked_from') == source and s.get('blocked_by'), 'BLOCKED requires blocked_from and blocked_by')
             return []
         if source == 'BLOCKED':
+            require(s.get('blocked_from') in self.pre_done(), 'INVALID blocked_from must be a state before DONE')
             require(target == s.get('blocked_from'), 'BLOCKED returns only blocked_from')
             return []
         edge = f'{source}->{target}'
@@ -497,3 +506,76 @@ class Factory:
         rule = self.workflow['dispatch'][key]
         require(s['status'] == rule['state'], 'INVALID dispatch state')
         return self.preconditions(story, rule['prerequisites'])
+
+    def pre_done(self):
+        return [x for x in self.workflow['states'] if x not in ('DONE', 'BLOCKED')]
+
+    def status_at(self, story, commit):
+        """Story status at a commit; None when the Story file is absent."""
+        path = f'safe/stories/{story}.yaml'
+        entry = self.git('ls-tree', commit, '--', path)
+        if not entry.strip():
+            return None
+        oid = entry.split()[2].decode()
+        cache = self.__dict__.setdefault('_status_cache', {})
+        if oid not in cache:
+            cache[oid] = self.story(story, commit)['status']
+        return cache[oid]
+
+    def completion_snapshot(self, story):
+        """Unique commit that introduced DONE; fail closed on none/many/merge/removal."""
+        require(self.git('rev-parse', '--is-shallow-repository').strip() == b'false', f'{COMPLETION}: {PROVENANCE_POLICY}')
+        require(self.story(story)['status'] == 'DONE', f'{COMPLETION}: Story not DONE at evaluated revision')
+        graph = {}
+        for line in self.git('rev-list', '--parents', self.revision).decode().splitlines():
+            commit, *parents = line.split()
+            graph[commit] = parents
+        done = {c: self.status_at(story, c) == 'DONE' for c in graph}
+        introductions = []
+        for commit, parents in graph.items():
+            require(done[commit] or not any(done[p] for p in parents), f'{COMPLETION}: DONE removed in history at {commit[:12]} (AC04)')
+            if done[commit] and not any(done[p] for p in parents):
+                introductions.append(commit)
+        require(introductions, f'{COMPLETION}: none')
+        require(len(introductions) == 1, f'{COMPLETION}: ambiguous ({len(introductions)} introductions); {PROVENANCE_POLICY}')
+        commit = introductions[0]
+        require(len(graph[commit]) == 1, f'{COMPLETION}: merge or root introduction; {PROVENANCE_POLICY}')
+        require(self.status_at(story, graph[commit][0]) == 'QA', f'{COMPLETION}: not entered from QA (AC04)')
+        require(self.ancestor(commit, self.revision), f'{COMPLETION}: not an ancestor; {PROVENANCE_POLICY}')
+        return commit
+
+    def completion_errors(self, story):
+        """AC06 as evaluated at the completion snapshot (ADR-0001 D1)."""
+        try:
+            commit = self.completion_snapshot(story)
+            snapshot = Factory(self.root, commit, github=self.github, archive=self.archive, verify_review=self.verify_review)
+            return [f'DONE completion snapshot {commit[:12]}: {e}' for e in snapshot.preconditions(story, snapshot.workflow['transitions']['QA->DONE'])]
+        except (Block, ValueError, KeyError, TypeError, IndexError) as e:
+            return [str(e)]
+
+    def history_errors(self, story, notices):
+        """Integrity of every record at the evaluated revision; history never authorises."""
+        errors = []
+        records = self.records(story)
+        for record in records:
+            if 'gate' not in record:
+                continue
+            try:
+                require(record['gate'] in self.workflow['gates'], 'unknown gate')
+                state = self.record(story, record['gate'], record, allow_nonpass=HISTORY_NONPASS, history=True)
+                if state in ('PASS', 'N/A-APPROVED') and not self.prior_record_valid(story, record['gate'], record, history=True):
+                    notices.append(f"HISTORY {record['gate']}: out-of-order record {record['_path']} kept, non-authorising (AC16)")
+            except (Block, ValueError, KeyError, TypeError) as e:
+                errors.append(str(e))
+        for gate in sorted({r['gate'] for r in records if 'gate' in r}):
+            try:
+                self.latest_record([r for r in records if r.get('gate') == gate])
+            except Block as e:
+                errors.append(str(e))
+        return errors
+
+    def arrived(self, story):
+        """True when the completion snapshot is not reachable from the first parent (newly integrated here)."""
+        commit = self.completion_snapshot(story)
+        parents = self.git('rev-list', '--parents', '-n', '1', self.revision).decode().split()[1:]
+        return not parents or not self.ancestor(commit, parents[0])

@@ -19,7 +19,7 @@ class GitHub:
             'Authorization': 'Bearer ' + self.credential,
             'Accept': 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28'})
         try:
-            with urllib.request.urlopen(request, timeout=20) as response:
+            with urllib.request.urlopen(request, timeout=20) as response:  # nosec B310 -- GitHub requests use the literal HTTPS api.github.com origin.
                 return json.load(response)
         except Exception:
             raise Block('NOT_EXECUTED GitHub verification unavailable') from None
@@ -64,7 +64,7 @@ class JenkinsArchive:
             headers["Authorization"] = "Basic " + base64.b64encode(f"{user}:{credential}".encode()).decode()
         request = urllib.request.Request(url, headers=headers)
         try:
-            with urllib.request.urlopen(request, timeout=20) as response:
+            with urllib.request.urlopen(request, timeout=20) as response:  # nosec B310 -- Jenkins base scheme and hostname are validated above as HTTPS.
                 return response.read()
         except Exception:
             raise Block('NOT_EXECUTED Jenkins archive unavailable') from None

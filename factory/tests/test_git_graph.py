@@ -87,6 +87,7 @@ class GitGraphTests(unittest.TestCase):
 
     def test_TS21_MOCK_real_git_done_pr_merge_develop_passes(self):
         self.x.all_gates()
+        self.status('QA')
         self.status('DONE')
         self.assertEqual(jenkins(self.x.f, 'develop'), [])
         before = self.x.f.records(STORY)
@@ -99,7 +100,7 @@ class GitGraphTests(unittest.TestCase):
         self.assertEqual(jenkins(self.x.f, 'develop'), [])
 
     def test_TS11_MOCK_real_git_merge_resolution_rewrites_record_invalid(self):
-        self.unit_gates()
+        self.x.review_ready()
         _, path = self.x.record('Code Review')
         original = path.read_bytes()
         relative = path.relative_to(self.x.root).as_posix()
@@ -197,7 +198,7 @@ class GitGraphTests(unittest.TestCase):
         self.unit_gates()
         self.assertEqual(self.x.f.transition(STORY, 'IN_PROGRESS', 'DEV_COMPLETE'), [])
         self.status('DEV_COMPLETE')
-        for gate in ('Code Review', 'Integration Test', 'Tester', 'QA', 'Jenkins'):
+        for gate in ('Code Review', 'Integration Test', 'Validation', 'Jenkins'):
             self.assertEqual(self.x.f.gate(STORY, gate)[0], 'STALE_IMPLEMENTATION', gate)
         self.assertEqual(jenkins(self.x.f, f'feature/{STORY}-devops'), [])
         self.cli_jenkins(0)
@@ -207,7 +208,7 @@ class GitGraphTests(unittest.TestCase):
         self.assertIn('missing evidence', self.cli_jenkins(1))
         self.unit_gates()
         self.cli_jenkins(0)
-        self.x.record('Tester', producer_role='CODEX_DEVOPS')
+        self.x.record('Validation', producer_role='CODEX_DEVOPS')
         self.assertEqual(jenkins(self.x.f, f'feature/{STORY}-devops'), ['wrong producer'])
         self.assertIn('wrong producer', self.cli_jenkins(1))
 
@@ -216,15 +217,20 @@ class GitGraphTests(unittest.TestCase):
         self.status('DEV_COMPLETE')
         self.x.s['acceptance_criteria'].append({'id': 'AC02', 'description': 'MOCK new contract'})
         self.x.save()
-        self.assertEqual(self.x.f.gate(STORY, 'Tester')[0], 'STALE_CONTRACT')
+        self.assertEqual(self.x.f.gate(STORY, 'Validation')[0], 'STALE_CONTRACT')
         self.assertEqual(jenkins(self.x.f, f'feature/{STORY}-devops'), [])
         self.cli_jenkins(0)
 
-    def test_TS11_MOCK_real_git_optional_out_of_order_pass_is_invalid(self):
+    def test_TS11_MOCK_real_git_optional_out_of_order_pass_is_history(self):
         self.status('IN_PROGRESS')
-        self.unit_gates()
-        self.x.record('Tester', timestamp='2099-01-01T00:00:00Z')
-        self.assertIn('out-of-order historical record', self.cli_jenkins(1))
+        for gate in ('build', 'lint'):
+            self.x.record(gate)
+        self.x.record('Validation', timestamp='2099-01-01T00:00:00Z')
+        self.x.record('Unit Test')
+        self.assertEqual(jenkins(self.x.f, f'feature/{STORY}-devops'), [])
+        self.assertIn('HISTORY Validation: out-of-order record', self.cli_jenkins(0))
+        self.status('TESTING')
+        self.assertTrue(self.x.f.transition(STORY, 'TESTING', 'QA'))
 
     def test_TS11_MOCK_real_git_multiple_introductions_are_invalid(self):
         _, path = self.x.record('build')

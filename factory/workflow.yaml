@@ -11,19 +11,18 @@ gates:
   build: {producers: [IMPLEMENTER], implementation: true, contract: false, prerequisites: [], na: false}
   lint: {producers: [IMPLEMENTER], implementation: true, contract: false, prerequisites: [], na: false}
   Unit Test: {producers: [IMPLEMENTER], implementation: true, contract: false, prerequisites: [build, lint], na: false}
-  Code Review: {producers: [GITHUB], implementation: true, contract: false, prerequisites: [Unit Test], na: false}
-  Integration Test: {producers: [IMPLEMENTER], implementation: true, contract: false, prerequisites: [Unit Test, Code Review], na: true}
-  Tester: {producers: [CODEX_TESTER], implementation: true, contract: true, prerequisites: [Unit Test, Code Review, Integration Test], na: false}
-  QA: {producers: [CODEX_QA], implementation: true, contract: true, prerequisites: [Unit Test, Code Review, Integration Test, Tester], na: false}
+  Validation: {producers: [CODEX_QA], implementation: true, contract: true, prerequisites: [Unit Test], na: false}
   Jenkins: {producers: [JENKINS], implementation: true, contract: false, prerequisites: [], na: false}
+  Code Review: {producers: [GITHUB], implementation: true, contract: false, prerequisites: [Unit Test, Validation, Jenkins], na: false}
+  Integration Test: {producers: [IMPLEMENTER], implementation: true, contract: false, prerequisites: [Unit Test, Code Review], na: true}
 transitions:
   DRAFT->REFINED: []
   REFINED->READY: [DoR]
   READY->IN_PROGRESS: [DoR, dependencies]
   IN_PROGRESS->DEV_COMPLETE: [build, lint, Unit Test]
-  DEV_COMPLETE->TESTING: [Unit Test, Code Review, Integration Test]
-  TESTING->QA: [Unit Test, Code Review, Integration Test, Tester]
-  QA->DONE: [Unit Test, Code Review, Integration Test, Tester, QA, Jenkins, DoD, dependencies, blockers]
+  DEV_COMPLETE->TESTING: [Unit Test]
+  TESTING->QA: [Unit Test, Validation]
+  QA->DONE: [Unit Test, Validation, Jenkins, Code Review, Integration Test, DoD, dependencies, blockers]
 failure_paths:
   Unit Test FAIL: {from: [DEV_COMPLETE, TESTING, QA], to: [IN_PROGRESS]}
   Functional Test FAIL: {from: [TESTING], to: [IN_PROGRESS]}
@@ -32,10 +31,9 @@ failure_paths:
   requirement ambiguity: {from: [REFINED, READY, IN_PROGRESS, DEV_COMPLETE, TESTING, QA], to: [DRAFT, REFINED]}
 dispatch:
   IMPLEMENTER: {state: READY, prerequisites: [DoR, dependencies]}
-  Code Review: {state: DEV_COMPLETE, prerequisites: [Unit Test]}
-  Integration Test: {state: DEV_COMPLETE, prerequisites: [Unit Test, Code Review]}
-  CODEX_TESTER: {state: DEV_COMPLETE, prerequisites: [Unit Test, Code Review, Integration Test]}
-  CODEX_QA: {state: TESTING, prerequisites: [Unit Test, Code Review, Integration Test, Tester]}
+  CODEX_QA: {state: TESTING, prerequisites: [Unit Test]}
+  Code Review: {state: QA, prerequisites: [Unit Test, Validation, Jenkins]}
+  Integration Test: {state: QA, prerequisites: [Unit Test, Code Review]}
 commands:
   factory_build: &factory_build ./scripts/factory-runtime.sh build
   factory_lint: &factory_lint ./scripts/factory-runtime.sh lint

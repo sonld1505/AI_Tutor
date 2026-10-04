@@ -135,3 +135,19 @@ mutant-guard tests. R2-07 and R3-05 stay open (MINOR/INFO).
   guarantees are the feature-branch check (a required status check) and the arrival build.
 - CI time grows (the full unit suite runs in Factory Validation). Performance stays an R3-05 follow-up.
 - `agents/codex/tester.md` is no longer on the DONE path. It is not deleted.
+
+
+## Recovery addendum: real integration composite (2026-10-04)
+
+The recovery SA approved host Bash coordination of two canonical Python phases to
+realise D6 and AC23/AC24 without exposing the Docker socket inside a container.
+Prepare verifies the real approved review, creates the disposable clone and runs
+schema, dispatch, BLOCK and DoR checks. The host runs the actual
+`scripts/factory-jenkins.sh` composite on that same clone. Complete verifies the
+source revision, clone containment, unchanged clone HEAD and actual exit status
+before continuing transitions, evidence writing and stale detection. A failed
+composite produces non-PASS output. Every Python phase still uses AD-02; no host
+Python fallback or additional writable real-repository mount is introduced.
+
+This is a technical implementation decision from the recovery SA, not a change
+to the acceptance contract. The implementing DevOps agent recorded this decision.

@@ -7,6 +7,7 @@ import py_compile
 import re
 import subprocess
 import sys
+import tempfile
 import unittest
 from pathlib import Path
 
@@ -58,10 +59,10 @@ def orchestrate(factory, args):
     invocation = None
     if args.action == 'dispatch':
         if args.role == 'Code Review':
-            invocation = f'Request an independent GitHub PR review for {args.story}; a human requests the review. No reviewer agent role is created.'
+            invocation = f'Request the PO GitHub PR approval for {args.story} after Validation and Jenkins PASS; a human requests the review. No reviewer agent role is created.'
         elif args.role == 'Integration Test':
             actor = factory.identity(args.story)['implementing_role']
-            invocation = f'Act as {actor} for {args.story}; run the workflow Integration Test command after independent Code Review PASS. Human starts the agent.'
+            invocation = f'Act as {actor} for {args.story}; run the workflow Integration Test command after the PO PR approval (Code Review PASS). Human starts the agent.'
         else:
             invocation = f'Act as {args.role} for {args.story}; read AGENTS.md, role file and Story. Human starts the agent.'
     require(state.get("status", s["status"]) == s["status"], "INVALID state/Story mismatch")
@@ -96,47 +97,45 @@ def jenkins(factory, branch):
     match = re.fullmatch(r'feature/(US-(?:FACTORY-)?[0-9]+)-[a-z]+', branch)
     stories = [match[1]] if match else [Path(p.decode()).stem for p in factory.git('ls-tree', '-r', '--name-only', factory.revision, '--', 'safe/stories/').splitlines() if p.endswith(b'.yaml')]
     errors = []
+    notices = []
     for story in stories:
         s = factory.story(story)
         if not match and s['status'] != 'DONE':
             continue
-        target = s['status']
-        incoming = [edge for edge in factory.workflow['transitions'] if edge.endswith('->' + target)]
-        require(incoming or target in ('DRAFT', 'BLOCKED'), 'unsupported Story status')
-        for edge in incoming:
-            names = factory.workflow['transitions'][edge]
-            # Entry readiness remains valid after starting; DoR's admission status
-            # check applies only to requests to enter development.
-            if 'DoR' in names and target == 'IN_PROGRESS':
-                errors.extend(factory.dor(s, check_status=False))
-                names = [name for name in names if name != 'DoR']
-            errors.extend(factory.preconditions(story, names))
-        if target == 'DONE':
-            errors.extend(factory.preconditions(story, factory.workflow['transitions']['QA->DONE']))
-        for record in factory.records(story):
-            if 'gate' in record:
-                try:
-                    require(record['gate'] in factory.workflow['gates'], 'unknown gate')
-                    nonpass = ('FAIL', 'NOT_EXECUTED', 'UNKNOWN', 'PENDING_PO', 'PARTIAL', 'PASS WITH BLOCKERS') if match else True
-                    state = factory.record(story, record["gate"], record, allow_nonpass=nonpass, history=True)
-                    if match and state in ('PASS', 'N/A-APPROVED'):
-                        require(factory.prior_record_valid(story, record['gate'], record, history=True), f"INVALID {record['gate']}: out-of-order historical record")
-                except (Block, ValueError, KeyError, TypeError) as e:
-                    errors.append(str(e))
-        # Status preconditions above decide which gates must currently PASS.
-        # History is validated at its source snapshot; STALE and well-formed
-        # non-PASS results do not invalidate a supported earlier status.
-        for gate in {r["gate"] for r in factory.records(story) if "gate" in r}:
+        f = factory
+        if not match:
             try:
-                factory.latest_record([r for r in factory.records(story) if r.get('gate') == gate])
-            except Block as e:
-                errors.append(str(e))
-            if not match:
-                state, reasons = factory.gate(story, gate)
-                if state not in ('PASS', 'N/A-APPROVED'):
-                    errors.extend(f'{gate}: {state} {reason}' for reason in reasons)
+                fresh = factory.arrived(story)
+            except Block:
+                fresh = True  # completion_errors reports the reason
+            if not fresh:
+                # Integrated by an earlier first-parent commit: AC06 at completion and record
+                # integrity are re-checked offline; remote review/archive verification ran on arrival.
+                f = Factory(factory.root, factory.revision, github=None, archive=None, verify_review=False)
+        target = s['status']
+        if match:
+            # Feature branch: the recorded status must be supported at the tip.
+            incoming = [edge for edge in factory.workflow['transitions'] if edge.endswith('->' + target)]
+            require(incoming or target in ('DRAFT', 'BLOCKED'), 'unsupported Story status')
+            if target == 'BLOCKED' and s.get('blocked_from') not in factory.pre_done():
+                errors.append('INVALID blocked_from must be a state before DONE')
+            for edge in incoming:
+                names = factory.workflow['transitions'][edge]
+                # Entry readiness remains valid after starting; DoR's admission status
+                # check applies only to requests to enter development.
+                if 'DoR' in names and target == 'IN_PROGRESS':
+                    errors.extend(factory.dor(s, check_status=False))
+                    names = [name for name in names if name != 'DoR']
+                errors.extend(factory.preconditions(story, names))
+        if target == 'DONE':
+            # Both modes: AC06 held at the unique commit that introduced DONE.
+            errors.extend(f.completion_errors(story))
+        # Both modes: integrity of every record at the evaluated revision.
+        errors.extend(f.history_errors(story, notices))
         external = [a for r in factory.records(story) for a in r.get('artifacts', []) if 'system' in a]
-        require(not external or factory.archive is not None, 'NOT_EXECUTED Jenkins archive verification unavailable')
+        require(not external or (not match and not fresh) or factory.archive is not None, 'NOT_EXECUTED Jenkins archive verification unavailable')
+    for notice in notices:
+        print(notice)
     return errors
 
 
@@ -163,8 +162,9 @@ def main():
         if args.command == 'build':
             sources = list((factory.root / 'factory').rglob('*.py'))
             require(sources, 'zero Factory sources')
-            for i, source in enumerate(sources):
-                py_compile.compile(str(source), cfile=f'/tmp/factory-build-{i}.pyc', doraise=True)
+            with tempfile.TemporaryDirectory(prefix='factory-build-') as compiled:
+                for i, source in enumerate(sources):
+                    py_compile.compile(str(source), cfile=str(Path(compiled) / f'{i}.pyc'), doraise=True)
         elif args.command == 'lint':
             return subprocess.run(['ruff', 'check', '--no-cache', str(factory.root / 'factory')]).returncode
         elif args.command == 'unit':

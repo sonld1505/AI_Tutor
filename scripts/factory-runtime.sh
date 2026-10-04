@@ -2,6 +2,9 @@
 set -euo pipefail
 ROOT="$(git rev-parse --show-toplevel)"
 source "$ROOT/factory/runtime/contract.env"
+if [[ "${1:-}" == integration && -z "${FACTORY_INTEGRATION_PHASE:-}" ]]; then
+  exec bash "$ROOT/scripts/factory-integration.sh" "$@"
+fi
 if [[ "${FACTORY_CANONICAL_REENTRY:-}" == "$FACTORY_IMAGE" && -f /.dockerenv && -f /tmp/factory-runtime-ready && -d /tmp/deps/yaml ]]; then
   [[ "$(/usr/local/bin/python -c 'import platform; print(platform.python_version())')" == "$FACTORY_PYTHON" ]] || { echo "BLOCK canonical Python version mismatch"; exit 1; }
   echo "Runtime: $FACTORY_IMAGE Python $FACTORY_PYTHON (canonical container reentry)"
@@ -34,7 +37,8 @@ if [[ "${1:-}" == --write ]]; then
   done
 fi
 if [[ "${1:-}" == integration ]]; then
-  FIXTURE_OUTPUT="$(mktemp -d /tmp/factory-integration-output.XXXXXX)"
+  FIXTURE_OUTPUT="${FACTORY_INTEGRATION_DIRECTORY:-$(mktemp -d /tmp/factory-integration-output.XXXXXX)}"
+  [[ -d "$FIXTURE_OUTPUT" && ! -L "$FIXTURE_OUTPUT" ]] || { echo "BLOCK Integration directory invalid"; exit 1; }
   MOUNTS+=(--mount "type=bind,src=$FIXTURE_OUTPUT,dst=$FIXTURE_OUTPUT" -e "TMPDIR=$FIXTURE_OUTPUT")
 fi
 ARGS=("$@")
@@ -50,7 +54,7 @@ done
 docker run --rm --read-only --cap-drop ALL --security-opt no-new-privileges \
   --user "$(id -u):$(id -g)" --tmpfs /tmp:rw,exec,mode=1777 \
   "${MOUNTS[@]}" --workdir "$ROOT" -e PYTHONDONTWRITEBYTECODE=1 \
-  -e FACTORY_IMAGE="$FACTORY_IMAGE" -e FACTORY_GITHUB_TOKEN -e JENKINS_URL -e JENKINS_API_USER -e JENKINS_API_TOKEN -e FACTORY_PYTHON="$FACTORY_PYTHON" "$FACTORY_IMAGE" sh -eu -c '
+  -e FACTORY_INTEGRATION_PHASE -e FACTORY_INTEGRATION_DIRECTORY -e FACTORY_IMAGE="$FACTORY_IMAGE" -e FACTORY_GITHUB_TOKEN -e JENKINS_URL -e JENKINS_API_USER -e JENKINS_API_TOKEN -e FACTORY_PYTHON="$FACTORY_PYTHON" "$FACTORY_IMAGE" sh -eu -c '
     test "$(python -c "import platform; print(platform.python_version())")" = "$FACTORY_PYTHON"
     python -m pip install --disable-pip-version-check --no-cache-dir --no-deps --only-binary=:all: --require-hashes --target /tmp/deps -r factory/runtime/requirements.txt
     touch /tmp/factory-runtime-ready
