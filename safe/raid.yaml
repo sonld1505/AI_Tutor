@@ -115,6 +115,21 @@ issues:
     owner: "HUMAN_PO"
     status: OPEN
 
+  - id: I-011
+    description: >
+      Identity drift, observed 2026-10-04 by the Claude orchestrator: at 09:14:42 UTC, config.worktree
+      of US-FACTORY-003-MGMT and of the new worktree US-FACTORY-004-MGMT was set to the implementation
+      identity (AI Tutor Agent / sonldfkr2911, plus the agent SSH key). That contradicts D-006 ("never
+      PO, management or reviewer"). The PO did not approve it, and the cause is not recorded. The
+      human PO ruled (2026-10-04) that D-006 is NOT amended. US-FACTORY-003-MGMT is restored at worktree
+      scope only (user.name sonld1505, user.email sonld150521@gmail.com, core.sshCommand removed,
+      ssh -T -> sonld1505). The implementation worktree and the global config are unchanged.
+      US-FACTORY-004-MGMT still carries the agent identity: that needs a PO instruction, because this
+      correction only covered the 003 management worktree. Management commit b779eef was made as
+      sonld1505 before the drift, so no commit was made under the drifted identity in 003-MGMT.
+    blocks: []
+    owner: "HUMAN_PO"
+    status: OPEN   # 003-MGMT corrected; 004-MGMT pending PO instruction
   - id: I-010
     description: >
       US-FACTORY-003 R3-02 (MAJOR, contract-level, round-3 pre-review 2026-10-04): develop-mode
@@ -124,9 +139,17 @@ issues:
       recommendation are in docs/factory/reviews/US-FACTORY-003-R3-02-po-decision-brief-2026-10-04.md.
       Every option except G changes AC text, which needs an explicit PO exception to the Factory V2
       "do not re-contract US-FACTORY-003" directive. Not sent to Codex. Recorded by CLAUDE_SM.
+    po_decision_2026_10_04: >
+      Human PO approved Option B (completion snapshot) as recommended in the brief, with the explicit
+      exception to the Factory V2 "do not re-contract US-FACTORY-003" directive that it requires. The
+      brief's section g wording was applied verbatim to safe/stories/US-FACTORY-003.yaml: AC18 (non-feature
+      branches), AC12(d) and the TS21 develop clause. AC04, AC06 and AC10 are unchanged. Delivery: a
+      management PR to develop, then a --no-ff merge of develop into feature/US-FACTORY-003-devops. Codex
+      DevOps implements the rule in round 4 together with R3-01. This item stays OPEN, and keeps blocking
+      DONE, until the contract is on develop and an implementation that satisfies it passes its gates.
     blocks: [US-FACTORY-003]
     owner: "HUMAN_PO"
-    status: OPEN
+    status: OPEN   # decision taken 2026-10-04 (Option B); implementation pending
 
 dependencies:
   - id: D-001
@@ -194,4 +217,5 @@ dependencies:
         by sonld1505 (a login different from sonldfkr2911).
     from: "US-FACTORY-003 (Code Review and Integration Test, i.e. before TESTING; first implementation commit), every later Story's implementation commits and Code Review gate"
     to: "HUMAN_PO (GitHub admin)"
+    identity_drift_2026_10_04: "Management worktree identity drifted to sonldfkr2911 at 09:14 UTC without PO approval (I-011). PO ruling 2026-10-04: D-006 NOT amended; 003-MGMT restored to sonld1505 (worktree scope)."
     status: RESOLVED   # 2026-10-04 human PO; write-access evidence pending first approved push
