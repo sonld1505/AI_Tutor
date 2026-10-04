@@ -190,6 +190,24 @@ issues:
     blocks: []
     owner: "CLAUDE_SM (PR) / HUMAN_PO (approve + merge)"
     status: OPEN
+  - id: I-015
+    description: >
+      2026-10-04 (CLAUDE_SM, hard-stop): PO approved PR #8 (review 5405577037 by sonld1505, APPROVED,
+      commit_id 36f95d5a25bacf584ed7a27835749c7bc13125cc, 10:49:59Z; author sonldfkr2911; all PR commit
+      authors/committers sonldfkr2911; verified via real GitHub REST API; PR head = origin branch = local
+      HEAD = 36f95d5). But 36f95d5 contains no factory/evidence/US-FACTORY-003/ records (no build, lint,
+      Unit Test, Validation or Jenkins record in AC08 format) and the Story is IN_PROGRESS, not QA.
+      Per AC05/AC06/AC16 and factory/workflow.yaml, Code Review needs Unit Test, Validation and Jenkins
+      PASS records in the reviewed commit; Integration Test needs Unit Test and Code Review PASS, in QA.
+      factory/integration.py:149 enforces this, so TS24 would BLOCK immediately. TS24 NOT run (its single
+      run is preserved). Recovery needs a PO decision: either (a) the required records are committed
+      (Unit/build/lint by CODEX_DEVOPS, Validation by CODEX_QA, Jenkins record), the Story moves to QA,
+      the PR head changes, and the PO re-approves the new head before TS24; or (b) an explicit, recorded
+      PO contract amendment. Note: committing records moves the PR head, which invalidates the current
+      approval under the PO's resume instruction.
+    blocks: [US-FACTORY-003]
+    owner: "HUMAN_PO (decision) / CLAUDE_SM (coordination)"
+    status: OPEN
 
 dependencies:
   - id: D-001
