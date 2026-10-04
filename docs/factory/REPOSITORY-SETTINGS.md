@@ -16,7 +16,7 @@
 | Merge methods (squash/rebase allowed?) | UNVERIFIED (needs auth) | unauthenticated API returns `null` |
 | Host default SSH key | Authenticates as the **PO login** `sonld1505`. **No passphrase** | `ssh -T -o BatchMode=yes git@github.com` → `Hi sonld1505!`; `ssh-keygen -y -P "" -f ~/.ssh/id_ed25519` succeeds |
 | Implementation identity | `AI Tutor Agent` / `sonldfkr2911`, separate key, `IdentitiesOnly=yes`, set per worktree (D-006) | `config.worktree` of `US-FACTORY-003-devops` |
-| Management commits by Claude | Made with the PO key (for example `dbe7278..b779eef`) | `config.worktree` of `US-FACTORY-003-MGMT`: `user.name sonld1505`, no `core.sshCommand` |
+| Management commits by Claude | `sonld1505` (D-006). Between 09:14 and about 16:40 on 2026-10-04 the management worktrees used the bot identity, against D-006 (RAID I-017). Five bot-authored management commits are kept as audit history: `9648c0f`, `5e446f7`, `1d0f261`, `12f48cb`, `010f250` | `config.worktree` of `US-FACTORY-003-MGMT` and `US-FACTORY-004-MGMT`: `user.name sonld1505`, no `core.sshCommand` |
 | `gh` on host | Not logged in | `gh auth status` |
 
 **Risk.** Any process on this host can push to or merge into `develop`/`main` as the PO. Nothing on GitHub requires a
@@ -24,29 +24,41 @@ review or a status check.
 
 ## 2. Order of operations (Lean mode, 2026-10-04)
 
-GitHub never lets a PR's author approve their own PR. **All Factory commits and PRs (implementation and management)
-use the existing bot identity `sonldfkr2911` (AI Tutor Agent)**, and the PO approves them. No new account is needed. The
-orchestrator configures the management worktrees with the bot identity (worktree-scoped config, same as D-006) before
-the PO applies protection.
+**Identity follows D-006 (PO decision 2026-10-04; D-006 is authoritative and not amended).** Implementation commits and
+PRs use the bot identity `sonldfkr2911` (AI Tutor Agent). Management commits use `sonld1505`. `sonld1505` is also the PO
+and the independent human reviewer. The bot never becomes the management author unless a later PO decision explicitly
+changes D-006. An earlier version of this section said the reverse and was applied without a D-006 amendment (RAID
+I-017). It is superseded.
 
-1. Step A: management worktrees use the bot identity (orchestrator, no PO action).
+1. Step A: management worktrees use `sonld1505`, and implementation worktrees use the bot (D-006; orchestrator, no PO action).
 2. Step B: take the PO key out of unattended use on the host (§4).
 3. Step C: repository merge settings (§5).
 4. Step D: branch protection on `develop` and `main` (§6).
 5. Step E: required status check after the Jenkins job exists (D-001) (§7).
 6. Step F: verify (§8).
 
-## 3. Step A: bot identity for management worktrees (orchestrator)
+## 3. Step A: identities per D-006 (orchestrator)
+
+Management worktrees (worktree scope only; no global identity):
 
 ```bash
 for W in /home/ubuntu/AI_Tutor-worktrees/US-FACTORY-003-MGMT /home/ubuntu/AI_Tutor-worktrees/US-FACTORY-004-MGMT; do
-  git -C "$W" config --worktree user.name  "AI Tutor Agent"
-  git -C "$W" config --worktree user.email "337536168+sonldfkr2911@users.noreply.github.com"
-  git -C "$W" config --worktree core.sshCommand "ssh -i /home/ubuntu/.ssh/id_ed25519_ai_tutor_agent -o IdentitiesOnly=yes"
+  git -C "$W" config --worktree user.name  "sonld1505"
+  git -C "$W" config --worktree user.email "sonld150521@gmail.com"
+  git -C "$W" config --worktree --unset core.sshCommand || true
 done
 ```
 
+Implementation worktrees keep `AI Tutor Agent` / `337536168+sonldfkr2911@users.noreply.github.com` with the dedicated
+key (`core.sshCommand ... -o IdentitiesOnly=yes`), as configured under D-006.
+
 The bot is never on the approver list. The PO (`sonld1505`) is the only approver.
+
+**Open consequence (needs a PO interpretation before step D is applied):** GitHub does not let a PR's author or (with
+`require_last_push_approval`) its last pusher approve it. Under D-006, management commits are pushed by `sonld1505`, so
+once section 6 is applied, a management PR cannot be approved by `sonld1505` alone. Possible ways: the bot opens the
+management PR but `sonld1505` is still the last pusher; a second human approver; or a reviewed admin exception for
+management-only PRs. Not decided. Section 6 is not applied yet, so nothing is blocked today.
 
 ## 4. Step B: take the PO key out of unattended use (PO)
 
@@ -104,7 +116,8 @@ Notes:
 - `restrictions` (who may push) is only available for organisation repositories. On a personal repository, the
   required review plus `enforce_admins` is what stops direct pushes.
 - With these settings, every merge needs a PR approved by someone other than its author and last pusher. Implementation
-  PRs and management PRs are all authored by the bot `sonldfkr2911` and approved by `sonld1505`.
+  PRs are authored by the bot `sonldfkr2911` and approved by `sonld1505`. For management PRs (commits by `sonld1505`
+  under D-006), see the open consequence in section 3.
 
 ## 7. Step E: required status checks (after D-001)
 
@@ -139,4 +152,5 @@ Record the results (commands plus output, no tokens) in CHANGELOG, and close R-0
 ## 9. Interim rule until applied
 
 - Factory agents never push to `develop`/`main` and never merge PRs (convention, already in AGENTS.md).
-- Management pushes with the PO key happen only on an explicit PO instruction for that push.
+- Management commits use `sonld1505` (D-006, PO decision 2026-10-04). They are pushed only to management branches, never
+  to `develop`/`main`.

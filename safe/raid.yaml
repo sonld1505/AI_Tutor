@@ -24,7 +24,7 @@ risks:
       (squash/rebase) are not verifiable without a token (UNVERIFIED).
     probability: null
     impact: null
-    mitigation: "Human/admin: apply docs/factory/REPOSITORY-SETTINGS.md (merge commits only, protection incl. admins, required review, later required Jenkins check); Factory commits (management and implementation) use the bot identity sonldfkr2911, never the PO key; PO key removed from unattended use on the host. Until then agents must not push to develop/main (convention only). US-FACTORY-007 Q4 / AC15."
+    mitigation: "Human/admin: apply docs/factory/REPOSITORY-SETTINGS.md (merge commits only, protection incl. admins, required review, later required Jenkins check); identities follow D-006 (PO decision 2026-10-04, D-006 authoritative and not amended): implementation commits use the bot identity sonldfkr2911, management commits use sonld1505 (an earlier text here said all Factory commits use the bot; superseded, see RAID I-017 on management/US-FACTORY-003-recovery-status); the PO key is taken out of unattended use from unattended use on the host. Until then agents must not push to develop/main (convention only). US-FACTORY-007 Q4 / AC15."
     owner: "HUMAN_PO"
     status: OPEN
   - id: R-004
@@ -225,8 +225,29 @@ issues:
       0.160 runs execpolicy-allowed commands outside the sandbox; ubuntu is docker-group + NOPASSWD sudo, so
       the allow rule is the privilege boundary (T1, unverified). The negative probe of rule matching was blocked
       by the Claude Code auto-mode classifier; tests need explicit user permission. Nothing installed.
+    po_decision_2026_10_04: >
+      APPROVED IN PRINCIPLE: the scoped runtime guard of docs/factory/FACTORY-RUNTIME-GUARD.md, P1-P3/U1, and the
+      negative tests N1-N11. Constraints: no danger-full-access; no direct docker.sock for the normal Codex sandbox;
+      no change to docker.sock ownership or permissions; no broad sudo; the guard is root-owned and not writable by the
+      agent; it verifies the pinned SHA-256 of every executable/config file it delegates to before execution;
+      execution is restricted to the approved worktree and the factory runtime entrypoint; arguments are allowlisted
+      and fail closed. N1-N11 must show that raw Docker, arbitrary commands, modified runtime scripts/config, path
+      traversal and execution outside the worktree stay blocked. If Codex execpolicy cannot safely run the guard
+      outside its sandbox, STOP and report; no fallback to danger-full-access without another PO approval. After the
+      guard passes, CODEX_DEVOPS produces the canonical build, lint and Unit Test records through it.
     blocks: [US-FACTORY-003]
     owner: "HUMAN_PO (approve P1-P3/U1 and test permission) / CLAUDE_SM"
+    status: OPEN
+  - id: I-018
+    description: >
+      Credential exposure (reported by the previous orchestrator session, CURRENT-STATE.md): a broad service-journal
+      read printed the Jenkins bootstrap/admin credential into tool output. It was not rotated. PO decision 2026-10-04:
+      rotate it. The value is never printed and never goes into Git, logs, DEVBOOK, RAID or command-line arguments. The
+      replacement is stored only in a root-only secret location. Record only completion and the verification method.
+      Jenkins jobs and configuration are preserved; stop before any destructive reconfiguration. (I-017 is used on
+      management/US-FACTORY-003-recovery-status, so this item is I-018.)
+    blocks: []
+    owner: "CLAUDE_SM (execute) / HUMAN_PO (approved)"
     status: OPEN
 
 dependencies:
