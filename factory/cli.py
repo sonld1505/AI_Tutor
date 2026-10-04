@@ -40,6 +40,7 @@ def write_record(factory, story, record):
 
 
 def orchestrate(factory, args):
+    require(factory.git('rev-parse', factory.revision) == factory.git('rev-parse', 'HEAD'), 'BLOCK orchestrate revision must equal HEAD')
     errors = factory.transition(args.story, args.source, args.target, args.reason) if args.action == 'transition' else factory.dispatch(args.story, args.role)
     require(not errors, '; '.join(errors))
     s = factory.story(args.story)
@@ -68,12 +69,22 @@ def orchestrate(factory, args):
         with path.open("r+"):
             pass
     require(os.access(directory, os.W_OK), "BLOCK evidence target read-only")
+    story_text = None
+    if args.action == 'transition':
+        original = factory.blob(f'safe/stories/{args.story}.yaml').decode()
+        matches = list(re.finditer(r'^(status:[ \t]*)([^#\r\n]*?)([ \t]*(?:#[^\r\n]*)?)$', original, re.MULTILINE))
+        require(len(matches) == 1, 'INVALID single top-level status line required')
+        match = matches[0]
+        require(yaml.safe_load(match[2]) == s['status'], 'INVALID status value')
+        story_text = original[:match.start(2)] + args.target + original[match.end(2):]
+        expected = dict(s, status=args.target)
+        require(yaml.safe_load(story_text) == expected, 'INVALID status edit changed other Story content')
     # All validation has completed before the first write.
+    require(factory.git('rev-parse', factory.revision) == factory.git('rev-parse', 'HEAD'), 'BLOCK HEAD changed during orchestration')
     with target.open('x') as f:
         json.dump(event, f, indent=2)
     if args.action == 'transition':
-        s['status'] = args.target
-        factory.path(f'safe/stories/{args.story}.yaml').write_text(yaml.safe_dump(s, sort_keys=False))
+        factory.path(f'safe/stories/{args.story}.yaml').write_text(story_text)
         state['status'] = args.target
     state_path.write_text(json.dumps(state, indent=2))
     if args.action == 'dispatch':
@@ -92,7 +103,13 @@ def jenkins(factory, branch):
         incoming = [edge for edge in factory.workflow['transitions'] if edge.endswith('->' + target)]
         require(incoming or target in ('DRAFT', 'BLOCKED'), 'unsupported Story status')
         for edge in incoming:
-            errors.extend(factory.preconditions(story, factory.workflow['transitions'][edge]))
+            names = factory.workflow['transitions'][edge]
+            # Entry readiness remains valid after starting; DoR's admission status
+            # check applies only to requests to enter development.
+            if 'DoR' in names and target == 'IN_PROGRESS':
+                errors.extend(factory.dor(s, check_status=False))
+                names = [name for name in names if name != 'DoR']
+            errors.extend(factory.preconditions(story, names))
         if target == 'DONE':
             errors.extend(factory.preconditions(story, factory.workflow['transitions']['QA->DONE']))
         for record in factory.records(story):
@@ -116,7 +133,6 @@ def main():
     parser.add_argument('command', choices=['build', 'lint', 'unit', 'integration', 'dor', 'status', 'validate-gate', 'can-transition', 'can-dispatch', 'orchestrate', 'write-evidence', 'jenkins'])
     parser.add_argument('--root', default=os.getcwd())
     parser.add_argument('--revision', default='HEAD')
-    parser.add_argument('--workflow')
     parser.add_argument('--story')
     parser.add_argument('--gate')
     parser.add_argument('--role')
@@ -130,7 +146,7 @@ def main():
     parser.add_argument('--branch', default=os.environ.get('BRANCH_NAME', ''))
     args = parser.parse_args()
     try:
-        factory = Factory(args.root, args.revision, args.workflow, github=GitHub(os.environ.get("FACTORY_GITHUB_TOKEN")), archive=JenkinsArchive() if args.command == "jenkins" else None)
+        factory = Factory(args.root, args.revision, github=GitHub(os.environ.get("FACTORY_GITHUB_TOKEN")), archive=JenkinsArchive() if args.command == "jenkins" else None)
         errors = []
         if args.command == 'build':
             sources = list((factory.root / 'factory').rglob('*.py'))
@@ -165,7 +181,7 @@ def main():
                 print(f'{gate}: {state} {"; ".join(reasons)}')
                 if state not in ('PASS', 'N/A-APPROVED'):
                     errors.append(gate)
-            print('Rerun in workflow prerequisite order: ' + ', '.join(factory.workflow['gates']))
+            print('Rerun in workflow prerequisite order: ' + ', '.join(factory.rerun_order(args.story)))
         elif args.command == 'validate-gate':
             state, errors = factory.gate(args.story, args.gate)
             require(state in ('PASS', 'N/A-APPROVED'), f'{args.gate}: {state}; {errors}')

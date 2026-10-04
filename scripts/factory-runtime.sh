@@ -15,6 +15,12 @@ COMMON="$(git rev-parse --path-format=absolute --git-common-dir)"
 GITDIR="$(git rev-parse --absolute-git-dir)"
 MOUNTS=(--mount "type=bind,src=$ROOT,dst=$ROOT,readonly" --mount "type=bind,src=$COMMON,dst=$COMMON,readonly")
 if [[ "$GITDIR" != "$COMMON" ]]; then MOUNTS+=(--mount "type=bind,src=$GITDIR,dst=$GITDIR,readonly"); fi
+if [[ "${1:-}" == unit ]]; then
+  RUNTIME_TEST_OUTPUT="$(mktemp -d /tmp/factory-runtime-test.XXXXXX)"
+  trap 'RUNTIME_EXIT=$?; rm -rf "$RUNTIME_TEST_OUTPUT" || :; exit "$RUNTIME_EXIT"' EXIT
+  bash "$ROOT/scripts/factory-runtime-test.sh" "$ROOT" "$RUNTIME_TEST_OUTPUT"
+  MOUNTS+=(--mount "type=bind,src=$RUNTIME_TEST_OUTPUT/report.json,dst=$RUNTIME_TEST_OUTPUT/report.json,readonly" -e "FACTORY_RUNTIME_TEST_REPORT=$RUNTIME_TEST_OUTPUT/report.json")
+fi
 # No directory-wide writable repository mount. Existing exact targets only.
 if [[ "${1:-}" == --write ]]; then
   shift
@@ -41,7 +47,7 @@ for ((i=0; i<${#ARGS[@]}; i++)); do
     fi
   fi
 done
-exec docker run --rm --read-only --cap-drop ALL --security-opt no-new-privileges \
+docker run --rm --read-only --cap-drop ALL --security-opt no-new-privileges \
   --user "$(id -u):$(id -g)" --tmpfs /tmp:rw,exec,mode=1777 \
   "${MOUNTS[@]}" --workdir "$ROOT" -e PYTHONDONTWRITEBYTECODE=1 \
   -e FACTORY_IMAGE="$FACTORY_IMAGE" -e FACTORY_GITHUB_TOKEN -e JENKINS_URL -e JENKINS_API_USER -e JENKINS_API_TOKEN -e FACTORY_PYTHON="$FACTORY_PYTHON" "$FACTORY_IMAGE" sh -eu -c '

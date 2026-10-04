@@ -36,23 +36,16 @@ def parse(data):
     return value
 
 
-def timestamp_key(record):
-    try:
-        value = datetime.datetime.fromisoformat(str(record.get("timestamp", "")).replace("Z", "+00:00"))
-        return value if value.tzinfo is not None else datetime.datetime.max.replace(tzinfo=datetime.UTC)
-    except (ValueError, TypeError):
-        return datetime.datetime.max.replace(tzinfo=datetime.UTC)
-
-
 class Factory:
-    def __init__(self, root, revision='HEAD', workflow=None, github=None, archive=None):
+    def __init__(self, root, revision='HEAD', github=None, archive=None):
         self.root = Path(root).resolve()
-        self.revision = revision
+        self.revision = self.git('rev-parse', '--verify', revision + '^{commit}').decode().strip()
         self.github = github
         self.archive = archive
         self._gate_cache = {}
         self._prior_cache = {}
-        self.workflow = parse((Path(workflow) if workflow else self.root / 'factory/workflow.yaml').read_text())
+        self._provenance_cache = {}
+        self.workflow = parse(self.blob('factory/workflow.yaml'))
         self.schema()
 
     def git(self, *args):
@@ -68,6 +61,10 @@ class Factory:
         for key in ('gates', 'transitions', 'failure_paths', 'dispatch', 'commands'):
             require(isinstance(w.get(key), dict) and w[key], f'INVALID workflow {key}')
         require(isinstance(w.get('story_implementers'), dict), 'INVALID story implementing roles')
+        review = w.get('github_review')
+        if review is not None:
+            require(isinstance(review, dict) and re.fullmatch(r'[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+', review.get('repository', '')), 'INVALID review repository')
+            require(isinstance(review.get('approved_reviewers'), list) and review['approved_reviewers'] and all(isinstance(x, str) and x for x in review['approved_reviewers']), 'INVALID approved reviewers')
         for roles in w['story_implementers'].values():
             require(isinstance(roles, list) and roles and all(r in w['implementing_roles'] for r in roles), 'INVALID implementing role mapping')
         names = set(w['gates']) | {'DoR', 'DoD', 'dependencies', 'blockers'}
@@ -135,14 +132,15 @@ class Factory:
         material['contract_refs'] = {p: self.git('rev-parse', f'{revision or self.revision}:{p}').decode().strip() for p in sorted(refs)}
         return digest(canonical(material))
 
-    def dor(self, s):
+    def dor(self, s, check_status=True):
         require(isinstance(s, dict) and isinstance(s.get("definition_of_ready"), dict), "DoR mapping required")
         template = parse(self.blob('safe/templates/definition-of-ready.yaml'))['definition_of_ready']
+        require(isinstance(template, dict) and template, 'INVALID empty DoR template')
         errors = [f'DoR {k} must be boolean true' for k in template if s.get('definition_of_ready', {}).get(k) is not True]
         errors.extend(f"DoR missing required section {key}" for key in ("id", "title", "status", "acceptance_criteria", "test_scenarios", "definition_of_ready") if key not in s)
         if not isinstance(s.get("id"), str) or re.fullmatch(r"US-(?:FACTORY-)?[0-9]+", s["id"]) is None:
             errors.append("DoR unknown Story id")
-        if s.get('status') not in ('REFINED', 'READY'):
+        if check_status and s.get('status') not in ('REFINED', 'READY'):
             errors.append('DoR status must be REFINED or READY')
         ac = s.get('acceptance_criteria')
         if not isinstance(ac, list) or not ac or any(not isinstance(a, dict) or not str(a.get('description', '')).strip() for a in ac):
@@ -152,6 +150,28 @@ class Factory:
         if s.get('open_questions', []):
             errors.append('DoR open_questions non-empty')
         return errors
+
+    def introduced(self, path):
+        """Unique first introduction, with immutable contents, in this Git history."""
+        revision = self.git('rev-parse', self.revision).decode().strip()
+        key = (revision, path)
+        if key in self._provenance_cache:
+            return self._provenance_cache[key]
+        additions = self.git('log', '--full-history', '--diff-filter=A', '--format=%H', revision, '--', path).decode().splitlines()
+        require(len(additions) == 1, 'INVALID ambiguous evidence introduction')
+        introduction = additions[0]
+        require(self.blob(path, introduction) == self.blob(path), 'INVALID evidence rewritten; append a new record')
+        changes = self.git('log', '--full-history', '--format=%H', revision, '--', path).decode().splitlines()
+        require(changes == additions, 'INVALID evidence history rewritten')
+        self._provenance_cache[key] = introduction
+        return introduction
+
+    def ancestor(self, earlier, later, strict=False):
+        if strict and earlier == later:
+            return False
+        result = subprocess.run(['git', '-C', str(self.root), 'merge-base', '--is-ancestor', earlier, later], capture_output=True)
+        require(result.returncode in (0, 1), 'INVALID ancestry unavailable')
+        return result.returncode == 0
 
     def records(self, story):
         prefix = f'factory/evidence/{story}/'
@@ -166,6 +186,9 @@ class Factory:
             if Path(p).suffix != '.md':
                 record = parse(self.blob(p))
                 if 'gate' in record or 'action' not in record:
+                    # Reserved provenance is derived, never supplied by a producer.
+                    record['_path'] = p
+                    record['_introduced'] = self.introduced(p)
                     records.append(record)
         return records
 
@@ -206,17 +229,34 @@ class Factory:
 
     def review(self, story, record):
         require(self.github is not None, 'NOT_EXECUTED GitHub review not verified')
+        policy = self.workflow.get('github_review')
+        require(policy is not None, 'NOT_EXECUTED review authority policy unavailable at revision')
+        require(record.get('repository', '').casefold() == policy['repository'].casefold(), 'review wrong repository')
         pr, commits, reviews = self.github(record)
+        require(pr['base']['repo']['full_name'].casefold() == policy['repository'].casefold(), 'review wrong base repository')
+        implementing_role = self.identity(story)['implementing_role']
+        require(pr['head']['ref'] == f'feature/{story}-' + implementing_role.removeprefix('CODEX_').lower(), 'review wrong PR head branch')
+        require(pr.get('commits') == len(commits), 'review incomplete commit list')
         require(all((c.get('author') or {}).get('login') and (c.get('committer') or {}).get('login') for c in commits), 'review unresolved commit login')
-        reviews = sorted(reviews, key=lambda r: (r['submitted_at'], r['id']))
+        reviews = sorted((r for r in reviews if r.get('state') != 'PENDING'), key=lambda r: (r['submitted_at'], r['id']))
         non_comment = latest_non_comment_reviews(reviews)
         require(not any(r['state'] == 'CHANGES_REQUESTED' for r in non_comment.values()), 'review CHANGES_REQUESTED')
         r = next((r for r in non_comment.values() if r['id'] == record.get('review_id') and r['state'] == 'APPROVED'), None)
         require(r is not None, 'review not verified APPROVED')
         forbidden = {pr['user']['login'], self.identity(story)['implementing_identity']}
         forbidden.update(c[k]['login'] for c in commits for k in ('author', 'committer'))
-        require(r['user']['login'] not in forbidden, 'review self-approval')
-        require(record['producer_identity'] == r['user']['login'], 'review identity mismatch')
+        login = r['user']['login'].casefold()
+        require(login not in {x.casefold() for x in forbidden}, 'review self-approval')
+        require(login in {x.casefold() for x in policy['approved_reviewers']}, 'review unapproved reviewer')
+        require(r.get('author_association') in ('OWNER', 'MEMBER', 'COLLABORATOR'), 'review association lacks write authority')
+        require(record['producer_identity'].casefold() == login, 'review identity mismatch')
+        require(record.get('review_submitted_at') == r['submitted_at'], 'review server submission mismatch')
+        submitted = datetime.datetime.fromisoformat(r['submitted_at'].replace('Z', '+00:00'))
+        claimed = datetime.datetime.fromisoformat(record['timestamp'].replace('Z', '+00:00'))
+        require(submitted.tzinfo is not None and claimed >= submitted, 'review record predates server submission')
+        # The server-reviewed snapshot must already contain valid Unit evidence.
+        snapshot = Factory(self.root, r['commit_id'], github=self.github)
+        require(not snapshot.preconditions(story, self.workflow['gates']['Code Review']['prerequisites']), 'review out-of-order reviewed snapshot')
         require(self.implementation(r['commit_id']) == self.implementation(), 'STALE_IMPLEMENTATION reviewed commit')
 
     def record(self, story, gate, r, allow_nonpass=False, history=False):
@@ -234,6 +274,8 @@ class Factory:
         require(r['producer_role'] in roles, 'wrong producer')
         if 'IMPLEMENTER' in config['producers']:
             require(r['producer_identity'] == producer_state['implementing_identity'], 'wrong producer identity')
+        if gate in ('Tester', 'QA'):
+            require(r['producer_identity'].casefold() != self.identity(story, r['source_commit'] if history else None)['implementing_identity'].casefold(), 'wrong producer independent identity')
         require(r['implementation_fingerprint'] == self.implementation(r['source_commit']), 'INVALID source fingerprint')
         if config['implementation'] and not history:
             require(r['implementation_fingerprint'] == self.implementation(), 'STALE_IMPLEMENTATION')
@@ -244,8 +286,9 @@ class Factory:
                 require(reason is None, reason)
         if 'IMPLEMENTER' in config['producers']:
             require(r.get('command') == self.command(story, gate), 'INVALID gate command')
+        artifact_factory = Factory(self.root, r['source_commit'], github=self.github, archive=self.archive) if history else self
         for a in r['artifacts']:
-            self.artifact(a)
+            artifact_factory.artifact(a)
         if allow_nonpass and r["result"] in ("FAIL", "NOT_EXECUTED", "UNKNOWN", "PENDING_PO"):
             require(isinstance(r.get("checks"), dict) and r["checks"], "INVALID structured checks")
             return r["result"]
@@ -280,14 +323,37 @@ class Factory:
 
     def _prior_record_valid(self, story, gate, record):
         try:
+            require(self.ancestor(record['source_commit'], record['_introduced'], strict=True), 'INVALID execution snapshot provenance')
             self.record(story, gate, record)
             for parent in self.workflow["gates"][gate]["prerequisites"]:
-                earlier = [r for r in self.records(story) if r.get("gate") == parent and timestamp_key(r) <= timestamp_key(record)]
+                earlier = [r for r in self.records(story) if r.get("gate") == parent and self.precedes(r, record)]
                 if not any(self.prior_record_valid(story, parent, r) for r in earlier):
                     return False
             return True
         except (Block, ValueError, KeyError, TypeError):
             return False
+
+    def precedes(self, prerequisite, dependent):
+        """Prerequisite was committed before the dependent's execution snapshot."""
+        return self.ancestor(prerequisite['_introduced'], dependent['source_commit']) and self.ancestor(dependent['source_commit'], dependent['_introduced'], strict=True)
+
+    def latest_record(self, records):
+        require(records, 'missing evidence')
+        newest = [r for r in records if all(x is r or self.ancestor(x['_introduced'], r['_introduced'], strict=True) for x in records)]
+        require(len(newest) == 1, 'INVALID ambiguous latest evidence')
+        return newest[0]
+
+    def rerun_order(self, story):
+        order = []
+        def visit(gate):
+            if gate in order:
+                return
+            for parent in self.workflow['gates'][gate]['prerequisites']:
+                visit(parent)
+            order.append(gate)
+        for gate in self.workflow['gates']:
+            visit(gate)
+        return [g for g in order if self.gate(story, g)[0] not in ('PASS', 'N/A-APPROVED')]
 
     def gate(self, story, gate, stack=()):
         if not stack:
@@ -311,13 +377,13 @@ class Factory:
         candidates = [r for r in self.records(story) if r.get('gate') == gate]
         if not candidates:
             return 'MISSING', errors + ['missing evidence']
-        # Newest record wins. Older records remain immutable history.
-        r = max(candidates, key=timestamp_key)
         try:
+            r = self.latest_record(candidates)
+            require(self.ancestor(r['source_commit'], r['_introduced'], strict=True), 'INVALID execution snapshot provenance')
             state = self.record(story, gate, r)
             for parent in self.workflow['gates'][gate]['prerequisites']:
                 prior = [x for x in self.records(story) if x.get('gate') == parent]
-                require(any(timestamp_key(x) <= timestamp_key(r) and self.prior_record_valid(story, parent, x) for x in prior), "out-of-order record")
+                require(any(self.precedes(x, r) and self.prior_record_valid(story, parent, x) for x in prior), "out-of-order record")
             if errors:
                 return 'INVALID', errors
             return state, []
@@ -355,6 +421,7 @@ class Factory:
             elif name == 'DoD':
                 dod = s.get('definition_of_done', {})
                 keys = parse(self.blob('safe/templates/definition-of-done.yaml'))['definition_of_done']
+                require(isinstance(keys, dict) and keys, 'INVALID empty DoD template')
                 refs = dod.get('evidence', {})
                 errors.extend(f'DoD {k} missing true/evidence' for k in keys if dod.get(k) is not True or not isinstance(refs, dict) or not refs.get(k))
                 if isinstance(refs, dict):

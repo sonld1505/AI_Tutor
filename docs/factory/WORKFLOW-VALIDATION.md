@@ -1,9 +1,12 @@
 # Factory workflow validation (US-FACTORY-003)
 
 This is Factory tooling, not product functionality. It does not close any defect,
-RAID item or Story. Changes remain uncommitted pending an approved agent identity.
+RAID item or Story. The initial implementation was committed as `42021fe`.
+This rework follows the independent pre-review FAIL of 2026-10-04; canonical
+host validation and orchestrator commit remain separate steps.
 
-`factory/workflow.yaml` is the policy definition. It defines states, transitions,
+`factory/workflow.yaml` **at the evaluated Git revision** is the policy definition.
+Working-tree edits are ignored; there is no `--workflow` override. It defines states, transitions,
 failure paths, dispatch prerequisites, producers, fingerprint classes, material
 keys, external systems, N/A eligibility and Factory commands. Missing/unreadable
 or invalid definitions block every entry point. Unknown evidence is never PASS.
@@ -47,7 +50,10 @@ committing those real management records belongs to the Scrum Master/human, not
 this implementation. No write occurs on validation BLOCK. On PASS the command
 records an event and prints the dispatch invocation; a human starts the agent.
 It never launches an agent, commits, merges, pushes or deploys. Uncommitted Story
-edits are rejected rather than overwritten. State records include the implementing
+edits are rejected rather than overwritten. Orchestration requires the evaluated
+revision to equal HEAD. Transitions edit only the single top-level status value,
+re-parse to verify that nothing else changed, and preserve comments and key order.
+State records include the implementing
 role and approved identity. Commit produced records before subsequent evaluation;
 Git objects, not uncommitted claims, are authoritative.
 
@@ -72,10 +78,31 @@ and refuses to write Code Review claims from the implementing role:
 ./scripts/factory-runtime.sh --write US-101 write-evidence --story US-101 --record-file producer-result.json
 ```
 
-Records are append-only. A new record does not rewrite history. The latest record
-for a gate must be valid, and its prerequisites must precede it. Historical stale
+Records are append-only. A new record does not rewrite history. Ordering uses Git
+ancestry, never producer timestamps or Git author/committer dates. Each record path
+must have one unique introduction commit in the evaluated history and unchanged
+contents since introduction. A record's `source_commit` must strictly precede its
+introduction. Every prerequisite must have been introduced at or before that source
+snapshot, and its own prerequisite chain must be valid. The source tree thus hashes
+the exact committed prerequisite records available to the producer. A prerequisite
+added later cannot repair an earlier out-of-order run, even with backdated or future
+record timestamps. Records committed together cannot authorise one another.
+The latest record is the unique introduction descendant of all earlier records for
+that gate; incomparable branches or duplicate records in one commit BLOCK rather
+than picking an arbitrary winner. Complete history is required; insufficient Git
+objects or ambiguous provenance BLOCK. Review IDs and `review_submitted_at` are
+immutable references to the GitHub server response; the latter must match server
+`submitted_at`. A review record claiming creation before server submission BLOCKs
+as inconsistent; a later claimed timestamp alone never proves ordering. The
+server-reviewed commit must itself contain valid Unit evidence.
+This provides ordering through committed snapshots and the server-reviewed snapshot,
+without claiming caller-controlled wall-clock values prove execution order.
+Historical stale
 records remain available but do not authorise a transition. Raw local execution
 logs belong under gitignored `factory/logs/<story>/<role>/`, never in evidence.
+Historical artifact hashes are checked at their source revision; current records
+must still match the evaluated revision. Rerun output lists only unsatisfied gates
+in the workflow's prerequisite order.
 
 Implementation fingerprints hash sorted Git tree entries (paths, modes and object
 IDs), excluding explicitly classified non-implementation paths: `safe/`, evidence, process state,
@@ -87,11 +114,28 @@ Implementation changes stale all bound gates and their dependents. Contract
 changes stale Tester and QA and their dependents. Rerun in prerequisite order.
 
 Code Review requires real read-only GitHub API verification at evaluation time.
-The adapter paginates PR commits/reviews, verifies independent logins, rejects
+The workflow pins repository `sonld1505/AI_Tutor` and the approved independent human
+reviewer `sonld1505` (RAID D-006). The PR base repository must match and its head must
+be `feature/<story>-<implementing-role>`. The chosen PR number identifies a PR only
+within those constraints; the record cannot choose another repository or branch.
+The reviewer needs OWNER, MEMBER or COLLABORATOR association and must differ from
+the PR author, every commit author/committer, and the implementing identity. All
+GitHub login comparisons, including latest-review grouping, ignore case.
+The adapter paginates PR commits/reviews, checks the returned commit count against
+the PR's server count (including GitHub's 250-commit cap), verifies independent logins, rejects
 unresolved authors/committers, and compares the reviewed local commit fingerprint.
+Unsubmitted PENDING reviews do not withdraw submitted decisions. Revisions predating
+the authority policy cannot pass Code Review; no default reviewer authority exists.
 `FACTORY_GITHUB_TOKEN` is supplied outside Git; values are never printed. Without
 credentials/connectivity, review is NOT_EXECUTED. No live GitHub call was run by
 this implementation dispatch. No new reviewer role exists; records use GITHUB.
+Use a read-only fine-grained token restricted to this repository, with Pull requests:
+Read and the automatically required Metadata: Read. It needs no write permission
+and performs only GET requests. Configure it in the local environment or Jenkins
+credential store; Jenkins administrators must inject it into the stage environment.
+No credential value belongs in a record, document, command output or URL.
+Permission reference: [GitHub list-reviews documentation](https://docs.github.com/en/rest/pulls/reviews#list-reviews-for-a-pull-request).
+Commit completeness reference: [GitHub list-commits documentation](https://docs.github.com/en/rest/pulls/pulls#list-commits-on-a-pull-request).
 
 `factory/policy.py` applies the approved C1–C3 contract. A reviewer's latest
 non-comment review controls approval and change requests; later comments withdraw
@@ -107,7 +151,10 @@ Failed execution/missing tools/configuration are not N/A. US-FACTORY-003 allows 
 
 `Factory Validation` is the only Jenkinsfile addition, immediately after Checkout.
 `factory-jenkins.sh` calls the same CLI. Feature branches validate the named Story's
-status and evidence; other branches validate DONE Stories. External references are
+status and evidence; other branches validate DONE Stories.
+IN_PROGRESS checks readiness content and dependencies without applying the READY-only
+admission status rule; the next DEV_COMPLETE transition still needs build/lint/Unit.
+External references are
 read from the Jenkins archive at `JENKINS_URL` (HTTPS, no credential-bearing URL).
 Missing/inaccessible/mismatched archives block completion. This mechanism has not
 been verified against a real Jenkins job. Optional authenticated archive reads use
@@ -120,7 +167,8 @@ The additive Integration command is registered as `factory_integration`:
 ```
 
 It refuses to begin before Unit Test and real independent Code Review PASS. In a
-disposable local clone it exercises schema load, supervised dispatch PASS/BLOCK,
+disposable local clone it exercises schema load, supervised dispatch PASS/BLOCK and
+a READY → IN_PROGRESS transition,
 the evidence writer, shell DoR delegation, local Jenkins entry, both fingerprints
 and stale detection after fixture Git object commits. Its GitHub check verifies
 the actual Story's review through the real API. No MOCK adapters are used. The
@@ -129,6 +177,10 @@ directory and is explicitly NON-AUTHORITATIVE. A human must promote it through t
 writer and commit durable evidence before evaluation. The command has not been
 executed here. Failed attempts produce FAIL/NOT_EXECUTED structured per-step output;
 promotion into Git-tracked evidence is a separate supervised writer operation.
+Each attempt has its own short `integration-summary.md` with the component results;
+it does not reuse Code Review artifacts. Promote and commit that summary first,
+then use the writer to bind the result record to the current source revision. Neither
+the disposable output nor its draft references authorise a gate before promotion.
 
 The AD-02 runtime contract is `factory/runtime/contract.env`. Image and version
 were selected from this clean worktree, pulled and checked independently. All
@@ -141,6 +193,14 @@ requested Story/state/evidence targets gain write mounts; `/tmp` is ephemeral
 runtime/fixture storage. UID/GID match the invoking user. Nested shell delegation
 reuses the marked, already-verified canonical container. US-FACTORY-002 must adopt
 this contract during recovery; its uncommitted runtime was not read or copied.
+The host-side canonical `unit` command first runs `scripts/factory-runtime-test.sh`:
+two real Docker invocations of the helper on a disposable MOCK repository, including
+`--write`. The workload is a labelled probe, while Docker's actual mounts and security
+flags are preserved. It checks read access, denied writes outside the exact targets,
+allowed Story/state/evidence writes, and host UID/GID ownership. A read-only report
+is supplied to TS27; missing or failed probes fail the unit command. No probe writes
+to the real repository. Direct in-container unit entry without this host probe report
+fails TS27 instead of skipping it.
 
 After out-of-order execution: return via an explicit failure path, for example
 QA → DEV_COMPLETE with `DoD FAIL: missing independent review`; retain previous

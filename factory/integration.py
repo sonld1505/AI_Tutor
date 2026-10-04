@@ -29,7 +29,7 @@ def execute_components(factory, story, steps):
     from cli import jenkins, orchestrate, write_record
     require(not factory.preconditions(story, factory.workflow['dispatch']['Integration Test']['prerequisites']), 'Integration prerequisites BLOCK')
     # Verify the Story's own approved review through the REAL injected production adapter.
-    review = max((r for r in factory.records(story) if r.get('gate') == 'Code Review'), key=lambda r: r['timestamp'])
+    review = factory.latest_record([r for r in factory.records(story) if r.get('gate') == 'Code Review'])
     factory.review(story, review)
     clone = Path(tempfile.mkdtemp(prefix='factory-integration-')) / 'repo'
     subprocess.run(['git', 'clone', '--no-hardlinks', '--no-checkout', str(factory.root), str(clone)], capture_output=True, check=True)
@@ -64,6 +64,7 @@ def execute_components(factory, story, steps):
     args = Namespace(story=fixture_id, action='dispatch', role='CODEX_DEVOPS', identity='integration_fixture', source=None, target=None, reason=None)
     orchestrate(f, args)
     commit_fixture(clone)
+    f = Factory(clone)
     steps['orchestrator dispatch PASS'] = 'PASS'
     args.role = 'CODEX_TESTER'
     before = story_path.read_bytes(), state_path.read_bytes(), sorted(p.name for p in evidence.iterdir())
@@ -81,23 +82,34 @@ def execute_components(factory, story, steps):
     stage = subprocess.run(['bash', str(clone / 'scripts/factory-jenkins.sh')], cwd=clone, env={**__import__('os').environ, 'BRANCH_NAME': f'feature/{fixture_id}-devops'}, capture_output=True)
     require(stage.returncode == 0, 'Jenkins shell entry FAIL')
     steps['Jenkins stage entry point'] = 'PASS'
+    args = Namespace(story=fixture_id, action='transition', role=None, identity=None, source='READY', target='IN_PROGRESS', reason=None)
+    orchestrate(f, args)
+    commit_fixture(clone)
+    f = Factory(clone)
+    require(f.story(fixture_id)['status'] == 'IN_PROGRESS', 'orchestrator transition FAIL')
+    s['status'] = 'IN_PROGRESS'
+    steps['orchestrator transition PASS'] = 'PASS'
     for index, source in enumerate((clone / 'factory').rglob('*.py')):
         py_compile.compile(str(source), cfile=f'/tmp/integration-{index}.pyc', doraise=True)
     write_record(f, fixture_id, {'story_id': fixture_id, 'gate': 'build', 'result': 'PASS', 'producer_role': 'CODEX_DEVOPS', 'producer_identity': 'integration_fixture', 'command': f.command(fixture_id, 'build'), 'checks': {'byte-compilation': 'PASS', 'schema': 'PASS'}, 'artifacts': [{'path': str(proof.relative_to(clone)), 'sha256': digest(proof.read_bytes())}]})
     commit_fixture(clone)
+    f = Factory(clone)
     steps['evidence writer'] = 'PASS'
     old_implementation, old_contract = f.implementation(), f.contract(fixture_id)
     (clone / 'integration-fixture-source.txt').write_text('Implementation change for stale detection')
     s['description'] = 'Changed acceptance contract'
     story_path.write_text(yaml.safe_dump(s))
     commit_fixture(clone)
+    f = Factory(clone)
     require(old_implementation != f.implementation() and old_contract != f.contract(fixture_id), 'fingerprints did not change')
     require(f.gate(fixture_id, 'build')[0] == 'STALE_IMPLEMENTATION', 'stale detection FAIL')
     steps['both fingerprints and stale detection after commit'] = 'PASS'
     output = clone / f'factory/evidence/{story}/integration-result.json'
     output.parent.mkdir(parents=True, exist_ok=True)
+    summary = output.parent / 'integration-summary.md'
+    summary.write_text('REAL Integration component results\n\n' + json.dumps(steps, indent=2) + '\n')
     # Successful result includes the real integration scenario outcome.
-    record = {'story_id': story, 'gate': 'Integration Test', 'result': 'PASS', 'producer_role': factory.identity(story)['implementing_role'], 'producer_identity': factory.identity(story)['implementing_identity'], 'source_commit': revision, 'implementation_fingerprint': factory.implementation(), 'acceptance_contract_fingerprint': factory.contract(story), 'timestamp': datetime.datetime.now(datetime.UTC).isoformat().replace('+00:00', 'Z'), 'checks': steps, 'artifacts': review['artifacts']}
+    record = {'story_id': story, 'gate': 'Integration Test', 'result': 'PASS', 'producer_role': factory.identity(story)['implementing_role'], 'producer_identity': factory.identity(story)['implementing_identity'], 'source_commit': revision, 'implementation_fingerprint': factory.implementation(), 'acceptance_contract_fingerprint': factory.contract(story), 'timestamp': datetime.datetime.now(datetime.UTC).isoformat().replace('+00:00', 'Z'), 'checks': steps, 'artifacts': [{'path': str(summary.relative_to(clone)), 'sha256': digest(summary.read_bytes())}]}
     record["ts_results"] = {"TS24": "PASS"}
     record['command'] = factory.command(story, 'Integration Test')
     output.write_text(json.dumps(record, indent=2))
@@ -111,14 +123,14 @@ def run(factory, story):
     """Preconditions block before execution; executed attempts preserve step results."""
     prerequisites = factory.workflow['dispatch']['Integration Test']['prerequisites']
     require(not factory.preconditions(story, prerequisites), 'Integration prerequisites BLOCK')
-    required_steps = ('own GitHub approved review', 'workflow schema', 'orchestrator dispatch PASS', 'orchestrator BLOCK without writes', 'validate-story.sh delegation', 'Jenkins stage entry point', 'evidence writer', 'both fingerprints and stale detection after commit')
+    required_steps = ('own GitHub approved review', 'workflow schema', 'orchestrator dispatch PASS', 'orchestrator BLOCK without writes', 'validate-story.sh delegation', 'Jenkins stage entry point', 'orchestrator transition PASS', 'evidence writer', 'both fingerprints and stale detection after commit')
     steps = {step: "NOT_EXECUTED" for step in required_steps}
     try:
         return execute_components(factory, story, steps)
     except (Block, OSError, ValueError, KeyError, TypeError, AssertionError, subprocess.SubprocessError, py_compile.PyCompileError, yaml.YAMLError) as error:
         output_dir = Path(tempfile.mkdtemp(prefix='factory-integration-failed-'))
         result = 'NOT_EXECUTED' if isinstance(error, Block) and 'NOT_EXECUTED' in str(error) else 'FAIL'
-        record = {'story_id': story, 'gate': 'Integration Test', 'result': result, 'producer_role': factory.identity(story)['implementing_role'], 'producer_identity': factory.identity(story)['implementing_identity'], 'source_commit': factory.git('rev-parse', factory.revision).decode().strip(), 'implementation_fingerprint': factory.implementation(), 'acceptance_contract_fingerprint': factory.contract(story), 'timestamp': datetime.datetime.now(datetime.UTC).isoformat().replace('+00:00', 'Z'), 'checks': steps, 'failure_type': type(error).__name__, 'artifacts': max((r for r in factory.records(story) if r.get('gate') == 'Code Review'), key=lambda r: r['timestamp'])['artifacts']}
+        record = {'story_id': story, 'gate': 'Integration Test', 'result': result, 'producer_role': factory.identity(story)['implementing_role'], 'producer_identity': factory.identity(story)['implementing_identity'], 'source_commit': factory.git('rev-parse', factory.revision).decode().strip(), 'implementation_fingerprint': factory.implementation(), 'acceptance_contract_fingerprint': factory.contract(story), 'timestamp': datetime.datetime.now(datetime.UTC).isoformat().replace('+00:00', 'Z'), 'checks': steps, 'failure_type': type(error).__name__}
         record['checks']['execution'] = result
         for step in required_steps:
             if record["checks"][step] == "NOT_EXECUTED":
@@ -126,6 +138,9 @@ def run(factory, story):
                 break
         record["ts_results"] = {"TS24": result}
         record['command'] = factory.command(story, 'Integration Test')
+        summary = output_dir / 'integration-summary.md'
+        summary.write_text('REAL failed Integration component results\n\n' + json.dumps(record['checks'], indent=2) + '\n')
+        record['artifacts'] = [{'path': f'factory/evidence/{story}/integration-summary.md', 'sha256': digest(summary.read_bytes())}]
         output = output_dir / 'integration-result.json'
         output.write_text(json.dumps(record, indent=2))
         print(f'NON-AUTHORITATIVE failed attempt output: {output}')

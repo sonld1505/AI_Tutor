@@ -40,7 +40,10 @@ class GitHub:
         number = record.get('pull_request')
         require(type(number) is int and number > 0, 'INVALID PR number')
         path = f'repos/{repo}/pulls/{number}'
-        return self.get(path), self.pages(path + '/commits'), self.pages(path + '/reviews')
+        pr = self.get(path)
+        commits = self.pages(path + '/commits')
+        require(type(pr.get('commits')) is int and pr['commits'] == len(commits), 'review incomplete commit list')
+        return pr, commits, self.pages(path + '/reviews')
 
 
 class JenkinsArchive:

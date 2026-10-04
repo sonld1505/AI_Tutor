@@ -3,6 +3,9 @@ states: [DRAFT, REFINED, READY, IN_PROGRESS, DEV_COMPLETE, TESTING, QA, DONE, BL
 non_implementation: [factory/state/, factory/evidence/, safe/, docs/, dev-book/, context/, agents/, README.md, CHANGELOG.md, DEVBOOK-AITUTOR.md, CLAUDE.md, CLAUDE_AI_Tutor.md, AGENTS.md]
 material_keys: [description, acceptance_criteria, functional_requirements, non_functional_requirements, test_scenarios, depends_on, components, api_impact, ui_impact, data_impact, security_impact, privacy_impact]
 external_systems: [jenkins]
+github_review:
+  repository: sonld1505/AI_Tutor
+  approved_reviewers: [sonld1505]
 implementing_roles: [CODEX_BACKEND, CODEX_FRONTEND, CODEX_ANDROID, CODEX_IOS, CODEX_DEVOPS]
 gates:
   build: {producers: [IMPLEMENTER], implementation: true, contract: false, prerequisites: [], na: false}
