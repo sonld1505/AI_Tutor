@@ -235,6 +235,12 @@ issues:
       traversal and execution outside the worktree stay blocked. If Codex execpolicy cannot safely run the guard
       outside its sandbox, STOP and report; no fallback to danger-full-access without another PO approval. After the
       guard passes, CODEX_DEVOPS produces the canonical build, lint and Unit Test records through it.
+    progress_2026_10_04_b: >
+      Guard reviewed and hardened (draft re-exec defect; .git-file hijack closed by the pinned git dir; symlinked record
+      dir). Host-side logic tests all PASS (POS build, N7, N8, env, N10 x4, N11, .git/branch/symlink cases). The install
+      of P1-P3/U1 by the orchestrator was REFUSED by the Claude Code auto-mode permission classifier, so nothing is installed.
+      N1-N6, N9 and the Codex POS remain. Reviewed files and install commands: docs/factory/runtime-guard/ and
+      FACTORY-RUNTIME-GUARD.md section 9.
     blocks: [US-FACTORY-003]
     owner: "HUMAN_PO (approve P1-P3/U1 and test permission) / CLAUDE_SM"
     status: OPEN
@@ -248,7 +254,15 @@ issues:
       management/US-FACTORY-003-recovery-status, so this item is I-018.)
     blocks: []
     owner: "CLAUDE_SM (execute) / HUMAN_PO (approved)"
-    status: OPEN
+    resolution_2026_10_04: >
+      Rotated. The exposed value (secrets/initialAdminPassword) was the active password of the local Jenkins user 'admin'.
+      A root-run script generated a new random password in memory, handed it to the script console through a temporary
+      jenkins-only file (deleted), and replaced the value in secrets/initialAdminPassword (same owner jenkins:jenkins and
+      mode 0640; Jenkins' own bootstrap store). No value was printed or put into argv, Git or logs. Verified: old
+      credential -> HTTP 401 on /whoAmI; new credential -> HTTP 200, name=admin, authenticated=true; sha256 of
+      config.xml, credentials.xml and every job config.xml unchanged; Jenkins active; admin has no API tokens. Temporary
+      pending and backup files removed. Consumers that read that file (the host helper) keep working.
+    status: CLOSED
 
 dependencies:
   - id: D-001

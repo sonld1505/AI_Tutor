@@ -1,0 +1,5 @@
+# RAID I-016 (PO approval 2026-10-04): the only command allowed to leave the Codex sandbox.
+prefix_rule(pattern=["/usr/local/bin/factory-runtime-guard", ["build", "lint", "unit", "write-evidence"]], decision="allow")
+prefix_rule(pattern=["docker"], decision="forbidden")
+prefix_rule(pattern=["sudo"], decision="forbidden")
+prefix_rule(pattern=["su"], decision="forbidden")

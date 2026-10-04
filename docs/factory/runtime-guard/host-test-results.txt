@@ -1,0 +1,32 @@
+POS-build | expect=exit0+RESULT | exit=0 | GUARD RESULT run=xP0yCJdS op=build head=36f95d5a25bacf584ed7a27835749c7bc13125cc exit=0 sha256=2a613add2440c203e16fe869f1c27a
+N7 [integration] | expect=BLOCK | exit=1 | GUARD BLOCK: operation not permitted
+N7 [build --x] | expect=BLOCK | exit=1 | GUARD BLOCK: operation not permitted
+N7 [write-evidence ../../x.json] | expect=BLOCK | exit=1 | GUARD BLOCK: invalid record name
+N7 [jenkins] | expect=BLOCK | exit=1 | GUARD BLOCK: operation not permitted
+N7 [] | expect=BLOCK | exit=1 | GUARD BLOCK: operation not permitted
+N7 [build build] | expect=BLOCK | exit=1 | GUARD BLOCK: operation not permitted
+N7 [status --story US-FACTORY-003] | expect=BLOCK | exit=1 | GUARD BLOCK: operation not permitted
+N7 [build;id] | expect=BLOCK | exit=1 | GUARD BLOCK: operation not permitted
+N7 [write-evidence a/b.json] | expect=BLOCK | exit=1 | GUARD BLOCK: invalid record name
+N7 [write-evidence .json.sh] | expect=BLOCK | exit=1 | GUARD BLOCK: invalid record name
+N8a-cwd-tmp | expect=BLOCK | exit=1 | GUARD BLOCK: working directory is not the US-FACTORY-003 worktree
+N8b-cwd-other-worktree | expect=BLOCK | exit=1 | GUARD BLOCK: working directory is not the US-FACTORY-003 worktree
+N8d-cwd-subdir | expect=BLOCK | exit=1 | GUARD BLOCK: working directory is not the US-FACTORY-003 worktree
+N5 env [LD_PRELOAD=/nonexistent.so] | expect=BLOCK | exit=1 | GUARD BLOCK: forbidden environment LD_PRELOAD
+N5 env [GIT_DIR=/tmp] | expect=BLOCK | exit=1 | GUARD BLOCK: forbidden environment GIT_DIR
+N5 env [BASH_ENV=/tmp/x] | expect=BLOCK | exit=1 | GUARD BLOCK: forbidden environment BASH_ENV
+N5 env [DOCKER_HOST=tcp://1.2.3.4:2375] | expect=BLOCK | exit=1 | GUARD BLOCK: forbidden environment DOCKER_HOST
+N5 env [PYTHONPATH=/tmp] | expect=BLOCK | exit=1 | GUARD BLOCK: forbidden environment PYTHONPATH
+N5 env [SHELLOPTS=xtrace] | expect=BLOCK | exit=1 | GUARD BLOCK: forbidden environment SHELLOPTS
+N10 committed change [scripts/factory-runtime.sh] | expect=BLOCK pin | exit=1 | GUARD BLOCK: canonical runtime pin mismatch
+N10 committed change [scripts/factory-runtime-test.sh] | expect=BLOCK pin | exit=1 | GUARD BLOCK: canonical runtime pin mismatch
+N10 committed change [factory/runtime/contract.env] | expect=BLOCK pin | exit=1 | GUARD BLOCK: canonical runtime pin mismatch
+N10 committed change [factory/runtime/requirements.txt] | expect=BLOCK pin | exit=1 | GUARD BLOCK: canonical runtime pin mismatch
+N11 uncommitted tracked change | expect=BLOCK | exit=1 | GUARD BLOCK: uncommitted tracked changes
+untracked file only (arg check reached? uses jenkins->BLOCK op) | expect=BLOCK | exit=1 | GUARD BLOCK: operation not permitted
+N-git .git link altered | expect=BLOCK | exit=1 | GUARD BLOCK: worktree .git link altered
+N-branch wrong branch | expect=BLOCK | exit=1 | GUARD BLOCK: wrong branch
+N-symlink records dir -> ~/.codex | expect=BLOCK | exit=1 | GUARD BLOCK: record directory invalid
+N-symlink record file | expect=BLOCK | exit=1 | GUARD BLOCK: record input unreadable
+write-evidence, state/evidence targets missing (fail closed) | expect=exit!=0 | exit=2 | (superseded: unhandled ls error, fail-closed but no message; guard fixed, retest below)
+write-evidence, state/evidence targets missing (fail closed) | expect=BLOCK | exit=1 | GUARD BLOCK: evidence directory or state file missing at snapshot revision

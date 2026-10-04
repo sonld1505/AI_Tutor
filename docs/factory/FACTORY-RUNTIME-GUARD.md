@@ -1,6 +1,8 @@
 # Factory runtime guard — design (PROPOSED, NOT INSTALLED)
 
-Status: design only, 2026-10-04. Waiting for PO approval of the privileged changes (§5).
+Status: **PO-approved in principle (2026-10-04); reviewed implementation ready; NOT INSTALLED.** The orchestrator's
+install of P1–P3/U1 was refused by the Claude Code auto-mode permission classifier. The PO has to run the install
+(§9) or allow it. Reviewed files: `docs/factory/runtime-guard/` (§9).
 Resolves: DEVBOOK #11 (Codex DevOps cannot run the canonical Docker gates), RAID I-016.
 Unblocks: RAID I-015 (US-FACTORY-003 build/lint/Unit Test records from CODEX_DEVOPS).
 PO constraints (2026-10-04): Codex stays sandboxed; no `danger-full-access`; Codex gets no
@@ -215,3 +217,55 @@ blocks sandbox-escape probes. Any FAIL → uninstall (rollback §5) and stop.
 | POS | Codex runs `/usr/local/bin/factory-runtime-guard build` once | `exit=0`, `GUARD RESULT … op=build`, audit line present, worktree unchanged |
 
 The first evidence-producing use (build, lint, unit, write-evidence) comes only after all N tests and POS pass.
+
+## 9. Reviewed implementation (2026-10-04, Claude orchestrator)
+
+Files in `docs/factory/runtime-guard/`:
+
+| File | sha256 | Installed as |
+|---|---|---|
+| `factory-runtime-guard` | `5a64561d0654780b8a71d56fb2b979315cacda96313bce04b3d2e13102c7578b` | `/usr/local/bin/factory-runtime-guard` (root:root 0755), P1 |
+| `pins.sha256` (values at `36f95d5`, identical to §3.5) | `50065984a531d5a1a5a0f1b79101c258ea4b3a6075ccf6b441dfd8dcc2275143` | `/etc/factory-runtime-guard/pins.sha256` (root:root 0644), P2 |
+| `factory-runtime-guard.rules` (§4) | `3fa9c333906d852d247a67cd69e8874f9f6f2f1e1fc40dd9be1580e14868f673` | `~/.codex/rules/factory-runtime-guard.rules`, U1 |
+
+Changes from the §3 draft, all found in review:
+1. **Defect:** the draft re-exec `bash -p --noprofile --norc` is invalid, because bash needs long options first. The draft
+   could never run. Fixed: `bash --noprofile --norc -p`.
+2. **Security:** the draft ran Git through the worktree's `.git` *file*. Codex can rewrite that file to point at a
+   Codex-controlled git dir, whose config (for example filter drivers) would then run unsandboxed. Fixed: Git always uses
+   the pinned git dir (`--git-dir`, `--work-tree`). The guard refuses if the `.git` link or the commondir layout is
+   altered. The snapshot is cloned from the pinned common dir.
+3. **Security:** `write-evidence` refuses a symlinked record directory: `realpath` is checked before and after the
+   read, and the file itself is read with `nofollow`.
+4. `flock` against concurrent runs. A uid check (must run as `ubuntu`). Explicit BLOCK when the evidence directory or
+   state file is missing at the snapshot revision. More forbidden variables (`SHELLOPTS`, `BASHOPTS`, `PS4`).
+
+Host-side logic tests (orchestrator) used a test copy that differs only in its path constants and points at a
+disposable fixture clone at `36f95d5`. Results: `host-test-results.txt`. **All passed:**
+- POS: a real canonical `build` exited 0, wrote the audit line and removed the snapshot.
+- N7 (10 argument cases), N8 (cwd `/tmp`, another worktree, a subdirectory), the environment cases (`LD_PRELOAD`,
+  `GIT_DIR`, `BASH_ENV`, `DOCKER_HOST`, `PYTHONPATH`, `SHELLOPTS`), N10 (a committed one-byte change to each of the 4
+  pinned files), N11, an altered `.git` link, the wrong branch, a symlinked records directory or record file, and
+  missing write targets: all BLOCK.
+- A symlinked cwd resolves (`pwd -P`) to the same real worktree. That is allowed, because it is the approved directory,
+  not a bypass.
+
+**Not yet run (they need the installed guard and rule):** N1–N6, N9 and the Codex-side POS. These test Codex
+execpolicy and the sandbox. If execpolicy runs any compound, substituted, wrapped or env-prefixed form outside the
+sandbox, or if workspace `.codex/` rules are writable and get loaded (N9), the guard is unsafe: uninstall (rollback
+§5) and STOP. Note: `[projects."/home/ubuntu/AI_Tutor"] trust_level = "trusted"` in `~/.codex/config.toml` makes N9
+material.
+
+Install commands (PO/admin; the same as P1–P3/U1):
+
+```bash
+D=/home/ubuntu/AI_Tutor-worktrees/US-FACTORY-004-MGMT/docs/factory/runtime-guard
+sha256sum "$D/factory-runtime-guard" "$D/pins.sha256" "$D/factory-runtime-guard.rules"   # compare with the table above
+sudo install -o root -g root -m 0755 "$D/factory-runtime-guard" /usr/local/bin/factory-runtime-guard
+sudo install -d -o root -g root -m 0755 /etc/factory-runtime-guard
+sudo install -o root -g root -m 0644 "$D/pins.sha256" /etc/factory-runtime-guard/pins.sha256
+sudo install -d -o ubuntu -g ubuntu -m 0700 /var/lib/factory-runtime-guard
+install -m 0644 "$D/factory-runtime-guard.rules" /home/ubuntu/.codex/rules/factory-runtime-guard.rules
+```
+
+Rollback: `sudo rm -f /usr/local/bin/factory-runtime-guard; sudo rm -rf /etc/factory-runtime-guard /var/lib/factory-runtime-guard; rm -f ~/.codex/rules/factory-runtime-guard.rules`.

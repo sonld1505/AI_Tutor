@@ -1,0 +1,80 @@
+#!/bin/bash -p
+# factory-runtime-guard: narrow host broker for CODEX_DEVOPS canonical gates (US-FACTORY-003 only).
+# Design: docs/factory/FACTORY-RUNTIME-GUARD.md (RAID I-016, PO approval 2026-10-04).
+# Root-owned, installed at /usr/local/bin/factory-runtime-guard. Never writes into the worktree.
+set -euo pipefail
+readonly SELF=/usr/local/bin/factory-runtime-guard
+if [[ "${FACTORY_GUARD_CLEAN:-}" != 1 ]]; then
+  for v in $(compgen -e); do
+    case "$v" in LD_*|GIT_*|DOCKER_*|BASH_ENV|ENV|PYTHON*|SHELLOPTS|BASHOPTS|PS4) echo "GUARD BLOCK: forbidden environment $v" >&2; exit 1;; esac
+  done
+  exec /usr/bin/env -i FACTORY_GUARD_CLEAN=1 PATH=/usr/sbin:/usr/bin:/sbin:/bin HOME=/home/ubuntu LANG=C.UTF-8 \
+    /bin/bash --noprofile --norc -p "$SELF" "$@"
+fi
+umask 077
+# --- constants (pinned) ---
+readonly WORKTREE=/home/ubuntu/AI_Tutor-worktrees/US-FACTORY-003-devops
+readonly GITDIR=/home/ubuntu/AI_Tutor/.git/worktrees/US-FACTORY-003-devops
+readonly COMMONDIR=/home/ubuntu/AI_Tutor/.git
+readonly BRANCH=refs/heads/feature/US-FACTORY-003-devops STORY=US-FACTORY-003
+readonly PINS=/etc/factory-runtime-guard/pins.sha256 STATE=/var/lib/factory-runtime-guard RUNUSER_UID=1000
+# --- end constants ---
+die() { echo "GUARD BLOCK: $*" >&2; exit 1; }
+# Git against the pinned, Codex-unwritable git dir only; never via the worktree's .git file.
+G() { /usr/bin/git -c core.fsmonitor=false -c core.hooksPath=/dev/null -c safe.directory='*' \
+      --git-dir="$GITDIR" --work-tree="$WORKTREE" --no-optional-locks "$@"; }
+
+[[ "$(id -u)" == "$RUNUSER_UID" ]] || die "must run as uid $RUNUSER_UID"
+case "${1:-}:$#" in
+  build:1|lint:1|unit:1) OP=$1 ;;
+  write-evidence:2) OP=$1; [[ "$2" =~ ^[A-Za-z0-9._-]{1,64}\.json$ ]] || die "invalid record name"; NAME=$2 ;;
+  *) die "operation not permitted" ;;
+esac
+[[ ! -L "$WORKTREE" && "$(realpath -e "$WORKTREE")" == "$WORKTREE" ]] || die "worktree path invalid"
+[[ "$(pwd -P)" == "$WORKTREE" ]] || die "working directory is not the US-FACTORY-003 worktree"
+[[ ! -L "$WORKTREE/.git" && "$(cat "$WORKTREE/.git")" == "gitdir: $GITDIR" ]] || die "worktree .git link altered"
+[[ "$(realpath -e "$GITDIR/commondir")" == "$GITDIR/commondir" && "$(realpath -e "$GITDIR/$(cat "$GITDIR/commondir")")" == "$COMMONDIR" ]] \
+  || die "git dir layout altered"
+[[ "$(G symbolic-ref HEAD)" == "$BRANCH" ]] || die "wrong branch"
+[[ -z "$(G status --porcelain --untracked-files=no)" ]] || die "uncommitted tracked changes"
+HEAD=$(G rev-parse --verify 'HEAD^{commit}')
+[[ -f "$PINS" && ! -L "$PINS" && "$(stat -c %u:%g:%a "$PINS")" == 0:0:644 ]] || die "pin file invalid"
+[[ -d "$STATE" && ! -L "$STATE" && "$(stat -c %u:%a "$STATE")" == "$RUNUSER_UID:700" ]] || die "state directory invalid"
+
+exec 9>"$STATE/lock"
+/usr/bin/flock -n 9 || die "another guard run is active"
+RUN=$(mktemp -d "$STATE/run.XXXXXXXX"); ID=${RUN##*.}; OUT="$STATE/out/$ID"
+trap 'rm -rf "$RUN"' EXIT
+mkdir -p "$OUT"
+# Snapshot from the pinned common dir (TOCTOU defence: outside Codex writable roots).
+/usr/bin/git -c core.hooksPath=/dev/null -c core.fsmonitor=false clone --quiet --no-local --no-hardlinks --no-checkout "$COMMONDIR" "$RUN/repo"
+/usr/bin/git -c core.hooksPath=/dev/null -C "$RUN/repo" checkout --quiet --detach "$HEAD"
+[[ "$(/usr/bin/git -C "$RUN/repo" rev-parse HEAD)" == "$HEAD" ]] || die "snapshot revision mismatch"
+(cd "$RUN/repo" && /usr/bin/sha256sum --check --strict --quiet "$PINS") || die "canonical runtime pin mismatch"
+
+ARGS=("$OP")
+if [[ "$OP" == write-evidence ]]; then
+  RECDIR="$WORKTREE/factory/logs/$STORY/devops/records"
+  [[ "$(realpath -e "$RECDIR")" == "$RECDIR" ]] || die "record directory invalid"
+  /usr/bin/dd if="$RECDIR/$NAME" of="$RUN/input.json" iflag=nofollow bs=65537 count=1 status=none || die "record input unreadable"
+  [[ "$(realpath -e "$RECDIR")" == "$RECDIR" ]] || die "record directory changed during read"
+  [[ "$(stat -c %s "$RUN/input.json")" -le 65536 ]] || die "record input too large"
+  ARGS=(--write "$STORY" write-evidence --story "$STORY" --record-file "$RUN/input.json")
+  [[ -d "$RUN/repo/factory/evidence/$STORY" && -f "$RUN/repo/factory/state/$STORY.json" ]] || die "evidence directory or state file missing at snapshot revision"
+  BEFORE=$(ls -1 "$RUN/repo/factory/evidence/$STORY")
+fi
+set +e
+(cd "$RUN/repo" && /usr/bin/timeout --kill-after=30 3600 /bin/bash --noprofile --norc scripts/factory-runtime.sh "${ARGS[@]}") > "$OUT/$OP.log" 2>&1
+RC=$?
+set -e
+cat "$OUT/$OP.log"
+HASH=$(/usr/bin/sha256sum "$OUT/$OP.log" | cut -d' ' -f1)
+if [[ "$OP" == write-evidence && $RC -eq 0 ]]; then
+  NEW=$(comm -13 <(echo "$BEFORE") <(ls -1 "$RUN/repo/factory/evidence/$STORY"))
+  [[ $(wc -l <<<"$NEW") -eq 1 && "$NEW" =~ ^[0-9A-Za-z_.:-]+\.json$ ]] || die "writer output ambiguous"
+  cp -- "$RUN/repo/factory/evidence/$STORY/$NEW" "$OUT/$NEW"
+  HASH=$(/usr/bin/sha256sum "$OUT/$NEW" | cut -d' ' -f1)
+fi
+printf '%s op=%s head=%s exit=%s run=%s sha256=%s\n' "$(date -u +%FT%TZ)" "$OP" "$HEAD" "$RC" "$ID" "$HASH" >> "$STATE/audit.log"
+echo "GUARD RESULT run=$ID op=$OP head=$HEAD exit=$RC sha256=$HASH out=$OUT"
+exit "$RC"
