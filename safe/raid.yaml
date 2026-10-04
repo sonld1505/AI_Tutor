@@ -159,6 +159,7 @@ dependencies:
         - "Until that identity is configured, implementation may be inspected/executed, but NO implementation commit may be created."
         - "AC13: the reviewer GitHub login must differ from the GitHub identity of every implementation commit author."
       note: "2026-10-03 (updated): extensions.worktreeConfig is enabled; the shared Git config has no user identity and user.useConfigOnly=true, so a worktree without its own identity cannot commit. Only the management worktree (US-FACTORY-003-MGMT) has the human identity sonld1505 in its config.worktree. No agent identity exists yet."
+      verification_2026_10_04: "Claude orchestrator re-checked: gh is not logged in; the only GitHub credential on EC2 is ~/.ssh/id_ed25519, which authenticates as sonld1505 (human PO). No agent GitHub account, Git identity or API token exists. US-FACTORY-003 implementation and local gates are complete and uncommitted (build/lint/unit/validate-story exit=0); the first implementation commit and Code Review are held at this item."
     from: "US-FACTORY-003 (Code Review and Integration Test, i.e. before TESTING; first implementation commit), every later Story's implementation commits and Code Review gate"
     to: "HUMAN_PO (GitHub admin)"
     status: OPEN
