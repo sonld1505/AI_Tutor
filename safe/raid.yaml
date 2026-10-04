@@ -215,6 +215,19 @@ issues:
     blocks: [US-FACTORY-003]
     owner: "HUMAN_PO (decision) / CLAUDE_SM (coordination)"
     status: OPEN
+  - id: I-016
+    description: >
+      DEVBOOK #11: Codex DevOps (codex exec -s workspace-write) cannot run the canonical Docker gates, so
+      CODEX_DEVOPS cannot produce build/lint/Unit Test records itself (AC05/AC14/AC25), and host runs must not
+      be recorded as CODEX_DEVOPS. PO decision 2026-10-04: keep sandbox isolation; no danger-full-access; no
+      docker.sock for Codex; use a narrow root-owned runtime guard. Design: docs/factory/FACTORY-RUNTIME-GUARD.md
+      (privileged changes P1-P3 + Codex rule U1, threat analysis T1-T11, tests N1-N11 + POS). Observed: Codex
+      0.160 runs execpolicy-allowed commands outside the sandbox; ubuntu is docker-group + NOPASSWD sudo, so
+      the allow rule is the privilege boundary (T1, unverified). The negative probe of rule matching was blocked
+      by the Claude Code auto-mode classifier; tests need explicit user permission. Nothing installed.
+    blocks: [US-FACTORY-003]
+    owner: "HUMAN_PO (approve P1-P3/U1 and test permission) / CLAUDE_SM"
+    status: OPEN
 
 dependencies:
   - id: D-001
