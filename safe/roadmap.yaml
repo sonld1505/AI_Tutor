@@ -1,0 +1,35 @@
+# Roadmap — owner: PM_PO. Milestones are targets, not commitments or results.
+# Dates and scope require human Product Owner approval.
+# Factory V2 decision: docs/factory/FACTORY-V2-ROADMAP.md (human PO, 2026-10-04).
+# Factory items are enablers, not product scope (I-001 exceptions). No Story file exists yet
+# for US-FACTORY-004..007; each is created through the normal BA/DoR process.
+updated: "2026-10-04"
+approved_by: "HUMAN_PO (2026-10-04, Factory V2 master architecture decision)"
+
+horizons:
+  - name: "FACTORY-V2"
+    target_window: "N/A"   # no dates set by the PO
+    epics: []              # Factory enablers are tracked as Stories, not product Epics
+    sequence:              # strictly sequential; a later Story is not implemented before its predecessor reaches the required state
+      - ref: US-FACTORY-003
+        title: "Central fail-closed workflow validator and supervised orchestrator"
+        state: "in rework; governed by its existing approved contract"
+      - ref: US-FACTORY-004
+        title: "Solution Architect Technical Authority"
+        state: "planned; proposed at US-FACTORY-003 safe completion checkpoint"
+      - ref: US-FACTORY-005
+        title: "Domain Engineering Agents"
+        state: planned
+      - ref: US-FACTORY-006
+        title: "Dynamic Multi-Agent Delivery Orchestration"
+        state: planned
+        carries: [DEF-004]
+      - ref: US-FACTORY-007
+        title: "Quality, Governance and Release Pipeline"
+        state: planned
+    exit_criteria:
+      - "Every Factory Story 003-007 reaches DONE through the Factory workflow (DoD PASS, Jenkins quality gate, human approval where required)."
+      - "All autonomous workflow state is recoverable from durable repository state after SSH, session, agent process or tmux loss and EC2 reboot (chat context is not authoritative)."
+      - "Escalation to the PO happens only at explicit human authority boundaries; fail-closed rules of the decision hold."
+    assumptions:
+      - "The CLAUDE.md constitution stays in force until a V2 Story changes it through the normal workflow."

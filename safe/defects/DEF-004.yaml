@@ -1,0 +1,50 @@
+id: DEF-004
+title: "Orchestrator and background-agent state is not observable or durable outside the Claude session"
+
+status: OPEN
+severity: MEDIUM      # proposed by CLAUDE_SM; operator lost ~1h45m believing a finished review was hung; no evidence corrupted
+found_by: HUMAN       # PO reported the apparent hang; CLAUDE_SM reconstructed the timeline
+found_on: "2026-10-04"
+owner_role: ""        # no owner until US-FACTORY-006 exists (Factory V2 roadmap); orchestration tooling, not product code
+related:
+  - US-FACTORY-006
+  - US-FACTORY-003
+  - docs/factory/FACTORY-V2-ROADMAP.md
+  - docs/factory/reviews/US-FACTORY-003-code-review-r3-2026-10-04.md
+
+description: >
+  During US-FACTORY-003 round 3 the PO believed the independent reviewer was still running
+  or hung, and asked for a runtime check. PO classification of the incident:
+  COMPLETED_BUT_ORCHESTRATOR_NOT_UPDATED. The session transcript shows the parent session
+  did receive the completion: hand-back at 2026-10-04T06:18:31Z, verdict reported to its
+  tmux pane at 06:19:24Z, question to the PO at 06:22:31Z, then idle waiting for human
+  input. At 08:06Z no reviewer process existed and the report was on disk. The defect is
+  that none of this was visible outside that one session: the reviewer ran in-process
+  (no PID of its own), the result lived only in a session scratch directory and the chat
+  transcript, and no durable record showed agent state, progress, completion or the
+  pending human decision. A second check from another session had to reconstruct it from
+  transcripts. An earlier round-3 reviewer (prior session) stopped mid-run with a partial
+  report and also left no durable state, which forced a full rerun.
+
+steps_to_reproduce:
+  - "Dispatch a background review agent from a Claude session in tmux."
+  - "Let it finish while the operator is not watching that pane."
+  - "From a new SSH/Claude session, try to determine whether the reviewer is running, finished, or waiting on a human, without reading session transcripts."
+
+expected: "Any operator or session can read, from durable repository-level state, each agent's state, last progress time, process state, final result location and any pending human decision; a completed result is never rerun."
+actual: "State exists only inside one Claude session and its scratch directory; completion and pending human decisions are invisible from outside; a stopped agent leaves no resumable checkpoint."
+
+acceptance_criteria:   # proposed for US-FACTORY-006 refinement (PO list, 2026-10-04); BA refines into the Story
+  - "AC01: Each dispatched agent writes a heartbeat with last_progress_at to durable state."
+  - "AC02: Durable state records agent state (e.g. DISPATCHED, RUNNING, COMPLETED, FAILED, STOPPED) and observed process state."
+  - "AC03: A completed agent writes a durable completion result (verdict, artifact paths and hashes, reviewed commit) outside the session scratch directory."
+  - "AC04: The orchestrator detects COMPLETED_BUT_ORCHESTRATOR_NOT_UPDATED (durable result exists, parent state not updated) and pending-human-decision states, and reports them."
+  - "AC05: Recovery resumes from the last durable checkpoint and never reruns work that has a valid durable completion result."
+
+evidence:
+  - "Parent session 3593cdb5 transcript timestamps 06:18:31Z / 06:19:24Z / 06:22:31Z (local Claude Code transcript, not in Git)."
+  - "Runtime check 2026-10-04 08:06-08:07Z: no reviewer process; PID 3367756 CPU ticks 19425 -> 19428 -> 19434 over 10 s; session status idle."
+
+verification:
+  verified_by: null
+  evidence: []

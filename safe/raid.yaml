@@ -115,6 +115,19 @@ issues:
     owner: "HUMAN_PO"
     status: OPEN
 
+  - id: I-010
+    description: >
+      US-FACTORY-003 R3-02 (MAJOR, contract-level, round-3 pre-review 2026-10-04): develop-mode
+      validation of DONE Stories checks evidence freshness against the develop tip (AC06/AC12/AC18),
+      so the first later implementation merge (planned: US-FACTORY-002 recovery, I-009) makes the
+      develop Factory Validation stage fail permanently. Needs a PO decision; options and the
+      recommendation are in docs/factory/reviews/US-FACTORY-003-R3-02-po-decision-brief-2026-10-04.md.
+      Every option except G changes AC text, which needs an explicit PO exception to the Factory V2
+      "do not re-contract US-FACTORY-003" directive. Not sent to Codex. Recorded by CLAUDE_SM.
+    blocks: [US-FACTORY-003]
+    owner: "HUMAN_PO"
+    status: OPEN
+
 dependencies:
   - id: D-001
     description: "Jenkins multibranch job + GitHub credential created by a human; needed for §52 evidence (US-FACTORY-001 AC05; DEF-003 AC06)."
