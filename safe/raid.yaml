@@ -115,7 +115,8 @@ issues:
     owner: "HUMAN_PO"
     status: OPEN
 
-  - id: I-011
+  - id: I-017
+    renumbered: "2026-10-04 reconciliation: first recorded as I-011 in 2798f7e. I-011 is already used on management/factory-v2-stabilization for the Story state drift (A3, G-16). Both facts are kept; only this item's ID changed."
     description: >
       Identity drift, observed 2026-10-04 by the Claude orchestrator: at 09:14:42 UTC, config.worktree
       of US-FACTORY-003-MGMT and of the new worktree US-FACTORY-004-MGMT was set to the implementation
@@ -129,7 +130,16 @@ issues:
       sonld1505 before the drift, so no commit was made under the drifted identity in 003-MGMT.
     blocks: []
     owner: "HUMAN_PO"
-    status: OPEN   # 003-MGMT corrected; 004-MGMT pending PO instruction
+    source_2026_10_04: >
+      The drift implements docs/factory/REPOSITORY-SETTINGS.md section 3, step A ("management worktrees use the
+      bot identity", orchestrator, no PO action) and the R-003 mitigation ("Factory commits (management and
+      implementation) use the bot identity sonldfkr2911"), both on management/factory-v2-stabilization
+      (9648c0f). Those statements broaden D-006 without a D-006 amendment. PO ruling 2026-10-04: D-006 is NOT
+      amended, so they are not authoritative for identity until the PO amends D-006. Commits 9648c0f, 5e446f7,
+      1d0f261, 12f48cb and 010f250 on that branch are bot-authored management commits. They are kept as
+      history (no rewrite).
+    correction_2026_10_04: "After the PO's reconciliation instruction, US-FACTORY-004-MGMT config.worktree was also restored to sonld1505 (worktree scope; core.sshCommand removed). The implementation worktree and the global config were not changed."
+    status: OPEN   # both management worktrees corrected; REPOSITORY-SETTINGS.md section 3 / R-003 text vs D-006 needs a PO decision before that branch merges
   - id: I-010
     description: >
       US-FACTORY-003 R3-02 (MAJOR, contract-level, round-3 pre-review 2026-10-04): develop-mode
@@ -149,6 +159,12 @@ issues:
       DONE, until the contract is on develop and an implementation that satisfies it passes its gates.
     blocks: [US-FACTORY-003]
     owner: "HUMAN_PO"
+    reconciliation_2026_10_04: >
+      PO ruling 2026-10-04: the Lean DONE contract and round-4 work on feature/US-FACTORY-003-devops (8c544b8,
+      36f95d5; ADR-0001) are authoritative. That contract already contains the completion-snapshot rule
+      (AC12(d), AC18, TS21, in the Lean wording). The verbatim Option B edit that 2798f7e made to this branch's
+      copy of the Story is withdrawn: the Story is restored to b779eef, following the rule that Story changes
+      live on the feature branch only (5e446f7). Kept OPEN until the round-4 fix is verified through the gates.
     status: OPEN   # decision taken 2026-10-04 (Option B); implementation pending
 
 dependencies:
@@ -217,5 +233,5 @@ dependencies:
         by sonld1505 (a login different from sonldfkr2911).
     from: "US-FACTORY-003 (Code Review and Integration Test, i.e. before TESTING; first implementation commit), every later Story's implementation commits and Code Review gate"
     to: "HUMAN_PO (GitHub admin)"
-    identity_drift_2026_10_04: "Management worktree identity drifted to sonldfkr2911 at 09:14 UTC without PO approval (I-011). PO ruling 2026-10-04: D-006 NOT amended; 003-MGMT restored to sonld1505 (worktree scope)."
+    identity_drift_2026_10_04: "Management worktree identity drifted to sonldfkr2911 at 09:14 UTC without PO approval (I-017; first recorded as I-011 in 2798f7e). PO ruling 2026-10-04: D-006 NOT amended; 003-MGMT restored to sonld1505 (worktree scope)."
     status: RESOLVED   # 2026-10-04 human PO; write-access evidence pending first approved push
