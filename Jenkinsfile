@@ -25,6 +25,14 @@ pipeline {
             }
         }
 
+        stage('Factory Validation') {
+            steps {
+                withCredentials([string(credentialsId: 'factory-github-token', variable: 'FACTORY_GITHUB_TOKEN')]) {
+                    sh './scripts/factory-jenkins.sh'
+                }
+            }
+        }
+
         stage('Build') {
             steps {
                 sh './scripts/build.sh'

@@ -1,0 +1,49 @@
+version: 1
+states: [DRAFT, REFINED, READY, IN_PROGRESS, DEV_COMPLETE, TESTING, QA, DONE, BLOCKED]
+non_implementation: [factory/state/, factory/evidence/, safe/, docs/, dev-book/, context/, agents/, README.md, CHANGELOG.md, DEVBOOK-AITUTOR.md, CLAUDE.md, CLAUDE_AI_Tutor.md, AGENTS.md]
+material_keys: [description, acceptance_criteria, functional_requirements, non_functional_requirements, test_scenarios, depends_on, components, api_impact, ui_impact, data_impact, security_impact, privacy_impact]
+external_systems: [jenkins]
+github_review:
+  repository: sonld1505/AI_Tutor
+  approved_reviewers: [sonld1505]
+implementing_roles: [CODEX_BACKEND, CODEX_FRONTEND, CODEX_ANDROID, CODEX_IOS, CODEX_DEVOPS]
+gates:
+  build: {producers: [IMPLEMENTER], implementation: true, contract: false, prerequisites: [], na: false}
+  lint: {producers: [IMPLEMENTER], implementation: true, contract: false, prerequisites: [], na: false}
+  Unit Test: {producers: [IMPLEMENTER], implementation: true, contract: false, prerequisites: [build, lint], na: false}
+  Validation: {producers: [CODEX_QA], implementation: true, contract: true, prerequisites: [Unit Test], na: false}
+  Jenkins: {producers: [JENKINS], implementation: true, contract: false, prerequisites: [], na: false}
+  Code Review: {producers: [GITHUB], implementation: true, contract: false, prerequisites: [Unit Test, Validation, Jenkins], na: false}
+  Integration Test: {producers: [IMPLEMENTER], implementation: true, contract: false, prerequisites: [Unit Test, Code Review], na: true}
+transitions:
+  DRAFT->REFINED: []
+  REFINED->READY: [DoR]
+  READY->IN_PROGRESS: [DoR, dependencies]
+  IN_PROGRESS->DEV_COMPLETE: [build, lint, Unit Test]
+  DEV_COMPLETE->TESTING: [Unit Test]
+  TESTING->QA: [Unit Test, Validation]
+  QA->DONE: [Unit Test, Validation, Jenkins, Code Review, Integration Test, DoD, dependencies, blockers]
+failure_paths:
+  Unit Test FAIL: {from: [DEV_COMPLETE, TESTING, QA], to: [IN_PROGRESS]}
+  Functional Test FAIL: {from: [TESTING], to: [IN_PROGRESS]}
+  QA FAIL: {from: [QA], to: [IN_PROGRESS, TESTING]}
+  DoD FAIL: {from: [QA], to: [DRAFT, REFINED, READY, IN_PROGRESS, DEV_COMPLETE, TESTING]}
+  requirement ambiguity: {from: [REFINED, READY, IN_PROGRESS, DEV_COMPLETE, TESTING, QA], to: [DRAFT, REFINED]}
+dispatch:
+  IMPLEMENTER: {state: READY, prerequisites: [DoR, dependencies]}
+  CODEX_QA: {state: TESTING, prerequisites: [Unit Test]}
+  Code Review: {state: QA, prerequisites: [Unit Test, Validation, Jenkins]}
+  Integration Test: {state: QA, prerequisites: [Unit Test, Code Review]}
+commands:
+  factory_build: &factory_build ./scripts/factory-runtime.sh build
+  factory_lint: &factory_lint ./scripts/factory-runtime.sh lint
+  factory_unit: &factory_unit ./scripts/factory-runtime.sh unit
+  factory_integration: &factory_integration ./scripts/factory-runtime.sh integration
+  US-FACTORY-003:
+    build: *factory_build
+    lint: *factory_lint
+    Unit Test: *factory_unit
+    Integration Test: *factory_integration
+unit_scenarios: [TS01, TS02, TS03, TS04, TS05, TS06, TS07, TS08, TS09, TS10, TS11, TS12, TS13, TS14, TS15, TS16, TS17, TS18, TS19, TS20, TS21, TS22, TS23, TS26, TS27, TS28]
+story_implementers:
+  US-FACTORY-003: [CODEX_DEVOPS]
