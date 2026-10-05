@@ -1,0 +1,67 @@
+# Factory current state: recovery checkpoint
+
+Updated: 2026-10-04 ~17:00 UTC by the Claude orchestrator (PM/BA/SM) after the PO-ordered reconciliation.
+Only statements verified against Git, GitHub, Jenkins logs or RAID are kept. Items marked
+*reported, not re-verified* come from the previous session and could not be checked safely.
+The previous uncommitted version of this file is preserved outside Git.
+
+## Authoritative state
+
+- Story **US-FACTORY-003**, status **IN_PROGRESS** (feature-branch Story at `36f95d5`).
+- Contract: the Lean DONE model on this branch (`8c544b8`, ADR-0001), confirmed authoritative by the PO on 2026-10-04.
+  The R3-02 completion-snapshot rule is part of it (AC12(d), AC18, TS21). AC04 and AC10 are unchanged since `233b1e9`.
+- Branch `feature/US-FACTORY-003-devops`: HEAD = origin = **`36f95d5a25bacf584ed7a27835749c7bc13125cc`**.
+  This file is the only local change, and it is uncommitted. Committing it would move the PR #8 head.
+- Implementation identity: `AI Tutor Agent` / `sonldfkr2911` (worktree scope). Management worktrees
+  (`US-FACTORY-003-MGMT`, `US-FACTORY-004-MGMT`) use `sonld1505` again, because the PO did not amend D-006 (RAID I-017).
+- Management records: `management/US-FACTORY-003-recovery-status` @ `c8c0415` (reconciliation) and
+  `management/factory-v2-stabilization` @ `010f250` (Lean migration, I-011..I-016). Neither is merged to develop (I-014).
+
+## Verified evidence at 36f95d5 (supporting only; there are no AC08 records)
+
+- `factory/evidence/US-FACTORY-003/` does not exist at `36f95d5`. The validator `status` lists all seven gates as MISSING:
+  build, lint, Unit Test, Validation, Jenkins, Code Review, Integration Test.
+- The validator `jenkins --branch feature/US-FACTORY-003-devops` at `36f95d5`: PASS. This was an orchestrator check, not evidence.
+- Jenkins build #3 (`factory/logs/US-FACTORY-003/recovery/jenkins-3.log`): checked out `36f95d5`. Factory Validation
+  stage: `Ran 107 tests in 1139.541s`, `OK`, gitleaks "no leaks found", `SECURITY SCAN PASSED`, `FACTORY CI PASS`.
+  The backend `Build` stage failed with "No supported project detected" (I-005), later stages were skipped, and the
+  result was `FAILURE` (`PIPELINE FAILED — DEPLOYMENT BLOCKED`).
+- Host runs (ignored logs, *not* CODEX_DEVOPS gate records): build PASS, lint "All checks passed!", the targeted run
+  `Ran 2 tests in 96.828s OK`, and `SECURITY SCAN PASSED`.
+- Round-4 independent review (`docs/factory/US-FACTORY-003-round4-review.md`): initial review 0 Critical / 2 Major, one
+  fix pass, re-review 0 Critical / 0 Major, by code inspection only (no tests). It is not an AC08 Validation record.
+- PR #8 (GitHub REST API, read-only): open, `feature/US-FACTORY-003-devops` -> `develop`, head `36f95d5`, author
+  `sonldfkr2911`. Review 5405577037 by `sonld1505`: APPROVED on `36f95d5` at 10:49:59Z. PR #7 is closed.
+
+## Evidence validity
+
+- Nothing in the AC08 format exists, so nothing can be reused as a gate record. Every gate must be produced in workflow
+  order: build, lint, Unit Test (CODEX_DEVOPS); Validation (independent identity); Jenkins; Code Review; Integration (TS24).
+- PR approval 5405577037 cannot satisfy Code Review. AC05/AC06/TS04 need the approval on a commit that already contains
+  Validation and Jenkins PASS, and `36f95d5` contains neither. The PO also ruled it historical only (RAID I-015, option a).
+- Jenkins #3 is valid CI evidence for the `36f95d5` implementation fingerprint, but it is not an AC08 Jenkins record.
+  A Jenkins build on the commit that carries the Validation record has to produce one.
+- Committing records under `factory/evidence/` does not change the implementation fingerprint (`workflow.yaml`
+  `non_implementation`), so no implementation rerun is needed for that reason alone.
+
+## First unfinished gate and blocker
+
+- **First unfinished gate: build, lint and Unit Test records by CODEX_DEVOPS** (`can-transition IN_PROGRESS -> DEV_COMPLETE`
+  is BLOCK: build, lint and Unit Test are MISSING). No new implementation round is required.
+- **Blocked by RAID I-016 (PO/security):** the Codex sandbox cannot reach Docker. The PO chose a narrow root-owned runtime
+  guard (`docs/factory/FACTORY-RUNTIME-GUARD.md` on `management/factory-v2-stabilization`). The PO must approve P1–P3/U1
+  and give explicit permission for the negative tests N1–N11. No danger-full-access, no docker.sock, and no host run
+  labelled as CODEX_DEVOPS.
+- TS24 has not run; its single run is reserved for after the PO approves a head that contains Validation and Jenkins.
+
+## Reported by the previous session, not re-verified
+
+- A Jenkins Secret Text `factory-github-token` was imported and checked with a read-only GET (HTTP 200).
+- **Security:** an earlier broad journal read exposed the Jenkins bootstrap password in tool output, and it was **not
+  rotated**. Rotation is a PO/admin decision.
+- Helper `/tmp/factory-003-jenkins.py` exists (its `index`/`build` modes change Jenkins). The PR body draft is at
+  `/tmp/US-FACTORY-003-pr-body.md`.
+
+## Not done
+
+No AC08 records, DoD flags, Story status change, merge, deployment, force-push or history rewrite.
