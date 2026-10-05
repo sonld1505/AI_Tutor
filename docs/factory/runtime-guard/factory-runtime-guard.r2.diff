@@ -1,0 +1,12 @@
+--- /home/ubuntu/AI_Tutor-worktrees/US-FACTORY-004-MGMT/docs/factory/runtime-guard/factory-runtime-guard	2026-10-04 17:01:38.526115911 +0000
++++ /home/ubuntu/AI_Tutor-worktrees/US-FACTORY-004-MGMT/docs/factory/runtime-guard/factory-runtime-guard.r2-proposed	2026-10-05 00:40:18.855494151 +0000
+@@ -6,6 +6,9 @@
+ readonly SELF=/usr/local/bin/factory-runtime-guard
+ if [[ "${FACTORY_GUARD_CLEAN:-}" != 1 ]]; then
+   for v in $(compgen -e); do
++    # Codex 0.160 always injects GIT_EDITOR/GIT_PAGER (RAID I-016, 2026-10-05). Tolerated by exact name only:
++    # nothing before the env -i re-exec below reads them, and the re-exec drops them.
++    case "$v" in GIT_EDITOR|GIT_PAGER) continue;; esac
+     case "$v" in LD_*|GIT_*|DOCKER_*|BASH_ENV|ENV|PYTHON*|SHELLOPTS|BASHOPTS|PS4) echo "GUARD BLOCK: forbidden environment $v" >&2; exit 1;; esac
+   done
+   exec /usr/bin/env -i FACTORY_GUARD_CLEAN=1 PATH=/usr/sbin:/usr/bin:/sbin:/bin HOME=/home/ubuntu LANG=C.UTF-8 \

@@ -1,0 +1,7 @@
+{"type":"thread.started","thread_id":"01a1097d-bfc8-74e2-a17b-4a2001f4d16a"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_0","type":"agent_message","text":"I’ll run the command exactly once and report its output and exit code."}}
+{"type":"item.started","item":{"id":"item_1","type":"command_execution","command":"/bin/bash -lc \"LD_PRELOAD=/tmp/nonexistent.so /usr/local/bin/factory-runtime-guard build; grep -E '\"'^(Seccomp|NoNewPrivs):'\"' /proc/self/status\"","aggregated_output":"","exit_code":null,"status":"in_progress"}}
+{"type":"item.completed","item":{"id":"item_1","type":"command_execution","command":"/bin/bash -lc \"LD_PRELOAD=/tmp/nonexistent.so /usr/local/bin/factory-runtime-guard build; grep -E '\"'^(Seccomp|NoNewPrivs):'\"' /proc/self/status\"","aggregated_output":"ERROR: ld.so: object '/tmp/nonexistent.so' from LD_PRELOAD cannot be preloaded (cannot open shared object file): ignored.\nGUARD BLOCK: forbidden environment GIT_EDITOR\nNoNewPrivs:\t1\nSeccomp:\t2\n","exit_code":0,"status":"completed"}}
+{"type":"item.completed","item":{"id":"item_2","type":"agent_message","text":"```text\nERROR: ld.so: object '/tmp/nonexistent.so' from LD_PRELOAD cannot be preloaded (cannot open shared object file): ignored.\nGUARD BLOCK: forbidden environment GIT_EDITOR\nNoNewPrivs:\t1\nSeccomp:\t2\n```\n\nExit code: `0`"}}
+{"type":"turn.completed","usage":{"input_tokens":30573,"cached_input_tokens":24576,"cache_write_input_tokens":0,"output_tokens":158,"reasoning_output_tokens":0}}

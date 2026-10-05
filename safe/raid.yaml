@@ -241,8 +241,21 @@ issues:
       of P1-P3/U1 by the orchestrator was REFUSED by the Claude Code auto-mode permission classifier, so nothing is installed.
       N1-N6, N9 and the Codex POS remain. Reviewed files and install commands: docs/factory/runtime-guard/ and
       FACTORY-RUNTIME-GUARD.md section 9.
+    progress_2026_10_05: >
+      PO installed P1-P3/U1 manually. Orchestrator verified: installed guard, pins and rule are byte-identical to the
+      reviewed artifacts at c9adac2 (sha256 5a64561d.., 50065984.., 3fa9c333..), ownership/modes as P1-P3, pins equal
+      36f95d5. Codex-side N1-N6 and N9 PASS: every compound, substituted, redirected, env-prefixed, wrapped or PATH-resolved
+      form ran sandboxed (Seccomp 2, NoNewPrivs 1) or was rejected; docker.sock denied; workspace .codex is a read-only
+      mount (write, mv and symlink fail). Host-side N7, N8 and N11 on the installed guard: all BLOCK. No escape → rollback
+      not triggered. POS BLOCKED: Codex 0.160 injects GIT_EDITOR and GIT_PAGER into every command, the guard rejects all
+      GIT_*, so CODEX_DEVOPS can never run build/lint/unit (fail-closed; Codex config can remove GIT_EDITOR but not
+      GIT_PAGER). Fix proposed as r2 (exact-name skip of GIT_EDITOR/GIT_PAGER before the env -i re-exec;
+      sha256 e9127cf9..), host-tested on a scratch copy, NOT installed. Evidence:
+      docs/factory/runtime-guard/validation-2026-10-05/RESULTS.md. Uncommitted work in the 002/003 DevOps worktrees
+      preserved first (refs/preserve/2026-10-05/*, ~/AI_Tutor-backups/2026-10-05/), worktrees untouched.
+    next_2026_10_05: "PO: approve r2 and reinstall P1 only (pins and rule unchanged); then orchestrator reruns POS and N3/N5 (env path) before any evidence use."
     blocks: [US-FACTORY-003]
-    owner: "HUMAN_PO (approve P1-P3/U1 and test permission) / CLAUDE_SM"
+    owner: "HUMAN_PO (approve + install guard r2) / CLAUDE_SM"
     status: OPEN
   - id: I-018
     description: >

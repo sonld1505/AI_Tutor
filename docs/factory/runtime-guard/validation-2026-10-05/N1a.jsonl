@@ -1,0 +1,5 @@
+{"type":"thread.started","thread_id":"01a1097c-f827-70e3-ab95-a33d5aa7720f"}
+{"type":"turn.started"}
+{"type":"item.completed","item":{"id":"item_0","type":"agent_message","text":"I’ll run the command exactly once and report its output and exit code."}}
+{"type":"item.completed","item":{"id":"item_1","type":"agent_message","text":"Rejected:\n```text\nexec_command failed: CreateProcess { message: \"Rejected(\\\"`/bin/bash -lc \\\\\\\"docker ps; grep -E '\\\\\\\"'^(Seccomp|NoNewPrivs):'\\\\\\\"' /proc/self/status\\\\\\\"` rejected: policy forbids commands starting with `docker`\\\")\" }\n```\n\nNo stdout/stderr or exit code was produced."}}
+{"type":"turn.completed","usage":{"input_tokens":29595,"cached_input_tokens":26880,"cache_write_input_tokens":0,"output_tokens":152,"reasoning_output_tokens":0}}

@@ -1,8 +1,8 @@
 # Factory runtime guard — design (PROPOSED, NOT INSTALLED)
 
-Status: **PO-approved in principle (2026-10-04); reviewed implementation ready; NOT INSTALLED.** The orchestrator's
-install of P1–P3/U1 was refused by the Claude Code auto-mode permission classifier. The PO has to run the install
-(§9) or allow it. Reviewed files: `docs/factory/runtime-guard/` (§9).
+Status: **INSTALLED by the PO (P1–P3/U1, verified 2026-10-05). Isolation tests N1–N9, N11 PASS. POS BLOCKED.** Codex injects
+`GIT_EDITOR`/`GIT_PAGER`, and the installed guard rejects them, so it cannot be used yet. Fix r2 is waiting for PO approval and
+reinstall (§10). Reviewed files: `docs/factory/runtime-guard/` (§9).
 Resolves: DEVBOOK #11 (Codex DevOps cannot run the canonical Docker gates), RAID I-016.
 Unblocks: RAID I-015 (US-FACTORY-003 build/lint/Unit Test records from CODEX_DEVOPS).
 PO constraints (2026-10-04): Codex stays sandboxed; no `danger-full-access`; Codex gets no
@@ -269,3 +269,25 @@ install -m 0644 "$D/factory-runtime-guard.rules" /home/ubuntu/.codex/rules/facto
 ```
 
 Rollback: `sudo rm -f /usr/local/bin/factory-runtime-guard; sudo rm -rf /etc/factory-runtime-guard /var/lib/factory-runtime-guard; rm -f ~/.codex/rules/factory-runtime-guard.rules`.
+
+## 10. Post-install validation (2026-10-05, Claude orchestrator)
+
+Full record and raw Codex logs: `runtime-guard/validation-2026-10-05/RESULTS.md`.
+
+- Installed files are byte-identical to §9. Pins = 36f95d5.
+- N1–N6, N9 (Codex side) and N7, N8, N11 (host side, installed guard): **all PASS**. No command left the sandbox except through the
+  exact allow rule, and Docker was unreachable. Rollback not triggered.
+- **POS BLOCKED (design omission):** Codex 0.160 always exports `GIT_EDITOR=true` and `GIT_PAGER`. §3.1 rejects all `GIT_*`, so
+  every Codex call ends with `GUARD BLOCK: forbidden environment GIT_EDITOR`. `shell_environment_policy` can drop
+  `GIT_EDITOR` but not `GIT_PAGER`.
+- **Fix r2 (proposed, not installed):** `runtime-guard/factory-runtime-guard.r2-proposed`
+  (sha256 `e9127cf9101e56887c592b457a742396cb990b323f12f29e8d5ea05bf26cfc9d`, diff `factory-runtime-guard.r2.diff`).
+  Skip exactly these two names in the pre-re-exec scan. Nothing reads them before `env -i`, which drops them. Every other
+  forbidden variable, including `GIT_DIR`, `GIT_CONFIG_*` and near-miss names, still BLOCKs (scratch-copy test).
+- Install (PO/admin, P1 only; pins and rule unchanged):
+  ```bash
+  D=/home/ubuntu/AI_Tutor-worktrees/US-FACTORY-004-MGMT/docs/factory/runtime-guard
+  sha256sum "$D/factory-runtime-guard.r2-proposed"   # must be e9127cf9…cfc9d
+  sudo install -o root -g root -m 0755 "$D/factory-runtime-guard.r2-proposed" /usr/local/bin/factory-runtime-guard
+  ```
+- After reinstall: rerun POS, N3a and N5a (Codex), and N7/N8/N11 (host) on the installed r2. Only then does the guard produce evidence.
