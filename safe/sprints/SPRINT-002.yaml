@@ -11,16 +11,16 @@ end_date: "2026-10-14"
 stories:
   - id: US-001
     type: enabler
-    points: null          # estimation pending (DoR estimation_completed false)
-    assigned_role: null   # open: Codex Backend or team AI engineer (US-001 Q4)
-    status: REFINED
-    commitment: planned
+    points: 5             # human PO 2026-10-08
+    assigned_role: CODEX_BACKEND   # human PO 2026-10-08; assignment PLANNED until start blockers clear
+    status: READY
+    commitment: committed
   - id: US-002
     type: enabler
-    points: null
-    assigned_role: null   # needs a mobile engineer with real iPhone/Android devices (US-002 Q4)
-    status: REFINED
-    commitment: planned
+    points: 8             # human PO 2026-10-08
+    assigned_role: null   # not assigned yet: needs a mobile engineer with real iPhone/Android devices (US-002 Q4)
+    status: READY
+    commitment: committed
   - id: US-003
     type: enabler
     points: null
@@ -32,13 +32,14 @@ risks:
   - R-005   # names outside the masked band
   - R-006   # mock data may overstate accuracy
 
-# Must clear before US-001/US-002 can move to READY / IN_PROGRESS:
+# DoR PASS 7/7 for US-001 and US-002 (CLAUDE_SM 2026-10-08, checked by hand: R-001).
+# Start blockers (READY -> IN_PROGRESS):
 blockers:
-  - "DoR estimation_completed: story points for US-001 and US-002"
-  - "D-007: provider API keys configured outside Git (A+)"
+  - "D-007: approved by PO; keys not yet configured on the spike machine"
   - "D-006: agent Git identity for implementation commits (spike code in repo)"
+  - "US-002: assignee (mobile engineer with devices)"
   - "Mock data sets produced (notebook pages, 1-page sheets, voice recordings) and stored outside Git"
 
 metrics:
-  committed_points: 0
+  committed_points: 13
   completed_points: 0

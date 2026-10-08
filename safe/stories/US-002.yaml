@@ -8,11 +8,11 @@ depends_on: []
 epic: "EPIC-001"
 feature: "F-021"
 
-status: REFINED
+status: READY
 blocked_from: null
 blocked_by: []
 priority: high
-story_points: null
+story_points: 8   # human PO 2026-10-08
 
 business_context: >
   Rảnh tay là ràng buộc cứng (D03). Chưa xác nhận có thư viện từ gọi tiếng Việt đạt chất lượng
@@ -127,4 +127,4 @@ definition_of_ready:
   dependencies_identified: true
   architecture_reviewed: true        # spike, no production architecture; checked by CLAUDE_BA against TH v1.3 §4.2, §4.4
   test_scenarios_defined: true
-  estimation_completed: false
+  estimation_completed: true

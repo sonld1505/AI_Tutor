@@ -254,3 +254,4 @@ dependencies:
     from: "US-001, US-002"
     to: "HUMAN_PO"
     status: OPEN
+    update_2026_10_08: "Human PO approved the approach (keys outside Git, configured by a human). Stays OPEN until the keys are actually configured on the spike machine; start blocker for provider calls, not a DoR item."

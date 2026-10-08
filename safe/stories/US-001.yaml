@@ -8,11 +8,11 @@ depends_on: []
 epic: "EPIC-007"
 feature: "F-021"
 
-status: REFINED
+status: READY
 blocked_from: null
 blocked_by: []
 priority: high
-story_points: null
+story_points: 5   # human PO 2026-10-08
 
 business_context: >
   Toàn bộ sản phẩm dựa trên giả thuyết model vision thương mại đọc đủ đúng chữ viết tay
@@ -117,7 +117,7 @@ open_questions:
   - "Q2: Provider đã chốt là Anthropic; còn phải xác minh điều khoản cho người dưới 18 tuổi, retention, training, vị trí xử lý (inference_geo) trước khi gửi ảnh thật. Việc A+, cần PO duyệt."
   - "Q6: Tập mẫu theo SGK Cánh diều HK1, gồm hình học; vở có số câu ở lề trái (ví dụ '1) 5x + 3 = 28')."
   - "Q3 (đã trả lời 08/10): tuần 1 dùng tập mock do người lớn tạo; nguồn và đồng ý cho ảnh trẻ thật để sau (RAID I-013), trước G1."
-  - "Q4: Ai chạy spike: Codex Backend hay kỹ sư AI của đội?"
+  - "Q4 (đã trả lời 08/10): Codex Backend chạy spike."
   - "Q7: Shadow teacher gán nhãn tập spike (D25); cần ký hợp tác trước 14/10."
 
 definition_of_done:
@@ -141,4 +141,4 @@ definition_of_ready:
   dependencies_identified: true
   architecture_reviewed: true        # spike, no production architecture; checked by CLAUDE_BA against TH v1.3 §5.7, §6, §12
   test_scenarios_defined: true
-  estimation_completed: false
+  estimation_completed: true
