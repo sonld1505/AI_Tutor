@@ -1,14 +1,15 @@
 # Source: baseline v1.3 (docs/product/), human PO decisions 2026-10-08.
-# Drafted by Claude PM/PO; status DRAFT until the human PO approves.
-# business_value is decided by the human PO (null until then).
+# Drafted by Claude PM/PO; approved by the human PO 2026-10-08 ("Duyệt hết theo đề xuất").
 # BH = docs/product/business-hld-v1.3.md, TH = docs/product/technical-hld-v1.3.md
 id: F-020
 epic: EPIC-007
 title: Harness replay và bộ dữ liệu
-status: DRAFT
+status: APPROVED
+approved_by: HUMAN_PO
+approved_at: "2026-10-08"
 description: Chạy ảnh đề, ảnh bài làm, âm thanh qua hệ thống; chấm theo acceptance; báo theo model_version/policy_version/learned_scope_version
   (TH §12).
-business_value: null
+business_value: "8/10 (thang tương đối 1–10), MoSCoW MUST: theo EPIC-007. PO duyệt 2026-10-08."
 benefit_hypothesis: Giả thuyết pilot; kiểm chứng bằng KPI của EPIC-007 (BH §8, §11).
 use_cases: []
 acceptance_criteria:

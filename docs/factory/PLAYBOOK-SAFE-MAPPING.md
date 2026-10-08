@@ -25,6 +25,6 @@
 ## Hệ quả hiện tại
 
 - **2026-10-08:** chủ dự án chọn bộ tài liệu trong `docs/product/` làm baseline sản phẩm; cùng ngày hợp nhất thành **v1.3**. Business HLD v1.3 giữ vai trò bước [0]–[1] (scope, D01–D31, use case U01–U25, KPI); Technical HLD v1.3 là đầu vào bước [3] (kiến trúc, API, acceptance A01–A46), chưa thay thế ADR. `SCOPE-AITUTOR.md` và `HLD-AITUTOR.md` đã SUPERSEDED; RAID I-001 CLOSED.
-- Đã tạo ở trạng thái **DRAFT**: EPIC-001→007, F-001→024 (mỗi U và mỗi A gắn với ít nhất một Feature), `safe/roadmap.yaml` (kickoff 08/10, go/no-go 16/12/2026), Story tuần 1 US-001→003. Chưa có PI-001: chờ PO duyệt. Câu hỏi mở chặn refinement: RAID I-013.
+- EPIC-001→007, F-001→024 (mỗi U và mỗi A gắn với ít nhất một Feature), `safe/roadmap.yaml` (kickoff 08/10, go/no-go 16/12/2026) và thứ tự backlog: **APPROVED** bởi PO ngày 08/10/2026 (business_value thang 1–10, MoSCoW). Story tuần 1 US-001→003 còn DRAFT. Chưa có PI-001. Câu hỏi mở chặn refinement: RAID I-013.
 - `DEVBOOK-AITUTOR.md` dùng chung cho cả Playbook (bước [8]) và factory: mọi lần AI sai → người sửa đều ghi vào đó.
 - Điểm business value (PI, Epic) do chủ dự án quyết; agent chỉ đề xuất, để `null` khi chưa có quyết định.

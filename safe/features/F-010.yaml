@@ -1,15 +1,16 @@
 # Source: baseline v1.3 (docs/product/), human PO decisions 2026-10-08.
-# Drafted by Claude PM/PO; status DRAFT until the human PO approves.
-# business_value is decided by the human PO (null until then).
+# Drafted by Claude PM/PO; approved by the human PO 2026-10-08 ("Duyệt hết theo đề xuất").
 # BH = docs/product/business-hld-v1.3.md, TH = docs/product/technical-hld-v1.3.md
 id: F-010
 epic: EPIC-003
 title: ValidatorRegistry và bộ chấm số học/đại số
-status: DRAFT
+status: APPROVED
+approved_by: HUMAN_PO
+approved_at: "2026-10-08"
 description: Registry chọn bộ chấm theo domain; MVP đăng ký bộ số học/đại số HK1 (parser allowlist + SymPy có timeout);
   tách answer_status/reasoning_status; dòng sai gốc; domain chưa đăng ký (hình học) → UNSUPPORTED; thêm bộ hình
   học sau pilot không đổi pipeline (TH §8.5, D30).
-business_value: null
+business_value: "10/10 (thang tương đối 1–10), MoSCoW MUST: theo EPIC-003. PO duyệt 2026-10-08."
 benefit_hypothesis: Giả thuyết pilot; kiểm chứng bằng KPI của EPIC-003 (BH §8, §11).
 use_cases: []
 acceptance_criteria:

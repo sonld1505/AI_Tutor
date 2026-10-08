@@ -1,9 +1,10 @@
-# Roadmap — owner: PM_PO. Milestones are targets, not commitments or results.
+# Roadmap — owner: PM_PO. Approved by the human PO 2026-10-08. Milestones are targets, not commitments or results.
 # Source: docs/product/business-hld-v1.3.md §11 (gates S/G0/G1/G2, go/no-go)
 # and docs/product/technical-hld-v1.3.md §13. Kickoff 2026-10-08 (human PO, 2026-10-08); week N = kickoff + 7*(N-1) days.
 kickoff: "2026-10-08"
 updated: "2026-10-08"
-approved_by: null
+approved_by: HUMAN_PO
+approved_at: "2026-10-08"
 
 horizons:
   - name: "Tuần 1 — Spike"

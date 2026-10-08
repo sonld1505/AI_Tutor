@@ -1,15 +1,16 @@
 # Source: baseline v1.3 (docs/product/), human PO decisions 2026-10-08.
-# Drafted by Claude PM/PO; status DRAFT until the human PO approves.
-# business_value is decided by the human PO (null until then).
+# Drafted by Claude PM/PO; approved by the human PO 2026-10-08 ("Duyệt hết theo đề xuất").
 # BH = docs/product/business-hld-v1.3.md, TH = docs/product/technical-hld-v1.3.md
 id: EPIC-003
 title: Kiểm tra bài và Trợ giúp
-status: DRAFT
+status: APPROVED
+approved_by: HUMAN_PO
+approved_at: "2026-10-08"
 problem_statement: App giải bài đưa đáp án ngay; trợ lý AI đa năng không chấm cách làm và không biết trẻ đã học
   gì.
 business_outcome: Khi trẻ gọi, cô đọc lời giải của câu (theo số câu ghi trong vở), chỉ dòng sai gốc và gợi ý nhỏ
   nhất trong phạm vi đã học; không phán sai khi chưa đủ bằng chứng.
-business_value: null
+business_value: "10/10 (thang tương đối 1–10), MoSCoW MUST: giá trị lõi. PO duyệt 2026-10-08."
 success_metrics:
 - Error precision > 90%; recall ≥ 90% — mục tiêu pilot, chưa đo
 - Kết luận sai khi thiếu bằng chứng < 1% — mục tiêu pilot, chưa đo

@@ -1,14 +1,15 @@
 # Source: baseline v1.3 (docs/product/), human PO decisions 2026-10-08.
-# Drafted by Claude PM/PO; status DRAFT until the human PO approves.
-# business_value is decided by the human PO (null until then).
+# Drafted by Claude PM/PO; approved by the human PO 2026-10-08 ("Duyệt hết theo đề xuất").
 # BH = docs/product/business-hld-v1.3.md, TH = docs/product/technical-hld-v1.3.md
 id: F-006
 epic: EPIC-002
 title: Phạm vi đã học có version
-status: DRAFT
+status: APPROVED
+approved_by: HUMAN_PO
+approved_at: "2026-10-08"
 description: 'Web: shadow teacher tick bài đã học theo mục lục SGK Cánh diều lớp 6 HK1; mỗi lần đổi tạo version;
   buổi đang chạy dùng snapshot (TH §8.2, API learned-scope).'
-business_value: null
+business_value: "8/10 (thang tương đối 1–10), MoSCoW MUST: theo EPIC-002. PO duyệt 2026-10-08."
 benefit_hypothesis: Giả thuyết pilot; kiểm chứng bằng KPI của EPIC-002 (BH §8, §11).
 use_cases:
 - U20
