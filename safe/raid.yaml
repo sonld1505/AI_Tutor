@@ -249,6 +249,16 @@ dependencies:
     from: "US-FACTORY-003 (Code Review and Integration Test, i.e. before TESTING; first implementation commit), every later Story's implementation commits and Code Review gate"
     to: "HUMAN_PO (GitHub admin)"
     status: OPEN
+  - id: D-008
+    description: >
+      US-002 is assigned to Codex Android + Codex iOS (human PO 2026-10-08), but the factory EC2 is Linux with
+      no Android SDK and cannot build iOS (Xcode needs macOS). Measurements must run on real Android 15+ and
+      iOS 18.7+ devices (AC01-AC04, AC06). Needed: Android SDK/Flutter on the build host, a macOS build host
+      (local Mac or macOS CI) with signing for TestFlight or ad-hoc install, the physical devices, and a human
+      who installs builds and plays the mock recordings. Codex cannot hold or operate devices.
+    from: "US-002"
+    to: "HUMAN_PO / DEVOPS"
+    status: OPEN
   - id: D-007
     description: "API keys for Anthropic (US-001), Viettel AI and Azure Speech (US-002) configured by a human on the machine that runs the spikes (environment variable or secret store), never in Git, code, logs or reports. A+ (secrets, providers): PO approves before first use."
     from: "US-001, US-002"

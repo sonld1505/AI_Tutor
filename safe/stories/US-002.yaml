@@ -104,7 +104,7 @@ open_questions:
   - "Q1: Cách chốt danh sách máy đã có (tiêu chí tối thiểu + test thật); vẫn cần đội mobile đề xuất tiêu chí và máy cụ thể cho spike."
   - "Q2 (đã trả lời 08/10): tuần 1 dùng ghi âm người lớn + giọng tổng hợp; ghi âm trẻ để sau (RAID I-013)."
   - "Q3 (đã trả lời 08/10): cổng S = nhận đúng 'Cô ơi' ≥ 80% và kích hoạt nhầm ≤ 3 lần/giờ trên mỗi nền tảng."
-  - "Q4: Spike cần kỹ sư mobile thật trên iPhone; Codex Android/iOS có máy thử không?"
+  - "Q4 (đã trả lời 08/10): giao Codex Android (android/**) và Codex iOS (ios/**). Chạy đo trên máy thật cần máy build macOS cho iOS, Android SDK, máy thử và người thao tác (RAID D-008)."
 
 definition_of_done:
   implementation_complete: false

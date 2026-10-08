@@ -18,7 +18,7 @@ stories:
   - id: US-002
     type: enabler
     points: 8             # human PO 2026-10-08
-    assigned_role: null   # not assigned yet: needs a mobile engineer with real iPhone/Android devices (US-002 Q4)
+    assigned_role: [CODEX_ANDROID, CODEX_IOS]   # human PO 2026-10-08; assignment PLANNED until start blockers clear
     status: READY
     commitment: committed
   - id: US-003
@@ -37,7 +37,7 @@ risks:
 blockers:
   - "D-007: approved by PO; keys not yet configured on the spike machine"
   - "D-006: agent Git identity for implementation commits (spike code in repo)"
-  - "US-002: assignee (mobile engineer with devices)"
+  - "D-008 (US-002): macOS build host for iOS, Android SDK, real devices and a human operator for on-device measurements"
   - "Mock data sets produced (notebook pages, 1-page sheets, voice recordings) and stored outside Git"
 
 metrics:
