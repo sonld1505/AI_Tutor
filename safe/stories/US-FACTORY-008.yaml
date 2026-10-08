@@ -17,6 +17,12 @@ title: "Provide a pinned Flutter + Android SDK build toolchain for the factory"
 #   Android SDK License: accepted by the human PO (RAID D-009). The image build may
 #     accept the licenses non-interactively; the accepted license files are not
 #     edited by hand.
+#   Verification model (human PO 2026-10-08, because of RAID I-016 on the host: the
+#     Codex sandbox has no Docker access and the runtime guard covers only the Python
+#     gates): Codex DevOps writes the Dockerfile, wrapper, smoke-test script and docs
+#     inside its sandbox and does not run Docker. A human runs TS01-TS10 on the host
+#     with the committed files; those results are recorded as HUMAN, never as
+#     CODEX_DEVOPS. No permission is widened.
 #
 # Renumbered 2026-10-08 (human PO): drafted and merged as US-FACTORY-004 (PR #12), but
 # that ID is already used on the unmerged branch management/factory-v2-stabilization
@@ -105,6 +111,7 @@ dependencies:
   - "DEP04: Creating the worktree: create-worktree.sh currently accepts only ^US-[0-9]+$ until US-FACTORY-002 lands (RAID I-003). The worktree for this Story was created by hand on 2026-10-08 (git worktree add), as for US-FACTORY-002."
   - "DEP05: The DoR validator is fail-open (DEF-001, R-001), so the SM checks this Story's DoR by hand."
   - "DEP06: Commits by the agent need D-006 (agent Git identity)."
+  - "DEP07: Codex sandbox has no Docker (RAID I-016 on the host). TS01-TS10 are run by a human on the host and recorded as HUMAN (PO decision 2026-10-08)."
 
 components:
   backend: false
