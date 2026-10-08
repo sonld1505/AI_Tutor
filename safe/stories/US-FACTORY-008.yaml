@@ -1,4 +1,4 @@
-id: US-FACTORY-004
+id: US-FACTORY-008
 
 title: "Provide a pinned Flutter + Android SDK build toolchain for the factory"
 
@@ -17,6 +17,10 @@ title: "Provide a pinned Flutter + Android SDK build toolchain for the factory"
 #   Android SDK License: accepted by the human PO (RAID D-009). The image build may
 #     accept the licenses non-interactively; the accepted license files are not
 #     edited by hand.
+#
+# Renumbered 2026-10-08 (human PO): drafted and merged as US-FACTORY-004 (PR #12), but
+# that ID is already used on the unmerged branch management/factory-v2-stabilization
+# (Lean MVF Story). Same for I-014 -> I-021 and R-007 -> R-008. Content unchanged.
 story_type: enabler
 depends_on: []
 epic: ""
@@ -24,15 +28,18 @@ feature: ""
 
 # DRAFT | REFINED | READY | IN_PROGRESS | DEV_COMPLETE | TESTING | QA | DONE | BLOCKED
 # State machine: agents/claude/scrum-master.md
-status: REFINED   # DoR 6/7: story_points not set by the human PO
+status: IN_PROGRESS  # REFINED -> READY (3 pts) -> IN_PROGRESS 2026-10-08, CLAUDE_SM on human PO instruction
 assignment:
   role: DEVOPS
   agent: CODEX
-  state: PLANNED   # human PO 2026-10-08; starts when READY
+  branch: feature/US-FACTORY-008-devops
+  worktree: /home/ubuntu/AI_Tutor-worktrees/US-FACTORY-008-DEVOPS
+  base: management/us-factory-008-start (this Story's record; merges into develop via PR)
+  state: ACTIVE  # 2026-10-08. D-006 open: work and test in the worktree, NO implementation commit until the agent identity is configured
 blocked_from: null
 blocked_by: []
 priority: high       # US-002 Android measurements cannot be built without it
-story_points: null
+story_points: 3      # human PO, 2026-10-08
 
 business_context: >
   US-002 (voice spike, gate S, week 1) must be measured on real Android 15+
@@ -95,7 +102,7 @@ dependencies:
   - "DEP01: Docker 29.1 on the EC2; the ubuntu session can reach the Docker daemon (checked 2026-10-08, see RAID I-007)."
   - "DEP02: Network access from the host to Docker Hub, storage.googleapis.com (Flutter) and dl.google.com (Android SDK) to build the image."
   - "DEP03: Android SDK License accepted by the human PO (RAID D-009, 2026-10-08)."
-  - "DEP04: Creating the worktree: create-worktree.sh currently accepts only ^US-[0-9]+$ until US-FACTORY-002 lands (RAID I-003). The worktree for this Story is created by hand, as for US-FACTORY-002."
+  - "DEP04: Creating the worktree: create-worktree.sh currently accepts only ^US-[0-9]+$ until US-FACTORY-002 lands (RAID I-003). The worktree for this Story was created by hand on 2026-10-08 (git worktree add), as for US-FACTORY-002."
   - "DEP05: The DoR validator is fail-open (DEF-001, R-001), so the SM checks this Story's DoR by hand."
   - "DEP06: Commits by the agent need D-006 (agent Git identity)."
 
@@ -163,12 +170,12 @@ definition_of_done:
 
 # Keep this block LAST: scripts/validate-story.sh reads the 20 lines after it.
 # Keys must match safe/templates/definition-of-ready.yaml.
-# DoR assessment by CLAUDE_SM (manual, R-001), 2026-10-08. Result: 6/7 -> REFINED.
+# DoR assessment by CLAUDE_SM (manual, R-001), 2026-10-08. Result: 7/7 -> READY (points set by the human PO).
 definition_of_ready:
   business_value_defined: true        # business_value
   story_defined: true                 # scope and out-of-scope fixed by PO decisions 2026-10-08
   acceptance_criteria_defined: true   # AC01-AC08, each testable
-  dependencies_identified: true       # DEP01-DEP06; RAID D-006, D-008, D-009, I-003, I-007
+  dependencies_identified: true       # DEP01-DEP06; RAID D-006, D-008, D-009, I-003, I-007, R-008
   architecture_reviewed: true         # AD-03 (pinned image, one model for local + CI), human PO
   test_scenarios_defined: true        # TS01-TS10; every AC covered
-  estimation_completed: false         # story_points not set by the human PO
+  estimation_completed: true          # 3 points, human PO 2026-10-08

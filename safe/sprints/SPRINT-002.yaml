@@ -21,12 +21,12 @@ stories:
     assigned_role: [CODEX_ANDROID, CODEX_IOS]   # human PO 2026-10-08; assignment PLANNED until start blockers clear
     status: READY
     commitment: committed
-  - id: US-FACTORY-004
+  - id: US-FACTORY-008
     type: enabler
-    points: null          # pending human PO
-    assigned_role: CODEX_DEVOPS   # human PO 2026-10-08; PLANNED until READY
-    status: REFINED
-    commitment: not_committed     # becomes committed when the PO sets points
+    points: 3             # human PO 2026-10-08
+    assigned_role: CODEX_DEVOPS   # human PO 2026-10-08
+    status: IN_PROGRESS   # 2026-10-08; D-006 open: no implementation commit yet
+    commitment: committed
   - id: US-003
     type: enabler
     points: null
@@ -37,17 +37,17 @@ stories:
 risks:
   - R-005   # names outside the masked band
   - R-006   # mock data may overstate accuracy
-  - R-007   # 2 vCPU / 7 GB RAM for Gradle + Flutter builds
+  - R-008   # 2 vCPU / 7 GB RAM for Gradle + Flutter builds
 
 # DoR PASS 7/7 for US-001 and US-002 (CLAUDE_SM 2026-10-08, checked by hand: R-001).
 # Start blockers (READY -> IN_PROGRESS):
 blockers:
   - "D-007: approved by PO; keys not yet configured on the spike machine"
   - "D-006: agent Git identity for implementation commits (spike code in repo)"
-  - "D-008 (US-002): macOS build host for iOS, real devices and a human operator for on-device measurements; Android SDK + Flutter via US-FACTORY-004"
-  - "I-014 (US-002): Flutter project layout and owner of shared Dart code (android/** vs ios/** split)"
+  - "D-008 (US-002): macOS build host for iOS, real devices and a human operator for on-device measurements; Android SDK + Flutter via US-FACTORY-008"
+  - "I-021 (US-002): Flutter project layout and owner of shared Dart code (android/** vs ios/** split)"
   - "Mock data sets produced (notebook pages, 1-page sheets, voice recordings) and stored outside Git"
 
 metrics:
-  committed_points: 13
+  committed_points: 16
   completed_points: 0
