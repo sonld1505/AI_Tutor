@@ -1,0 +1,174 @@
+id: US-FACTORY-004
+
+title: "Provide a pinned Flutter + Android SDK build toolchain for the factory"
+
+# SAFe Enabler Story (factory tooling, not product scope). Prerequisite of the
+# Android part of US-002 (RAID D-008). Drafted by CLAUDE_BA 2026-10-08 on human PO
+# instruction: "giao Codex DevOps cài Android SDK và Flutter".
+#
+# Decisions approved by the human PO on 2026-10-08:
+#   AD-03: Flutter and the Android SDK are provided ONLY through a pinned Docker
+#     image (same model as AD-01 for Python). Codex local runs and Jenkins use the
+#     same image. Nothing is installed on the EC2 host.
+#   Versions: latest Flutter stable at implementation time, then pinned exactly
+#     (Flutter version + image digest recorded in the repo). Android platform
+#     android-35 (Android 15); minSdk 35 because the app supports Android 15+ only
+#     (D23); compileSdk/targetSdk >= 35. JDK 17 inside the image.
+#   Android SDK License: accepted by the human PO (RAID D-009). The image build may
+#     accept the licenses non-interactively; the accepted license files are not
+#     edited by hand.
+story_type: enabler
+depends_on: []
+epic: ""
+feature: ""
+
+# DRAFT | REFINED | READY | IN_PROGRESS | DEV_COMPLETE | TESTING | QA | DONE | BLOCKED
+# State machine: agents/claude/scrum-master.md
+status: REFINED   # DoR 6/7: story_points not set by the human PO
+assignment:
+  role: DEVOPS
+  agent: CODEX
+  state: PLANNED   # human PO 2026-10-08; starts when READY
+blocked_from: null
+blocked_by: []
+priority: high       # US-002 Android measurements cannot be built without it
+story_points: null
+
+business_context: >
+  US-002 (voice spike, gate S, week 1) must be measured on real Android 15+
+  and iOS 18.7+ devices. The app stack is Flutter with native modules (TH v1.3
+  §10). The factory EC2 is Linux with no Android SDK and no Flutter (checked
+  2026-10-08: no adb, sdkmanager, flutter), so no Android build can be produced.
+  It also has no /dev/kvm, so an Android emulator cannot run there.
+
+business_value: >
+  Gives Codex Android and Jenkins one reproducible way to build a Flutter APK
+  for Android 15+, so the US-002 spike can produce an installable Android build
+  this week. Pinning keeps local and CI results identical, as AD-01 does for
+  Python.
+
+description: >
+  As the factory owner (human PO), I want a pinned Docker image containing
+  Flutter stable, the Android SDK (platform android-35, matching build-tools,
+  platform-tools) and JDK 17, plus a wrapper script that runs a command inside
+  it on the current checkout, so that Codex agents and Jenkins can build a
+  Flutter Android APK the same way.
+  Owner role: Codex DevOps (infrastructure/**, scripts/**).
+  Out of scope: iOS builds (need macOS, RAID D-008); Android emulator (no KVM
+  on the host); installing anything on the EC2 host; changing build.sh,
+  lint.sh, unit-test.sh or Jenkinsfile (they are being changed by
+  US-FACTORY-002; Flutter gate detection is a follow-up Story); app code
+  (US-002); signing keys and Play Store publishing.
+
+acceptance_criteria:
+  - id: AC01
+    description: "A Dockerfile under infrastructure/docker/ builds an image containing Flutter stable (exact version pinned), JDK 17 and the Android SDK command-line tools with platforms;android-35, a matching build-tools version and platform-tools. Every version, and the base image digest, is pinned in the repo."
+  - id: AC02
+    description: "The image reference used by the factory is an exact tag plus digest, defined once in the repo and read by the wrapper script."
+  - id: AC03
+    description: "A wrapper script under scripts/ runs a given command inside the pinned image with the current checkout mounted. It exits with the command's exit code, and it exits non-zero naming the cause if Docker is unavailable or the image cannot be built or pulled. It never falls back to a host flutter, sdkmanager or java."
+  - id: AC04
+    description: "Inside the image, `flutter doctor` reports Flutter and the Android toolchain as OK and the Android licenses as accepted. Missing Xcode, Chrome and connected devices are expected and documented."
+  - id: AC05
+    description: "A smoke test creates a throwaway Flutter app in a temporary directory with minSdk 35 and compileSdk/targetSdk >= 35, and builds a debug APK inside the image. The APK exists and its manifest shows minSdkVersion 35. Nothing is written to the repository."
+  - id: AC06
+    description: "The build runs on the factory EC2 (2 vCPU, 7 GB RAM). Gradle memory settings are fixed explicitly so the smoke build does not fail from lack of memory. The measured build time and peak memory are recorded in the evidence, or N/A if they were not measured."
+  - id: AC07
+    description: "Nothing is installed on the EC2 host: no Flutter, Android SDK, JDK or ANDROID_HOME added to the host. Existing scripts (build.sh, lint.sh, unit-test.sh, deploy.sh, validate-story.sh) and Jenkinsfile are unchanged."
+  - id: AC08
+    description: "Usage is documented (README section or infrastructure/docker/<image>/README.md): how to build or pull the image, run the wrapper, the pinned versions, how to upgrade them, and the limits (no iOS, no emulator)."
+
+functional_requirements:
+  - "FR01: The license acceptance step runs only during the image build and refers to RAID D-009 in a comment."
+  - "FR02: The Flutter and Gradle caches may use a named Docker volume to save build time; a cache miss must not change results."
+  - "FR03: The container runs as a non-root user whose UID matches the checkout owner, so files created in the mounted checkout are not root-owned."
+  - "FR04: Every failure prints which step failed (docker, image, flutter doctor, gradle)."
+
+non_functional_requirements:
+  - "NFR01 (fail closed): UNKNOWN != PASS. A missing tool, image or result is FAIL."
+  - "NFR02 (reproducibility): versions and digests are pinned; the host toolchain has no effect on results."
+  - "NFR03 (secrets): no keystore, signing key, token or private registry credential in the repo, image or logs."
+  - "NFR04 (scope guard): no change outside infrastructure/** and scripts/** except the documentation in AC08 and the Story's own evidence."
+  - "NFR05 (resources): the image fits in the host's free disk (84 GB free on 2026-10-08); the image size is recorded."
+
+dependencies:
+  - "DEP01: Docker 29.1 on the EC2; the ubuntu session can reach the Docker daemon (checked 2026-10-08, see RAID I-007)."
+  - "DEP02: Network access from the host to Docker Hub, storage.googleapis.com (Flutter) and dl.google.com (Android SDK) to build the image."
+  - "DEP03: Android SDK License accepted by the human PO (RAID D-009, 2026-10-08)."
+  - "DEP04: Creating the worktree: create-worktree.sh currently accepts only ^US-[0-9]+$ until US-FACTORY-002 lands (RAID I-003). The worktree for this Story is created by hand, as for US-FACTORY-002."
+  - "DEP05: The DoR validator is fail-open (DEF-001, R-001), so the SM checks this Story's DoR by hand."
+  - "DEP06: Commits by the agent need D-006 (agent Git identity)."
+
+components:
+  backend: false
+  frontend: false
+  android: false
+  ios: false
+  infrastructure: true
+
+api_impact: false
+ui_impact: false
+data_impact: false
+security_impact: true     # third-party toolchain downloads; license acceptance; container runs on the CI host
+privacy_impact: false
+
+test_scenarios:
+  - id: TS01
+    covers: [AC01, AC02]
+    scenario: "Build the image from a clean cache. Every FROM line uses a digest, and Flutter, build-tools and platform versions are fixed values in the repo, not 'latest'."
+  - id: TS02
+    covers: [AC04]
+    scenario: "Wrapper runs `flutter doctor -v`: Flutter OK, Android toolchain OK, licenses accepted. The output is saved as evidence."
+  - id: TS03
+    covers: [AC05, AC06]
+    scenario: "Smoke test: `flutter create` in a temporary directory, set minSdk 35, `flutter build apk --debug` -> exit 0. `aapt dump badging` (or apkanalyzer) shows minSdkVersion 35. Record build time and peak memory."
+  - id: TS04
+    covers: [AC03]
+    scenario: "Docker stopped or unreachable -> wrapper exits non-zero with a message naming Docker."
+  - id: TS05
+    covers: [AC03, AC02]
+    scenario: "Image reference set to an unknown digest -> wrapper exits non-zero naming the image; it does not use a host toolchain."
+  - id: TS06
+    covers: [AC03]
+    scenario: "Wrapper runs `false` -> exits 1; runs `true` -> exits 0 (exit code passed through)."
+  - id: TS07
+    covers: [AC03, AC07]
+    scenario: "Run TS02 with no flutter, java or sdkmanager on the host PATH -> same result. `which flutter sdkmanager adb` on the host stays empty after the Story."
+  - id: TS08
+    covers: [AC07]
+    scenario: "git diff of the Story branch shows no change to Jenkinsfile, scripts/build.sh, lint.sh, unit-test.sh, deploy.sh or validate-story.sh."
+  - id: TS09
+    covers: [FR03]
+    scenario: "After the smoke test, no file in the mounted directory is owned by root."
+  - id: TS10
+    covers: [AC08]
+    scenario: "A reviewer follows the documentation on a fresh shell and reproduces TS02."
+
+open_questions: []
+
+# Evidence links (Jenkins build, test report, review) are required for each true value.
+# Filled by Tester/QA/Scrum Master — never by the implementing agent alone.
+definition_of_done:
+  implementation_complete: false
+  code_review_passed: false
+  build_passed: false
+  lint_passed: false
+  unit_tests_passed: false
+  integration_tests_passed: false
+  acceptance_criteria_passed: false
+  security_scan_passed: false
+  qa_passed: false
+  documentation_updated: false
+  evidence: []
+
+# Keep this block LAST: scripts/validate-story.sh reads the 20 lines after it.
+# Keys must match safe/templates/definition-of-ready.yaml.
+# DoR assessment by CLAUDE_SM (manual, R-001), 2026-10-08. Result: 6/7 -> REFINED.
+definition_of_ready:
+  business_value_defined: true        # business_value
+  story_defined: true                 # scope and out-of-scope fixed by PO decisions 2026-10-08
+  acceptance_criteria_defined: true   # AC01-AC08, each testable
+  dependencies_identified: true       # DEP01-DEP06; RAID D-006, D-008, D-009, I-003, I-007
+  architecture_reviewed: true         # AD-03 (pinned image, one model for local + CI), human PO
+  test_scenarios_defined: true        # TS01-TS10; every AC covered
+  estimation_completed: false         # story_points not set by the human PO

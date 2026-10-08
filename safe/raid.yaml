@@ -44,6 +44,13 @@ risks:
     mitigation: "Measure in spike US-001 (AC07); shadow teacher labels 'contains identifying data' (A46) and each label is a safety incident."
     owner: "HUMAN_PO"
     status: OPEN
+  - id: R-007
+    description: "The factory EC2 has 2 vCPU and 7 GB RAM. Gradle + Flutter Android builds in a container (US-FACTORY-004) may be slow or run out of memory, and they compete with Jenkins and Codex runs on the same host."
+    probability: null
+    impact: null
+    mitigation: "US-FACTORY-004 AC06 fixes Gradle memory explicitly and records build time and peak memory; if the smoke build does not fit, the PO decides on a larger instance or a separate build host."
+    owner: "HUMAN_PO"
+    status: OPEN
 
 assumptions: []
 
@@ -201,6 +208,15 @@ issues:
     status: OPEN
     update_2026_10_08_w1: "Human PO 2026-10-08: start week 1 on MOCK data (adult-made notebook images, team-authored 1-page sheets, adult + synthetic voice). Provider terms, test devices and recording consent may be settled later; they no longer block US-001/US-002 but still block any real child data (needed before G1). Removed US-001, US-002 from blocks."
     update_2026_10_08: "Hint-text LLM question answered by human PO: template only; no template -> 'cần xem lại' (D31). Intent stays rule-based."
+  - id: I-014
+    description: >
+      The app is one Flutter project with native modules (TH v1.3 §10), but the factory gives Codex Android
+      ownership of android/** and Codex iOS ownership of ios/**. Shared Dart code (lib/, pubspec.yaml, test/)
+      has no owner, and scripts/build.sh, lint.sh, unit-test.sh only detect android/gradlew. The project layout
+      and ownership of shared Flutter code must be decided before US-002 writes app code.
+    blocks: ["US-002"]
+    owner: "HUMAN_PO"
+    status: OPEN
 
 dependencies:
   - id: D-001
@@ -259,6 +275,12 @@ dependencies:
     from: "US-002"
     to: "HUMAN_PO / DEVOPS"
     status: OPEN
+    update_2026_10_08: "Android SDK + Flutter part assigned to Codex DevOps as Enabler US-FACTORY-004 (pinned Docker image, AD-03). macOS host for iOS, devices and human operator still open."
+  - id: D-009
+    description: "Android SDK License (Google) acceptance needed to install the Android SDK in the US-FACTORY-004 image. Human PO accepted the license on 2026-10-08 and allowed the image build to accept it non-interactively."
+    from: "US-FACTORY-004"
+    to: "HUMAN_PO"
+    status: CLOSED
   - id: D-007
     description: "API keys for Anthropic (US-001), Viettel AI and Azure Speech (US-002) configured by a human on the machine that runs the spikes (environment variable or secret store), never in Git, code, logs or reports. A+ (secrets, providers): PO approves before first use."
     from: "US-001, US-002"
