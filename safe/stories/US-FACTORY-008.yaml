@@ -17,6 +17,8 @@ title: "Provide a pinned Flutter + Android SDK build toolchain for the factory"
 #   Android SDK License: accepted by the human PO (RAID D-009). The image build may
 #     accept the licenses non-interactively; the accepted license files are not
 #     edited by hand.
+#   AC02 amended 2026-10-08 (human PO, after Codex hard-stop): a self-built image has no
+#     digest until it is built, so it is pinned by tag + local image ID in two stages.
 #   Verification model (human PO 2026-10-08, because of RAID I-016 on the host: the
 #     Codex sandbox has no Docker access and the runtime guard covers only the Python
 #     gates): Codex DevOps writes the Dockerfile, wrapper, smoke-test script and docs
@@ -77,7 +79,7 @@ acceptance_criteria:
   - id: AC01
     description: "A Dockerfile under infrastructure/docker/ builds an image containing Flutter stable (exact version pinned), JDK 17 and the Android SDK command-line tools with platforms;android-35, a matching build-tools version and platform-tools. Every version, and the base image digest, is pinned in the repo."
   - id: AC02
-    description: "The image reference used by the factory is an exact tag plus digest, defined once in the repo and read by the wrapper script."
+    description: "The image reference is defined once in the repo (one file) and read by the wrapper: an exact local tag plus the image ID (sha256) of the built image. Two-stage pin (human PO 2026-10-08): Codex commits the file with the image ID empty; a human builds the image on the host and records the tag and image ID; the wrapper refuses to run while the ID is empty and when the local image's ID does not match. No registry."
   - id: AC03
     description: "A wrapper script under scripts/ runs a given command inside the pinned image with the current checkout mounted. It exits with the command's exit code, and it exits non-zero naming the cause if Docker is unavailable or the image cannot be built or pulled. It never falls back to a host flutter, sdkmanager or java."
   - id: AC04
@@ -141,7 +143,7 @@ test_scenarios:
     scenario: "Docker stopped or unreachable -> wrapper exits non-zero with a message naming Docker."
   - id: TS05
     covers: [AC03, AC02]
-    scenario: "Image reference set to an unknown digest -> wrapper exits non-zero naming the image; it does not use a host toolchain."
+    scenario: "Image ID empty -> wrapper exits non-zero saying the image is not pinned. Image ID set to a value that does not match the local image (or the image is absent) -> exits non-zero naming the image. Neither case uses a host toolchain."
   - id: TS06
     covers: [AC03]
     scenario: "Wrapper runs `false` -> exits 1; runs `true` -> exits 0 (exit code passed through)."
