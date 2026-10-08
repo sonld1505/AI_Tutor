@@ -16,9 +16,9 @@ items:
   - ref: US-FACTORY-002
     moscow: null
     rationale: "Enabler, 3 pts. Prerequisite of US-FACTORY-001 (D-005) and US-003. IN_PROGRESS 2026-10-03, Codex DevOps. DONE needs I-005, D-001."
-  - ref: US-FACTORY-004
+  - ref: US-FACTORY-008
     moscow: null
-    rationale: "Enabler, points pending (PO). Pinned Flutter + Android SDK Docker image for local and CI builds (AD-03, D-009). Needed for the Android part of US-002. REFINED 2026-10-08, Codex DevOps. Position proposed by CLAUDE_SM; PO decides."
+    rationale: "Enabler, 3 pts (PO). Pinned Flutter + Android SDK Docker image for local and CI builds (AD-03, D-009). Needed for the Android part of US-002. IN_PROGRESS 2026-10-08, Codex DevOps (no commits until D-006). Position proposed by CLAUDE_SM; PO decides."
   - ref: US-FACTORY-001
     moscow: null
     rationale: "Factory validation, 2 pts. DoR PASS; BLOCKED until US-FACTORY-002 is DONE."
@@ -34,7 +34,7 @@ items:
     rationale: "Spike Claude Opus/Sonnet/Haiku 5.5 on de-identified images (F-021). Gate S 2026-10-14. READY 2026-10-08, 5 pts, Codex Backend, MOCK data. Start needs D-007 keys configured and D-006."
   - ref: US-002
     moscow: MUST
-    rationale: "Spike 'Cô ơi', ASR Viettel AI, TTS Azure (F-021). Gate S 2026-10-14. READY 2026-10-08, 8 pts, MOCK voice data. Codex Android + iOS. Start needs D-008 (macOS host, devices, operator; Android SDK via US-FACTORY-004), I-014 (Flutter project ownership), D-007 keys, D-006."
+    rationale: "Spike 'Cô ơi', ASR Viettel AI, TTS Azure (F-021). Gate S 2026-10-14. READY 2026-10-08, 8 pts, MOCK voice data. Codex Android + iOS. Start needs D-008 (macOS host, devices, operator; Android SDK via US-FACTORY-008), I-021 (Flutter project ownership), D-007 keys, D-006."
   - ref: US-003
     moscow: MUST
     rationale: "Adapter skeleton with labelled fakes (F-019). Unblocks vertical slice without a real provider. Depends on US-FACTORY-002."
