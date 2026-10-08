@@ -19,6 +19,8 @@ title: "Provide a pinned Flutter + Android SDK build toolchain for the factory"
 #     edited by hand.
 #   AC02 amended 2026-10-08 (human PO, after Codex hard-stop): a self-built image has no
 #     digest until it is built, so it is pinned by tag + local image ID in two stages.
+#   AC01 amended 2026-10-08 (human PO): apt packages unpinned, recorded via dpkg -l;
+#     the AC02 image ID is what freezes the tested image.
 #   Verification model (human PO 2026-10-08, because of RAID I-016 on the host: the
 #     Codex sandbox has no Docker access and the runtime guard covers only the Python
 #     gates): Codex DevOps writes the Dockerfile, wrapper, smoke-test script and docs
@@ -77,7 +79,7 @@ description: >
 
 acceptance_criteria:
   - id: AC01
-    description: "A Dockerfile under infrastructure/docker/ builds an image containing Flutter stable (exact version pinned), JDK 17 and the Android SDK command-line tools with platforms;android-35, a matching build-tools version and platform-tools. Every version, and the base image digest, is pinned in the repo."
+    description: "A Dockerfile under infrastructure/docker/ builds an image containing Flutter stable (exact version pinned), JDK 17 and the Android SDK command-line tools with platforms;android-35, a matching build-tools version and platform-tools. The base image digest and the versions + official checksums of Flutter, the JDK (via the base image) and each Android SDK component are pinned in the repo. Scope of pinning (human PO 2026-10-08, after Codex hard-stop): OS support packages installed with apt (git, unzip, xz-utils, runtime libraries) are installed by name without version pins; the image build writes the installed package list (dpkg -l) to the evidence. Flutter engine artifacts (flutter precache) and the Gradle/Maven dependencies of the smoke-test app are pinned transitively by the Flutter version and need no separate checksum. The built image is frozen by the AC02 image ID; any rebuild needs a new recorded image ID and a re-run of the TS."
   - id: AC02
     description: "The image reference is defined once in the repo (one file) and read by the wrapper: an exact local tag plus the image ID (sha256) of the built image. Two-stage pin (human PO 2026-10-08): Codex commits the file with the image ID empty; a human builds the image on the host and records the tag and image ID; the wrapper refuses to run while the ID is empty and when the local image's ID does not match. No registry."
   - id: AC03
@@ -131,7 +133,7 @@ privacy_impact: false
 test_scenarios:
   - id: TS01
     covers: [AC01, AC02]
-    scenario: "Build the image from a clean cache. Every FROM line uses a digest, and Flutter, build-tools and platform versions are fixed values in the repo, not 'latest'."
+    scenario: "Build the image from a clean cache. Every FROM line uses a digest; Flutter, build-tools, platform, platform-tools and cmdline-tools are fixed values with checksums verified during the build, not 'latest'. The dpkg -l package list is saved as evidence."
   - id: TS02
     covers: [AC04]
     scenario: "Wrapper runs `flutter doctor -v`: Flutter OK, Android toolchain OK, licenses accepted. The output is saved as evidence."
