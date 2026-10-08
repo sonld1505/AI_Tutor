@@ -8,7 +8,7 @@ depends_on: []
 epic: "EPIC-001"
 feature: "F-021"
 
-status: DRAFT
+status: REFINED
 blocked_from: null
 blocked_by: []
 priority: high
@@ -24,10 +24,14 @@ business_value: >
   phải chạm máy, mất trụ khác biệt số 1.
 
 description: >
+  Tuần 1 chạy trên DỮ LIỆU MOCK (PO 08/10/2026): không có dữ liệu của trẻ thật. Kết quả gắn nhãn MOCK, không dùng
+  để tuyên bố năng lực thật; đo lại trên dữ liệu trẻ thật (có đồng ý, điều khoản đã xác minh) trước cổng G1.
   ASR đã chọn là Viettel AI, TTS là Azure Neural TTS giọng nữ tiếng Việt (D27); spike đo cả hai trên máy thật.
   So sánh ba phương án từ gọi theo Technical HLD §4.2: (1) thư viện keyword spotting có custom wake word;
   (2) model nhỏ tự huấn luyện; (3) VAD + ASR Viettel AI, chỉ khi (1) và (2) không đạt. Đo trên máy thật
-  Android 15+ và iPhone iOS 18.7+ với bộ ghi âm 20–30 trẻ nói tập lệnh Business HLD §5.2 và âm nền (TV, anh chị em).
+  Android 15+ và iPhone iOS 18.7+ sẵn có của đội, với bộ ghi âm MOCK: 10–20 người lớn nói tập lệnh Business HLD §5.2
+  (có người nói giọng cao, nói nhanh, nói nhỏ) cộng giọng tổng hợp đổi cao độ mô phỏng giọng trẻ, và âm nền có
+  license phù hợp (TV, hội thoại có chứa "cô ơi" ngoài ngữ cảnh). Danh sách máy cụ thể ghi trong báo cáo.
 
 acceptance_criteria:
   - id: AC01
@@ -39,7 +43,7 @@ acceptance_criteria:
   - id: AC04
     description: "Xác nhận chỉ đoạn sau từ gọi được gửi đi (log mạng trên máy thử); không có ASR luôn bật."
   - id: AC05
-    description: "Khuyến nghị một phương án kèm license của thư viện/model và chi phí; PO quyết."
+    description: "Khuyến nghị một phương án kèm license của thư viện/model và chi phí; PO quyết. Mọi số đo gắn nhãn MOCK; kết luận cổng S ghi là 'S (MOCK)', đo lại với giọng trẻ thật trước G1."
   - id: AC06
     description: "Đo ASR Viettel AI trên tập lệnh của trẻ (tỷ lệ đúng, độ trễ) và TTS Azure (độ trễ tới âm đầu, cách đọc biểu thức Toán tiếng Việt)."
 
@@ -48,13 +52,14 @@ functional_requirements:
   - "FR02: Bộ ghi âm có nhãn câu lệnh, tách giọng trẻ và âm nền."
 
 non_functional_requirements:
-  - "NFR01: Không lưu audio của trẻ ngoài bộ test được đồng ý; không commit audio vào Git."
+  - "NFR01: Tuần 1 không thu âm trẻ em; bộ ghi âm người lớn có đồng ý của người nói; không commit audio vào Git."
+  - "NFR03: Key Viettel AI và Azure do người cấu hình ngoài Git (A+, RAID D-007); không nằm trong code, log hay báo cáo."
   - "NFR02: Mục tiêu tham chiếu (chưa phải ngưỡng cổng S): kích hoạt nhầm < 1 lần/giờ, lệnh hiểu đúng ≥ 90% (Business HLD §8.2)."
 
 dependencies:
-  - "Q1: Danh sách máy Android và iPhone dùng cho spike."
-  - "Q2: Đồng ý ghi âm 20–30 trẻ."
-  - "Xác minh điều khoản Viettel AI và Azure cho giọng nói của trẻ (A+)."
+  - "Máy thử: Android 15+ và iPhone iOS 18.7+ sẵn có của đội (PO 08/10: danh sách chốt sau)."
+  - "D-007: key Viettel AI và Azure được người cấu hình (A+)."
+  - "Đồng ý ghi âm trẻ và điều khoản Viettel AI/Azure cho giọng trẻ: để sau (RAID I-013), trước G1."
 
 components:
   backend: false
@@ -77,7 +82,7 @@ test_scenarios:
   - id: TS02
     covers: [AC01, AC02]
     type: measurement
-    scenario: "Phát tập ghi âm 20–30 trẻ nói từng lệnh → tỷ lệ nhận đúng từ gọi và intent."
+    scenario: "Phát tập ghi âm MOCK (người lớn + giọng tổng hợp) nói từng lệnh → tỷ lệ nhận đúng từ gọi và intent."
   - id: TS03
     covers: [AC03]
     type: measurement
@@ -97,7 +102,7 @@ test_scenarios:
 
 open_questions:
   - "Q1: Cách chốt danh sách máy đã có (tiêu chí tối thiểu + test thật); vẫn cần đội mobile đề xuất tiêu chí và máy cụ thể cho spike."
-  - "Q2: Nguồn ghi âm trẻ và hình thức đồng ý."
+  - "Q2 (đã trả lời 08/10): tuần 1 dùng ghi âm người lớn + giọng tổng hợp; ghi âm trẻ để sau (RAID I-013)."
   - "Q3 (đã trả lời 08/10): cổng S = nhận đúng 'Cô ơi' ≥ 80% và kích hoạt nhầm ≤ 3 lần/giờ trên mỗi nền tảng."
   - "Q4: Spike cần kỹ sư mobile thật trên iPhone; Codex Android/iOS có máy thử không?"
 
@@ -117,9 +122,9 @@ definition_of_done:
 # Keep this block LAST: scripts/validate-story.sh reads the 20 lines after it.
 definition_of_ready:
   business_value_defined: true
-  story_defined: false
-  acceptance_criteria_defined: false
+  story_defined: true
+  acceptance_criteria_defined: true
   dependencies_identified: true
-  architecture_reviewed: false
+  architecture_reviewed: true        # spike, no production architecture; checked by CLAUDE_BA against TH v1.3 §4.2, §4.4
   test_scenarios_defined: true
   estimation_completed: false

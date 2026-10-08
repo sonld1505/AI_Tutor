@@ -1,0 +1,44 @@
+id: SPRINT-002
+# Product week 1 (spike, gate S). Created by CLAUDE_SM 2026-10-08 on human PO instruction:
+# "start tuần 1 với dữ liệu mock". No PI exists yet (PI-001 not approved).
+pi: null
+
+goal: "Gate S (MOCK) by 2026-10-14: measure Claude Opus/Sonnet/Haiku 5.5 on mock notebook pages and 1-page sheets (US-001) and 'Cô ơi' + Viettel AI ASR + Azure TTS on mock voice recordings on real Android 15+/iOS 18.7+ devices (US-002)."
+
+start_date: "2026-10-08"
+end_date: "2026-10-14"
+
+stories:
+  - id: US-001
+    type: enabler
+    points: null          # estimation pending (DoR estimation_completed false)
+    assigned_role: null   # open: Codex Backend or team AI engineer (US-001 Q4)
+    status: REFINED
+    commitment: planned
+  - id: US-002
+    type: enabler
+    points: null
+    assigned_role: null   # needs a mobile engineer with real iPhone/Android devices (US-002 Q4)
+    status: REFINED
+    commitment: planned
+  - id: US-003
+    type: enabler
+    points: null
+    assigned_role: CODEX_BACKEND
+    status: DRAFT         # depends on US-FACTORY-002 DONE; schema question Q2 open
+    commitment: not_committed
+
+risks:
+  - R-005   # names outside the masked band
+  - R-006   # mock data may overstate accuracy
+
+# Must clear before US-001/US-002 can move to READY / IN_PROGRESS:
+blockers:
+  - "DoR estimation_completed: story points for US-001 and US-002"
+  - "D-007: provider API keys configured outside Git (A+)"
+  - "D-006: agent Git identity for implementation commits (spike code in repo)"
+  - "Mock data sets produced (notebook pages, 1-page sheets, voice recordings) and stored outside Git"
+
+metrics:
+  committed_points: 0
+  completed_points: 0

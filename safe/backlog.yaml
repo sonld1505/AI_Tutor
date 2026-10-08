@@ -28,10 +28,10 @@ items:
   # --- Week 1, gate S ---
   - ref: US-001
     moscow: MUST
-    rationale: "Spike Claude Opus/Sonnet/Haiku 5.5 on de-identified images (F-021). Gate S 2026-10-14. DRAFT: Anthropic terms check (A+) and data consent (I-013)."
+    rationale: "Spike Claude Opus/Sonnet/Haiku 5.5 on de-identified images (F-021). Gate S 2026-10-14. REFINED on MOCK data (PO 2026-10-08); needs points and D-007 keys."
   - ref: US-002
     moscow: MUST
-    rationale: "Spike 'Cô ơi', ASR Viettel AI, TTS Azure (F-021). Gate S 2026-10-14. DRAFT: test devices and recording consent open (I-013)."
+    rationale: "Spike 'Cô ơi', ASR Viettel AI, TTS Azure (F-021). Gate S 2026-10-14. REFINED on MOCK voice data (PO 2026-10-08); needs points, D-007 keys and devices."
   - ref: US-003
     moscow: MUST
     rationale: "Adapter skeleton with labelled fakes (F-019). Unblocks vertical slice without a real provider. Depends on US-FACTORY-002."

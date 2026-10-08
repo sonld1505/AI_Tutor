@@ -13,6 +13,7 @@ horizons:
     exit_criteria:
       - "Cổng S (BH v1.3 §11.1): model Claude tốt nhất có kết luận lỗi đúng ≥ 75% trên bài làm và đủ câu/ý đề in một trang ≥ 95%; 'Cô ơi' nhận đúng ≥ 80%, kích hoạt nhầm ≤ 3 lần/giờ mỗi nền tảng; mục lục kỹ năng và support matrix HK1 Cánh diều đã chốt"
     assumptions:
+      - "Tuần 1 chạy trên dữ liệu MOCK (PO 08/10): kết luận ghi 'S (MOCK)'; đo lại trên dữ liệu trẻ thật có đồng ý trước G1 (RAID R-006)"
       - "Provider được duyệt trước khi dùng dữ liệu trẻ thật (CLAUDE_AI_Tutor.md §10)"
       - "Tư vấn pháp lý và shadow teacher bắt đầu trong tuần 1"
   - name: "Tuần 2–5 — Vertical slice"
