@@ -1,0 +1,37 @@
+# Roadmap — owner: PM_PO. Milestones are targets, not commitments or results.
+# Source: docs/product/business-hld-v1.3.md §11 (gates S/G0/G1/G2, go/no-go)
+# and docs/product/technical-hld-v1.3.md §13. Kickoff 2026-10-08 (human PO, 2026-10-08); week N = kickoff + 7*(N-1) days.
+kickoff: "2026-10-08"
+updated: "2026-10-08"
+approved_by: null
+
+horizons:
+  - name: "Tuần 1 — Spike"
+    target_window: "2026-10-08 → 2026-10-14 (cổng S: 2026-10-14)"
+    epics: [EPIC-007, EPIC-001, EPIC-002]
+    exit_criteria:
+      - "Cổng S (BH v1.3 §11.1): model Claude tốt nhất có kết luận lỗi đúng ≥ 75% trên bài làm và đủ câu/ý đề in một trang ≥ 95%; 'Cô ơi' nhận đúng ≥ 80%, kích hoạt nhầm ≤ 3 lần/giờ mỗi nền tảng; mục lục kỹ năng và support matrix HK1 Cánh diều đã chốt"
+    assumptions:
+      - "Provider được duyệt trước khi dùng dữ liệu trẻ thật (CLAUDE_AI_Tutor.md §10)"
+      - "Tư vấn pháp lý và shadow teacher bắt đầu trong tuần 1"
+  - name: "Tuần 2–5 — Vertical slice"
+    target_window: "2026-10-15 → 2026-11-11 (cổng G0: 2026-11-11)"
+    epics: [EPIC-001, EPIC-002, EPIC-003, EPIC-004, EPIC-005, EPIC-006, EPIC-007]
+    exit_criteria:
+      - "Cổng G0 (BH v1.3 §11.1): replay và máy thật trên Android 15+ và iOS 18.7+, gồm buổi 45 phút không chạm máy; 0 frame có người tới server; 0 dữ liệu định danh tới nhà cung cấp; 0 gợi ý ngoài phạm vi trên tập test"
+    assumptions:
+      - "Nếu G0 trễ: thu hẹp số chủ đề HK1 được chấm trước khi bỏ tính năng (BH v1.3 §11)"
+  - name: "Tuần 6 — Alpha"
+    target_window: "2026-11-12 → 2026-11-18 (cổng G1: 2026-11-18)"
+    epics: []
+    exit_criteria:
+      - "Cổng G1 (BH §11.1): alpha 5 gia đình, ≥ 2 mỗi nền tảng"
+    assumptions: []
+  - name: "Tuần 7–10 — Pilot"
+    target_window: "2026-11-19 → 2026-12-16 (G2 giữa tuần 7 ≈ 2026-11-22; go/no-go 2026-12-16)"
+    epics: []
+    exit_criteria:
+      - "Cổng G2 giữa tuần 7: mở 15 → 50 gia đình"
+      - "Go/no-go cuối tuần 10 theo bảng BH §11.2"
+    assumptions:
+      - "Gia đình vào pilot dùng khoảng 3–4 tuần; chưa đủ kết luận retention dài hạn"

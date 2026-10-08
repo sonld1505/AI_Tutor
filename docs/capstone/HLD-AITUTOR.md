@@ -1,5 +1,7 @@
 # HLD-AITUTOR — High Level Design
 
+> ⚠️ **SUPERSEDED ngày 08/10/2026.** Dựng từ `CLAUDE_AI_Tutor.md` bản 03/10. Chủ dự án đã chọn baseline trong `docs/product/` (nay là v1.3) ([Business HLD](../product/business-hld-v1.3.md), [Technical HLD](../product/technical-hld-v1.3.md)) làm baseline sản phẩm. Không dùng file này làm yêu cầu; giữ lại để tra lịch sử quyết định. Phần lệch chính: `CLAUDE_AI_Tutor.md` §16.
+
 > **Trạng thái:** `DRAFT — AI soạn, CHƯA duyệt`. Không phải kiến trúc đã chốt.
 > **Ngày:** 2026-10-03 · **Soạn bởi:** Claude Code (Opus 5.5) · **Người duyệt:** Lê Đình Sơn (chưa duyệt)
 > **Input:** `CLAUDE_AI_Tutor.md` (**CT**) · `docs/capstone/SCOPE-AITUTOR.md` (**SCOPE**, DRAFT).

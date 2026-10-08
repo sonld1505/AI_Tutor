@@ -1,0 +1,19 @@
+# Source: baseline v1.3 (docs/product/), human PO decisions 2026-10-08.
+# Drafted by Claude PM/PO; status DRAFT until the human PO approves.
+# business_value is decided by the human PO (null until then).
+# BH = docs/product/business-hld-v1.3.md, TH = docs/product/technical-hld-v1.3.md
+id: F-018
+epic: EPIC-006
+title: TTL ảnh, xuất và xóa dữ liệu
+status: DRAFT
+description: Ảnh tự xóa sau 7 ngày hoặc theo cài đặt; text đề và tiến độ giữ; API xuất/xóa/retention (TH §7.1, §8.10).
+business_value: null
+benefit_hypothesis: Giả thuyết pilot; kiểm chứng bằng KPI của EPIC-006 (BH §8, §11).
+use_cases:
+- U24
+acceptance_criteria:
+- A39 đạt theo docs/product/technical-hld-v1.3.md §15.1
+- A41 đạt theo docs/product/technical-hld-v1.3.md §15.1
+non_functional_requirements: []
+dependencies: []
+stories: []

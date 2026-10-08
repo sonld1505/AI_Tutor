@@ -1,18 +1,19 @@
 # Prioritized backlog — owner: PM_PO. Template: safe/templates/backlog.yaml
-# Product Epics/Features wait for approval of docs/capstone/SCOPE-AITUTOR.md
-# (decision 2026-10-03, see docs/factory/PLAYBOOK-SAFE-MAPPING.md).
-updated: "2026-10-03"
+# Product scope source: baseline v1.3 in docs/product/ (human PO decisions 2026-10-08;
+# SCOPE-AITUTOR.md is superseded, RAID I-001 closed).
+# Order and MoSCoW are PROPOSED by Claude PM/PO following the 10-week plan
+# (BH §11, TH §13); the human PO decides. MoSCoW stays null until then.
+updated: "2026-10-08"
 approved_by: null
 
-# Factory items below are not product scope (I-001 exceptions). Order and MoSCoW
-# are proposed by Claude; the human PO decides.
 items:
+  # --- Factory prerequisites (I-001 exceptions, unchanged) ---
   - ref: US-FACTORY-003
     moscow: null
     rationale: "Enabler, 8 pts (PO). Central fail-closed workflow gate validator + revision/contract-bound evidence. PO Q4: integrated before US-FACTORY-002 may merge (I-009). READY 2026-10-03 (DoR 7/7, Q1-Q11 resolved, AD-02). Start held by DEP01 (Story not yet on a base branch); TESTING needs D-006; DONE needs D-001, I-005-type decision, security scan. Position proposed by CLAUDE_BA; PO decides."
   - ref: US-FACTORY-002
     moscow: null
-    rationale: "Enabler, 3 pts. Prerequisite of US-FACTORY-001 (D-005). READY (AD-01 pinned python:3.12 container). IN_PROGRESS 2026-10-03, Codex DevOps (feature/US-FACTORY-002-devops). DONE needs I-005, D-001."
+    rationale: "Enabler, 3 pts. Prerequisite of US-FACTORY-001 (D-005) and US-003. IN_PROGRESS 2026-10-03, Codex DevOps. DONE needs I-005, D-001."
   - ref: US-FACTORY-001
     moscow: null
     rationale: "Factory validation, 2 pts. DoR PASS; BLOCKED until US-FACTORY-002 is DONE."
@@ -22,3 +23,35 @@ items:
   - ref: DEF-003
     moscow: null
     rationale: "MEDIUM, latent while deploy.sh exits 1. No owning Story (I-004)."
+  # --- Week 1, gate S ---
+  - ref: US-001
+    moscow: null
+    rationale: "Spike Claude Opus/Sonnet/Haiku 5.5 on de-identified images (F-021). Gate S 2026-10-14. DRAFT: Anthropic terms check (A+) and data consent (I-013)."
+  - ref: US-002
+    moscow: null
+    rationale: "Spike 'Cô ơi', ASR Viettel AI, TTS Azure (F-021). Gate S 2026-10-14. DRAFT: test devices and recording consent open (I-013)."
+  - ref: US-003
+    moscow: null
+    rationale: "Adapter skeleton with labelled fakes (F-019). Unblocks vertical slice without a real provider. Depends on US-FACTORY-002."
+  # --- Weeks 2–5, gate G0 (order follows context v0.5 §12) ---
+  - ref: EPIC-006
+    moscow: null
+    rationale: "Consent gate, person blocking and de-identification (F-023) are preconditions for any image upload (A36, A40, A43)."
+  - ref: EPIC-002
+    moscow: null
+    rationale: "No READY without a confirmed 1-page problem set and scope confirmed by the shadow teacher (D25)."
+  - ref: EPIC-001
+    moscow: null
+    rationale: "Hands-free session lifecycle; depends on US-002 outcome."
+  - ref: EPIC-003
+    moscow: null
+    rationale: "Check/Help pipeline; core value."
+  - ref: EPIC-004
+    moscow: null
+    rationale: "Progress, resume, report per problem set."
+  - ref: EPIC-007
+    moscow: null
+    rationale: "Replay harness (F-020), shadow-teacher review (F-024) and observability/release (F-022) needed for G0."
+  - ref: EPIC-005
+    moscow: null
+    rationale: "Worksheets and near-live view; last in the slice order."

@@ -1,0 +1,19 @@
+# Source: baseline v1.3 (docs/product/), human PO decisions 2026-10-08.
+# Drafted by Claude PM/PO; status DRAFT until the human PO approves.
+# business_value is decided by the human PO (null until then).
+# BH = docs/product/business-hld-v1.3.md, TH = docs/product/technical-hld-v1.3.md
+id: F-004
+epic: EPIC-001
+title: Khung trang, bù lệch, chất lượng, che tay
+status: DRAFT
+description: Phát hiện 4 góc trang, bù phối cảnh trong ngưỡng, ngoài ngưỡng nhắc xê dịch giấy (không nhắc chỉnh
+  máy), chờ bỏ tay (TH §5).
+business_value: null
+benefit_hypothesis: Giả thuyết pilot; kiểm chứng bằng KPI của EPIC-001 (BH §8, §11).
+use_cases:
+- U16
+acceptance_criteria:
+- A35 đạt theo docs/product/technical-hld-v1.3.md §15.1
+non_functional_requirements: []
+dependencies: []
+stories: []

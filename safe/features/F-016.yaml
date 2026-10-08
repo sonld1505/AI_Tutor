@@ -1,0 +1,20 @@
+# Source: baseline v1.3 (docs/product/), human PO decisions 2026-10-08.
+# Drafted by Claude PM/PO; status DRAFT until the human PO approves.
+# business_value is decided by the human PO (null until then).
+# BH = docs/product/business-hld-v1.3.md, TH = docs/product/technical-hld-v1.3.md
+id: F-016
+epic: EPIC-006
+title: Chặn người và ràng buộc gửi ảnh
+status: DRAFT
+description: Person/face detection trên máy; frame có người không rời máy; server từ chối ảnh khi person_check !=
+  PASSED, payload quá giới hạn, session/run sai, thiếu đồng ý loại 1 (TH §1, §7.1).
+business_value: null
+benefit_hypothesis: Giả thuyết pilot; kiểm chứng bằng KPI của EPIC-006 (BH §8, §11).
+use_cases: []
+acceptance_criteria:
+- A36 đạt theo docs/product/technical-hld-v1.3.md §15.1
+non_functional_requirements:
+- 0 frame có người tới server
+- Không log ảnh hoặc audio
+dependencies: []
+stories: []

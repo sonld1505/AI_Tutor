@@ -1,0 +1,26 @@
+# Source: baseline v1.3 (docs/product/), human PO decisions 2026-10-08.
+# Drafted by Claude PM/PO; status DRAFT until the human PO approves.
+# business_value is decided by the human PO (null until then).
+# BH = docs/product/business-hld-v1.3.md, TH = docs/product/technical-hld-v1.3.md
+id: EPIC-005
+title: 'Phụ huynh: phiếu bài và xem từ xa'
+status: DRAFT
+problem_statement: Phụ huynh muốn có bài cho con luyện đúng lỗ hổng và yên tâm khi không ngồi kèm.
+business_outcome: Phiếu bài hệ thống sinh theo lỗ hổng trở thành tờ đề buổi sau; phụ huynh xem ảnh bàn học gần trực
+  tiếp, máy con báo đang được xem.
+business_value: null
+success_metrics:
+- Đề/đáp án phiếu sai = 0 (G0) — mục tiêu pilot, chưa đo
+- Phiếu bài được làm ≥ 40% (go/no-go) — mục tiêu pilot, chưa đo
+features:
+- F-014
+- F-015
+risks:
+- Phiếu sai đáp án làm mất niềm tin
+dependencies:
+- EPIC-004 (lỗ hổng từ báo cáo)
+- Giáo viên duyệt template
+owner: PM_PO
+sources:
+- docs/product/business-hld-v1.3.md §1–§8, §11
+- docs/product/technical-hld-v1.3.md §1–§15

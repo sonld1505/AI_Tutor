@@ -1,0 +1,32 @@
+# Source: baseline v1.3 (docs/product/), human PO decisions 2026-10-08.
+# Drafted by Claude PM/PO; status DRAFT until the human PO approves.
+# business_value is decided by the human PO (null until then).
+# BH = docs/product/business-hld-v1.3.md, TH = docs/product/technical-hld-v1.3.md
+id: EPIC-007
+title: Nền tảng AI, kiểm chứng và vận hành pilot
+status: DRAFT
+problem_statement: Không có adapter, bộ replay và số đo thì không thể chọn model, qua cổng G0 hay biết chi phí thật.
+business_outcome: Mọi model qua adapter có version; model chỉ bật khi qua replay và G0; shadow teacher rà mọi phản
+  hồi AI; có số đo latency, token, chi phí; phát hành được trên TestFlight và Google Play testing.
+business_value: null
+success_metrics:
+- Cổng S đạt cuối tuần 1 — mục tiêu pilot, chưa đo
+- Cổng G0 đạt cuối tuần 5 — mục tiêu pilot, chưa đo
+- Chi phí AI p95/học sinh/tháng đo được — mục tiêu pilot, chưa đo
+features:
+- F-019
+- F-020
+- F-021
+- F-022
+- F-024
+risks:
+- Điều khoản Anthropic/Viettel AI/Azure chưa xác minh
+- Làm cả Android và iOS trong 10 tuần
+- Shadow teacher quá tải khi lên 50 gia đình
+dependencies:
+- Dữ liệu replay có đồng ý loại 2
+- Shadow teacher gán nhãn
+owner: PM_PO
+sources:
+- docs/product/business-hld-v1.3.md §1–§8, §11
+- docs/product/technical-hld-v1.3.md §1–§15

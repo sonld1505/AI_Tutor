@@ -24,11 +24,13 @@ Translate Product Vision into prioritized, measurable delivery objectives.
 - prioritized backlog: safe/backlog.yaml
 - roadmap: safe/roadmap.yaml (from safe/templates/roadmap.yaml)
 
-Product Vision is not duplicated here: it lives in CLAUDE_AI_Tutor.md §2
+Product Vision is not duplicated here: it lives in docs/product/business-hld-v1.3.md §1
+(summary in CLAUDE_AI_Tutor.md §2)
 and is changed only by the human Product Owner.
 
 Epic and Feature content comes from approved Playbook artifacts
-(docs/capstone/). See docs/factory/PLAYBOOK-SAFE-MAPPING.md.
+(baseline v1.3 in docs/product/, human PO decisions of 2026-10-08;
+docs/capstone/ drafts are superseded). See docs/factory/PLAYBOOK-SAFE-MAPPING.md.
 
 ## Rules
 

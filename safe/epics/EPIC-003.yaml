@@ -1,0 +1,32 @@
+# Source: baseline v1.3 (docs/product/), human PO decisions 2026-10-08.
+# Drafted by Claude PM/PO; status DRAFT until the human PO approves.
+# business_value is decided by the human PO (null until then).
+# BH = docs/product/business-hld-v1.3.md, TH = docs/product/technical-hld-v1.3.md
+id: EPIC-003
+title: Kiểm tra bài và Trợ giúp
+status: DRAFT
+problem_statement: App giải bài đưa đáp án ngay; trợ lý AI đa năng không chấm cách làm và không biết trẻ đã học
+  gì.
+business_outcome: Khi trẻ gọi, cô đọc lời giải của câu (theo số câu ghi trong vở), chỉ dòng sai gốc và gợi ý nhỏ
+  nhất trong phạm vi đã học; không phán sai khi chưa đủ bằng chứng.
+business_value: null
+success_metrics:
+- Error precision > 90%; recall ≥ 90% — mục tiêu pilot, chưa đo
+- Kết luận sai khi thiếu bằng chứng < 1% — mục tiêu pilot, chưa đo
+- Gợi ý L1/L2 lộ đáp án < 5% — mục tiêu pilot, chưa đo
+- Hint → Recovery > 70% — mục tiêu pilot, chưa đo
+features:
+- F-008
+- F-009
+- F-010
+- F-011
+risks:
+- Model đọc sai chữ viết tay hoặc số câu trong vở
+- Gợi ý lộ đáp án hoặc vượt phạm vi
+dependencies:
+- EPIC-002 (bộ đề, scope)
+- Điều khoản Anthropic đã xác minh (CLAUDE_AI_Tutor.md §10)
+owner: PM_PO
+sources:
+- docs/product/business-hld-v1.3.md §1–§8, §11
+- docs/product/technical-hld-v1.3.md §1–§15
