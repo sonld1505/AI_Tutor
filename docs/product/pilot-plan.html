@@ -1,0 +1,419 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>[hidden]{display:none!important}body{margin:0}</style>
+<title>Kế hoạch Pilot AI Study Companion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=Lexend:wght@500;600;700&family=JetBrains+Mono:wght@500&display=swap">
+<style>
+/* Layout: một cột tài liệu, header kẻ ô li như trang vở; màu mực bút bi xanh cho nhấn, mực đỏ cho no-go */
+:root {
+  --paper: #f6f8fb;
+  --sheet: #ffffff;
+  --ink: #18223a;
+  --muted: #5b6680;
+  --line: #dbe2ee;
+  --grid: #c9d8f2;
+  --pen: #1d4ed8;
+  --pen-soft: #e6edfc;
+  --go: #15803d;
+  --go-soft: #e3f4e8;
+  --warn: #a16207;
+  --warn-soft: #fbf1d9;
+  --stop: #c0362c;
+  --stop-soft: #fbe6e3;
+  --f-display: "Lexend", "Be Vietnam Pro", system-ui, sans-serif;
+  --f-body: "Be Vietnam Pro", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f1420; --sheet: #161d2c; --ink: #e6ebf5; --muted: #9aa6bf; --line: #2a3448; --grid: #22314d;
+    --pen: #7ea2ff; --pen-soft: #1c2a4a; --go: #5fd08a; --go-soft: #15301f; --warn: #e6b450; --warn-soft: #33290f;
+    --stop: #ff8a7d; --stop-soft: #3a1c19; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f1420; --sheet: #161d2c; --ink: #e6ebf5; --muted: #9aa6bf; --line: #2a3448; --grid: #22314d;
+  --pen: #7ea2ff; --pen-soft: #1c2a4a; --go: #5fd08a; --go-soft: #15301f; --warn: #e6b450; --warn-soft: #33290f;
+  --stop: #ff8a7d; --stop-soft: #3a1c19; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--paper); color: var(--ink); font: 15px/1.6 var(--f-body); }
+.wrap { max-width: 960px; margin: 0 auto; padding-inline: 16px; padding-block: 0 64px; }
+header.hero {
+  margin-inline: -16px; padding: 40px 16px 28px;
+  background-color: var(--sheet);
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 24px 24px; background-position: -1px -1px;
+  border-bottom: 2px solid var(--pen);
+}
+.hero-inner { max-width: 928px; margin: 0 auto; background: var(--sheet); padding: 20px 22px; border: 1px solid var(--line); }
+.eyebrow { font: 600 12px/1 var(--f-body); letter-spacing: .08em; text-transform: uppercase; color: var(--pen); }
+h1 { font: 700 clamp(26px, 4vw, 36px)/1.2 var(--f-display); margin: 10px 0 8px; text-wrap: balance; }
+h2 { font: 600 21px/1.3 var(--f-display); margin: 0 0 6px; text-wrap: balance; }
+h3 { font: 600 16px/1.35 var(--f-display); margin: 0; }
+p { margin: 0; }
+.lede { color: var(--muted); max-width: 64ch; }
+.facts { display: flex; flex-wrap: wrap; gap: 8px 22px; margin-top: 16px; font-size: 14px; }
+.facts b { font-family: var(--f-display); font-weight: 600; font-variant-numeric: tabular-nums; }
+section { margin-top: 44px; display: grid; gap: 14px; }
+.sub { color: var(--muted); max-width: 70ch; }
+.qs { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+.q { background: var(--sheet); border: 1px solid var(--line); padding: 14px 16px; display: grid; gap: 4px; }
+.q span { font: 500 12px var(--f-mono); color: var(--pen); }
+
+/* Timeline */
+.timeline { overflow-x: auto; }
+.weeks { display: grid; grid-template-columns: repeat(14, minmax(40px, 1fr)); min-width: 620px; gap: 2px; }
+.wk { font: 500 11px var(--f-mono); color: var(--muted); text-align: center; padding-bottom: 4px; }
+.bar { padding: 7px 8px; font-size: 12.5px; font-weight: 600; line-height: 1.3; border-left: 3px solid var(--pen); background: var(--pen-soft); color: var(--ink); min-width: 0; }
+.bar.alt { border-left-color: var(--warn); background: var(--warn-soft); }
+.bar.go { border-left-color: var(--go); background: var(--go-soft); }
+
+/* Checklist */
+.toolbar { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; }
+.note { font-size: 13px; color: var(--muted); }
+button.reset { font: 500 13px var(--f-body); background: transparent; color: var(--muted); border: 1px solid var(--line); padding: 6px 12px; cursor: pointer; }
+button.reset:hover { color: var(--ink); border-color: var(--muted); }
+button:focus-visible, input:focus-visible + .box { outline: 2px solid var(--pen); outline-offset: 2px; }
+.phase { background: var(--sheet); border: 1px solid var(--line); }
+.phase-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+.phase-head .when { font: 500 12px var(--f-mono); color: var(--pen); }
+.phase-head .count { margin-left: auto; font: 500 12px var(--f-mono); color: var(--muted); font-variant-numeric: tabular-nums; }
+.meter { height: 3px; background: var(--line); }
+.meter i { display: block; height: 100%; background: var(--go); width: 0; transition: width .2s; }
+ul.items { list-style: none; margin: 0; padding: 6px 0; }
+ul.items li label { display: grid; grid-template-columns: 22px 1fr auto; gap: 10px; align-items: start; padding: 8px 16px; cursor: pointer; }
+ul.items li label:hover { background: var(--paper); }
+ul.items input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.box { width: 18px; height: 18px; border: 1.5px solid var(--muted); margin-top: 3px; display: grid; place-items: center; }
+input:checked + .box { background: var(--go); border-color: var(--go); }
+input:checked + .box::after { content: ""; width: 9px; height: 5px; border-left: 2px solid var(--sheet); border-bottom: 2px solid var(--sheet); transform: rotate(-45deg) translate(1px, -1px); }
+input:checked ~ .txt { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--muted); }
+.txt { min-width: 0; }
+.txt small { display: block; color: var(--muted); font-size: 13px; text-decoration: none; }
+.who { font: 500 11px var(--f-mono); color: var(--muted); border: 1px solid var(--line); padding: 2px 6px; white-space: nowrap; margin-top: 2px; }
+.crit { font: 600 11px var(--f-body); color: var(--stop); margin-left: 6px; letter-spacing: .02em; }
+
+/* Tables */
+.tbl { overflow-x: auto; background: var(--sheet); border: 1px solid var(--line); }
+table { border-collapse: collapse; width: 100%; min-width: 640px; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+th { font: 600 12px var(--f-body); letter-spacing: .04em; text-transform: uppercase; color: var(--muted); background: var(--paper); }
+tr:last-child td { border-bottom: 0; }
+td.num { font-variant-numeric: tabular-nums; white-space: nowrap; font-weight: 600; }
+.pill { display: inline-block; padding: 1px 8px; font-size: 13px; font-weight: 600; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.p-go { background: var(--go-soft); color: var(--go); }
+.p-warn { background: var(--warn-soft); color: var(--warn); }
+.p-stop { background: var(--stop-soft); color: var(--stop); }
+.grp td { background: var(--pen-soft); font: 600 13px var(--f-display); color: var(--ink); padding-block: 7px; }
+
+.rule { background: var(--sheet); border: 1px solid var(--line); border-left: 3px solid var(--pen); padding: 14px 16px; display: grid; gap: 8px; }
+.rule ol { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+.cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+.card { background: var(--sheet); border: 1px solid var(--line); padding: 14px 16px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.card ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+.tag { font: 500 12px var(--f-mono); }
+footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 13px; }
+@media (prefers-reduced-motion: reduce) { .meter i { transition: none; } }
+</style>
+<div class="wrap">
+<header class="hero">
+  <div class="hero-inner">
+    <div class="eyebrow">AI Study Companion · Pilot MVP</div>
+    <h1>Kế hoạch Pilot 10 tuần</h1>
+    <p class="lede">Lộ trình từ kickoff đến buổi go/no-go, checklist từng tuần, cổng chuyển pha và tiêu chí quyết định. Theo Business HLD và Technical HLD v1.3 (08/10/2026): Toán lớp 6 học kỳ 1, SGK Cánh diều, trên Android 15+ và iOS 18.7+; kickoff 08/10/2026, go/no-go 16/12/2026; Business HLD v1.3 §11 là nguồn chuẩn cho các ngưỡng. Các ngưỡng là đề xuất ban đầu.</p>
+    <div class="facts">
+      <span><b>≤ 50</b> gia đình</span>
+      <span><b>10</b> tuần kickoff → go/no-go</span>
+      <span>Android và iOS</span>
+      <span><b>Toán lớp 6</b></span>
+      <span>Học theo tờ đề in</span>
+      <span>Gọi cô bằng giọng nói</span>
+      <span>Không chạm máy khi học</span>
+      <span>Miễn phí trong pilot</span>
+    </div>
+  </div>
+</header>
+
+<section aria-labelledby="s-goal">
+  <h2 id="s-goal">Pilot phải trả lời bốn câu hỏi</h2>
+  <div class="qs">
+    <div class="q"><span>Q1 · Chất lượng AI</span><p>Cô chấm đúng dòng sai và gợi ý đúng mức khi con gọi không?</p></div>
+    <div class="q"><span>Q2 · Rảnh tay</span><p>Con có học cả buổi, kể cả chụp đề đầu buổi, bằng giọng nói mà không phải chạm hay chỉnh máy không?</p></div>
+    <div class="q"><span>Q3 · Giá trị</span><p>Phụ huynh có thấy báo cáo và phiếu bài in hữu ích không?</p></div>
+    <div class="q"><span>Q4 · Kinh doanh</span><p>Phụ huynh có đặt cọc thật không? Chi phí mỗi học sinh là bao nhiêu?</p></div>
+  </div>
+  <p class="note">Lộ trình 10 tuần tính từ kickoff đến go/no-go. Gia đình vào pilot dùng khoảng 3–4 tuần, nên kết luận về retention vẫn là sơ bộ. Từ gọi là "Cô ơi".</p>
+</section>
+
+<section aria-labelledby="s-time">
+  <h2 id="s-time">Lộ trình 10 tuần</h2>
+  <div class="timeline">
+    <div class="weeks" style="grid-template-columns: repeat(10, minmax(56px, 1fr)); min-width: 600px" role="img" aria-label="Tuần 1 spike, tuần 2 đến 5 xây vertical slice trên Android và iOS, tuần 6 alpha 5 gia đình, tuần 7 đến 10 pilot tới 50 gia đình, cuối tuần 10 go/no-go">
+      <div class="wk">T1</div><div class="wk">T2</div><div class="wk">T3</div><div class="wk">T4</div><div class="wk">T5</div><div class="wk">T6</div><div class="wk">T7</div><div class="wk">T8</div><div class="wk">T9</div><div class="wk">T10</div>
+      <div class="bar" style="grid-column: 1 / span 1">Spike</div>
+      <div class="bar" style="grid-column: 2 / span 4">Xây trên Android và iOS · G0</div>
+      <div class="bar alt" style="grid-column: 6 / span 1">Alpha 5 · G1</div>
+      <div class="bar go" style="grid-column: 7 / span 4">Pilot 15 → 50 · go/no-go</div>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="s-check">
+  <div class="toolbar">
+    <h2 id="s-check">Checklist theo tuần</h2>
+    <button class="reset" id="reset-checks" type="button">Bỏ đánh dấu tất cả</button>
+  </div>
+  <p class="note">Dấu tích chỉ lưu trên trình duyệt của bạn, người khác không thấy. <span class="crit">BẮT BUỘC</span> là việc phải xong trước khi sang pha sau.</p>
+  <div id="phases"></div>
+</section>
+
+<section aria-labelledby="s-gate">
+  <h2 id="s-gate">Cổng chuyển pha</h2>
+  <p class="sub">Không đạt cổng thì dừng ở pha hiện tại, sửa rồi đo lại. Lộ trình 10 tuần không có tuần dự phòng: trượt một cổng là lùi ngày go/no-go.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Cổng</th><th>Điều kiện</th><th>Ngưỡng</th><th>Ai xác nhận</th></tr></thead>
+    <tbody>
+      <tr class="grp"><td colspan="4">S · Spike đạt (cuối tuần 1)</td></tr>
+      <tr><td>S.1</td><td>Model Claude tốt nhất: kết luận lỗi đúng trên bài làm của trẻ (100–200 mẫu, ảnh đã ẩn danh)</td><td class="num">≥ 75%</td><td>Kỹ sư AI + shadow teacher</td></tr>
+      <tr><td>S.2</td><td>Model Claude tốt nhất: đủ câu/ý của đề in một trang, trước xác nhận (20–30 tờ thật)</td><td class="num">≥ 95%</td><td>Kỹ sư AI + shadow teacher</td></tr>
+      <tr><td>S.3</td><td>Từ gọi nhận đúng giọng trẻ trong phòng thường</td><td class="num">Có phương án khả thi</td><td>Kỹ sư mobile/voice</td></tr>
+      <tr><td>S.4</td><td>Mục lục kỹ năng và support matrix HK1 Cánh diều đã chốt</td><td class="num">Có</td><td>Sơn + shadow teacher</td></tr>
+      <tr class="grp"><td colspan="4">G0 · Replay và máy thật → phát cho gia đình (cuối tuần 5)</td></tr>
+      <tr><td>G0.1</td><td>Error precision trên bộ replay</td><td class="num">≥ 85%</td><td>Kỹ sư AI + shadow teacher</td></tr>
+      <tr><td>G0.2</td><td>Kết luận Toán từ ảnh xấu</td><td class="num">≈ 0</td><td>Kỹ sư AI</td></tr>
+      <tr><td>G0.3</td><td>Gợi ý L1/L2 lộ đáp án</td><td class="num">&lt; 5%</td><td>Giáo viên</td></tr>
+      <tr><td>G0.4</td><td>Frame có người tới server</td><td class="num">0</td><td>Kỹ sư mobile</td></tr>
+      <tr><td>G0.5</td><td>Đề và đáp án phiếu bài sai</td><td class="num">0</td><td>Giáo viên</td></tr>
+      <tr><td>G0.6</td><td>Lệnh giọng nói hiểu đúng (giọng trẻ, phòng thường)</td><td class="num">≥ 85%</td><td>Kỹ sư voice</td></tr>
+      <tr><td>G0.7</td><td>Buổi test 45 phút, gồm chụp đề, không cần chạm máy</td><td class="num">Đạt</td><td>Sơn</td></tr>
+      <tr><td>G0.8</td><td>Chạy ổn trên Android và iOS trong danh sách máy hỗ trợ</td><td class="num">Đạt</td><td>Kỹ sư mobile</td></tr>
+      <tr><td>G0.9</td><td>Gợi ý ngoài phạm vi đã học (tập test)</td><td class="num">0</td><td>Giáo viên</td></tr>
+      <tr><td>G0.10</td><td>Đủ câu/ý của đề sau xác nhận (tập đề test)</td><td class="num">100%</td><td>Kỹ sư AI + shadow teacher</td></tr>
+      <tr><td>G0.11</td><td>Dữ liệu định danh tới nhà cung cấp AI</td><td class="num">0</td><td>Kỹ sư AI</td></tr>
+      <tr class="grp"><td colspan="4">G1 · Alpha 5 → mở 15 gia đình (cuối tuần 6)</td></tr>
+      <tr><td>G1.1</td><td>Buổi học không crash hoặc mất dữ liệu</td><td class="num">≥ 95%</td><td>Kỹ sư</td></tr>
+      <tr><td>G1.2</td><td>Gia đình setup lần đầu trong 10 phút</td><td class="num">≥ 4/5</td><td>Sơn</td></tr>
+      <tr><td>G1.3</td><td>Báo cáo sau buổi khớp kiểm tra tay của shadow teacher</td><td class="num">100%</td><td>Shadow teacher</td></tr>
+      <tr><td>G1.7</td><td>Phản hồi AI được shadow teacher rà trong 7 ngày</td><td class="num">100%</td><td>Shadow teacher</td></tr>
+      <tr><td>G1.4</td><td>Sự cố dữ liệu hoặc quyền riêng tư</td><td class="num">0</td><td>Sơn</td></tr>
+      <tr><td>G1.5</td><td>Gia đình alpha dùng mỗi nền tảng</td><td class="num">≥ 2</td><td>Sơn</td></tr>
+      <tr><td>G1.6</td><td>Học tiếp đề dở dang khôi phục đúng tiến độ</td><td class="num">100% số lần thử</td><td>Kỹ sư</td></tr>
+      <tr class="grp"><td colspan="4">G2 · 15 → mở 50 gia đình (giữa tuần 7)</td></tr>
+      <tr><td>G2.1</td><td>Lỗi blocker còn mở</td><td class="num">0</td><td>Kỹ sư</td></tr>
+      <tr><td>G2.2</td><td>Kích hoạt nhầm đo thực tế</td><td class="num">&lt; 1 lần/giờ</td><td>Kỹ sư voice</td></tr>
+      <tr><td>G2.3</td><td>Đội hỗ trợ phản hồi trong ngày</td><td class="num">≥ 90% yêu cầu</td><td>Sơn</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<section aria-labelledby="s-go">
+  <h2 id="s-go">Bảng go/no-go cuối tuần 10</h2>
+  <p class="sub">Đánh giá trên các gia đình đã dùng ít nhất 3 tuần; báo riêng Android và iOS. Vùng "xem lại" nghĩa là chưa đủ để mở rộng, cần một vòng sửa và đo lại.</p>
+  <div class="tbl"><table>
+    <thead><tr><th>Nhóm</th><th>Chỉ số</th><th>Cách đo</th><th>Go</th><th>Xem lại</th><th>No-go</th></tr></thead>
+    <tbody>
+      <tr><td>Chất lượng AI</td><td>Phản hồi sai / tổng phản hồi</td><td>Giáo viên chấm mẫu log hằng tuần</td><td><span class="pill p-go">&lt; 10%</span></td><td><span class="pill p-warn">10–20%</span></td><td><span class="pill p-stop">&gt; 20%</span></td></tr>
+      <tr><td>Rảnh tay</td><td>Buổi phải chạm hoặc chỉnh máy</td><td>Event log và khảo sát</td><td><span class="pill p-go">&lt; 10%</span></td><td><span class="pill p-warn">10–25%</span></td><td><span class="pill p-stop">&gt; 25%</span></td></tr>
+      <tr><td>Chụp đề</td><td>Buổi chụp đề xong mà không cần người lớn giúp</td><td>Event log</td><td><span class="pill p-go">≥ 80%</span></td><td><span class="pill p-warn">60–80%</span></td><td><span class="pill p-stop">&lt; 60%</span></td></tr>
+      <tr><td>Giọng nói</td><td>Gia đình phàn nàn về nhận lệnh</td><td>Khảo sát và phỏng vấn</td><td><span class="pill p-go">&lt; 15%</span></td><td><span class="pill p-warn">15–30%</span></td><td><span class="pill p-stop">&gt; 30%</span></td></tr>
+      <tr><td>Sử dụng</td><td>Còn dùng ≥ 3 buổi/tuần ở tuần thứ 3 của gia đình đó</td><td>Event log</td><td><span class="pill p-go">≥ 50%</span></td><td><span class="pill p-warn">30–50%</span></td><td><span class="pill p-stop">&lt; 30%</span></td></tr>
+      <tr><td>Giá trị</td><td>Đồng ý "báo cáo giúp tôi biết con hổng chỗ nào"</td><td>Khảo sát, mức 4–5 trên thang 5</td><td><span class="pill p-go">≥ 70%</span></td><td><span class="pill p-warn">50–70%</span></td><td><span class="pill p-stop">&lt; 50%</span></td></tr>
+      <tr><td></td><td>Phiếu bài được làm và chụp lại</td><td>Phiếu chụp lại / phiếu đã phát</td><td><span class="pill p-go">≥ 40%</span></td><td><span class="pill p-warn">20–40%</span></td><td><span class="pill p-stop">&lt; 20%</span></td></tr>
+      <tr><td>Kinh doanh</td><td>Đặt cọc thật cho gói sau pilot</td><td>Gia đình đặt cọc / gia đình hoàn thành</td><td><span class="pill p-go">≥ 20%</span></td><td><span class="pill p-warn">10–20%</span></td><td><span class="pill p-stop">&lt; 10%</span></td></tr>
+      <tr><td>Chi phí</td><td>Chi phí AI p95 / học sinh / tháng</td><td>Trường <code>cost_usage</code> trong event</td><td><span class="pill p-go">Đo được, có lộ trình giảm</span></td><td><span class="pill p-warn">Đo được</span></td><td><span class="pill p-stop">Không đo được</span></td></tr>
+      <tr><td>An toàn</td><td>Frame có người tới server; sự cố dữ liệu; gợi ý ngoài phạm vi bị phát</td><td>Log chặn frame, kiểm tra mẫu, báo cáo sự cố</td><td><span class="pill p-go">0</span></td><td>—</td><td><span class="pill p-stop">≥ 1: dừng pilot ngay</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="rule">
+    <h3>Quy tắc quyết định (đề xuất)</h3>
+    <ol>
+      <li><b>Go:</b> nhóm An toàn đạt, không chỉ số nào ở vùng No-go, và ít nhất 7/9 chỉ số còn lại đạt Go. Mở rộng, bắt đầu freemium.</li>
+      <li><b>Lặp lại:</b> không có No-go nhưng dưới 7 chỉ số đạt Go. Chạy thêm 4 tuần với cùng nhóm, tập trung vào chỉ số yếu nhất.</li>
+      <li><b>Chuyển hướng:</b> No-go ở Giá trị hoặc Kinh doanh. Xem lại định vị, hoặc thử kênh trường/trung tâm (B2B2C) với giáo viên.</li>
+      <li><b>Quay về replay:</b> No-go ở Chất lượng AI, Rảnh tay, Chụp đề hoặc Giọng nói. Không mở rộng; sửa trên bộ replay.</li>
+      <li><b>Dừng ngay:</b> bất kỳ vi phạm An toàn nào, ở bất kỳ thời điểm nào.</li>
+    </ol>
+  </div>
+</section>
+
+<section aria-labelledby="s-open">
+  <h2 id="s-open">Quyết định phải chốt trong tuần 1</h2>
+  <div class="cols">
+    <div class="card"><h3>Sản phẩm</h3><ul>
+      <li>Mục lục kỹ năng và support matrix HK1 Cánh diều</li>
+      <li>Cấu hình máy tối thiểu ngoài Android 15+ / iOS 18.7+</li>
+      <li>Khối lượng rà soát của shadow teacher</li>
+      <li>Kênh thông báo cho phụ huynh</li>
+    </ul></div>
+    <div class="card"><h3>Kỹ thuật</h3><ul>
+      <li>Model Claude sau spike (Opus 5.5, Sonnet 5.5, Haiku 5.5); model dự phòng</li>
+      <li>Phương án từ gọi trên máy</li>
+      <li>Xác minh điều khoản Anthropic, Viettel AI, Azure</li>
+      <li>Tài khoản Apple Developer và Google Play Console</li>
+    </ul></div>
+    <div class="card"><h3>Pháp lý và kinh doanh</h3><ul>
+      <li>Nội dung hai loại đồng ý</li>
+      <li>Thời hạn lưu ảnh cho bộ replay</li>
+      <li>Mức đặt cọc và giá người dùng sớm</li>
+      <li>Ngân sách pilot</li>
+    </ul></div>
+  </div>
+</section>
+
+<section aria-labelledby="s-res">
+  <h2 id="s-res">Nguồn lực và ngân sách ngoài nhân sự</h2>
+  <div class="cols">
+    <div class="card"><h3>Đội</h3><ul>
+      <li><span class="tag">ENG-M</span> Mobile và voice: app Android và iOS (Flutter + native), camera, từ gọi, thẻ lệnh</li>
+      <li><span class="tag">ENG-AI</span> Backend và AI: adapter, validator, policy, tutor, replay</li>
+      <li><span class="tag">ENG-FS</span> Fullstack: web phụ huynh, phạm vi đã học, báo cáo, phiếu bài, vận hành</li>
+      <li><span class="tag">GV</span> Giáo viên Toán lớp 6 bán thời gian: gán nhãn, duyệt template, mục lục kỹ năng</li>
+      <li><span class="tag">SƠN</span> Product, pháp lý, tuyển và vận hành pilot</li>
+    </ul></div>
+    <div class="card"><h3>Chi phí ước tính (chưa kiểm chứng)</h3>
+      <div class="tbl" style="border:0"><table style="min-width:0">
+        <tbody>
+          <tr><td>API AI (vision, ASR, TTS)</td><td class="num">5–15 tr/tháng</td></tr>
+          <tr><td>Giá đỡ đế nặng cho 50 gia đình</td><td class="num">5–10 tr</td></tr>
+          <tr><td>In thẻ lệnh và hướng dẫn</td><td class="num">nhỏ</td></tr>
+          <tr><td>3–5 máy dự phòng (Android và iPhone)</td><td class="num">theo giá máy</td></tr>
+          <tr><td>Tài khoản Apple Developer, Google Play Console</td><td class="num">phí năm / một lần</td></tr>
+          <tr><td>Tư vấn pháp lý</td><td class="num">một lần</td></tr>
+          <tr><td>Server, lưu trữ, thông báo</td><td class="num">nhỏ</td></tr>
+        </tbody>
+      </table></div>
+    </div>
+  </div>
+</section>
+
+<section aria-labelledby="s-risk">
+  <h2 id="s-risk">Rủi ro trong pilot và cách xử lý</h2>
+  <div class="tbl"><table>
+    <thead><tr><th>Rủi ro</th><th>Dấu hiệu sớm</th><th>Xử lý</th></tr></thead>
+    <tbody>
+      <tr><td>Từ gọi không nhận giọng trẻ</td><td>Trẻ phải gọi nhiều lần; dùng thẻ lệnh nhiều</td><td>Đổi từ gọi; hạ ngưỡng có kiểm soát; thẻ lệnh dự phòng</td></tr>
+      <tr><td>Kích hoạt nhầm do TV, anh chị em</td><td>Cô lên tiếng khi không ai gọi</td><td>Nâng ngưỡng; xác nhận ý định ngắn; hướng dẫn chỗ ngồi học</td></tr>
+      <tr><td>Trẻ vẫn chạm hoặc chỉnh máy</td><td>Nhiều buổi bị lệch khung</td><td>Giá đỡ chắc hơn; tự bù lệch; nhắc xê dịch vở</td></tr>
+      <tr><td>Model đọc sai chữ viết tay</td><td>Nhiều câu hỏi xác nhận, phản hồi sai</td><td>Thêm mẫu vào replay; đổi model qua cổng; UNKNOWN</td></tr>
+      <tr><td>Lỗi riêng trên iOS hoặc Android</td><td>Một nền tảng kém hơn rõ rệt</td><td>Báo kết quả riêng từng nền tảng; sửa trước khi mở 50 gia đình</td></tr>
+      <tr><td>Máy nóng hoặc hết pin</td><td>Buổi học kết thúc bất thường</td><td>Cắm sạc trong checklist; giảm tần suất xử lý ảnh</td></tr>
+      <tr><td>Lộ trình gấp, trượt cổng</td><td>G0 chưa đạt cuối tuần 5</td><td>Thu hẹp số chủ đề HK1 được chấm; lùi go/no-go, không bỏ cổng</td></tr>
+      <tr><td>Chụp đề rườm rà</td><td>Trẻ nản ngay đầu buổi; nhiều lần chụp lại</td><td>Tự chụp khi trang ổn định; chỉ hỏi phần không chắc; tối đa 1 trang đề</td></tr>
+      <tr><td>Phụ huynh không biết con đã học đến đâu</td><td>Nhiều câu "cần xem lại phạm vi"</td><td>Giáo viên đồng hành hỗ trợ tick mục lục SGK khi onboarding</td></tr>
+      <tr><td>Phản hồi "nể" từ người quen</td><td>Khảo sát tốt nhưng ít dùng thật</td><td>Ưu tiên số liệu hành vi và đặt cọc; tách kết quả người quen và người lạ</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<footer>Kế hoạch pilot cho AI Study Companion theo Business HLD và Technical HLD v1.3, context v0.5 (08/10/2026). Các ngưỡng, chi phí và lịch là đề xuất.</footer>
+</div>
+
+<script>
+const PHASES = [
+  { id: "w1", name: "Spike và chuẩn bị", when: "Tuần 1", items: [
+    ["Lập mục lục kỹ năng và support matrix HK1 Cánh diều", "Câu hình học: chưa hỗ trợ", "GV", true],
+    ["Tạo tài khoản Apple Developer và Google Play Console", "", "SƠN", true],
+    ["Ký hợp tác shadow teacher Toán lớp 6", "Xác nhận phạm vi; rà và gán nhãn phản hồi AI", "SƠN", true],
+    ["Thu 100–200 bài làm thật trong vở, có số câu ở lề trái", "Gồm sai, tẩy xóa, ánh sáng kém; ẩn danh hóa trước khi gửi", "GV", true],
+    ["Thu 20–30 tờ đề in lớp 6 HK1 một trang", "Có ý con, có câu hình học", "GV", true],
+    ["Spike Claude Opus 5.5, Sonnet 5.5, Haiku 5.5 trên bộ mẫu; chọn model chính và dự phòng", "Xác minh điều khoản Anthropic cho người dưới 18 tuổi", "ENG-AI", true],
+    ["Spike từ gọi \"Cô ơi\", ASR Viettel AI, TTS Azure trên Android 15+ và iPhone iOS 18.7+ với 20–30 trẻ", "Có TV và tiếng ồn", "ENG-M", true],
+    ["Soạn hai loại đồng ý; tư vấn pháp lý", "", "SƠN", true],
+    ["Đặt mua giá đỡ đế nặng; thiết kế thẻ lệnh và giấy có dấu bốn góc", "", "SƠN", false],
+    ["Bắt đầu tuyển gia đình có con lớp 6 dùng Android 15+ hoặc iOS 18.7+", "Một phần là người không quen", "SƠN", false],
+    ["Repo, CI, adapter skeleton, môi trường dev và pilot", "", "ENG-FS", false]
+  ]},
+  { id: "w2", name: "Xây vertical slice", when: "Tuần 2–5", items: [
+    ["Tự bắt đầu khi đủ 4 góc trang; tự bù lệch; chặn người", "", "ENG-M", true],
+    ["Chụp 1 trang đề, dựng bộ đề, xác nhận câu/ý bằng giọng nói", "", "ENG-M", true],
+    ["Phạm vi đã học có version, scope gate, kho kiến thức lớp 6 tối thiểu", "", "ENG-AI", true],
+    ["Đọc số câu trong vở (lệnh \"Câu N\" dự phòng), tiến độ theo câu/ý, kết thúc và học tiếp", "", "ENG-AI", true],
+    ["Ẩn danh hóa ảnh trước khi gửi Anthropic; test payload", "", "ENG-AI", true],
+    ["Màn hình phạm vi đã học và rà soát cho shadow teacher", "", "ENG-FS", true],
+    ["Từ gọi, ghi đoạn lệnh, barge-in, thẻ lệnh, câu mẫu cache trên máy", "", "ENG-M", true],
+    ["Tự chụp khi vở ổn định, không tay che; cắt trang", "", "ENG-M", true],
+    ["Session, attempt, ảnh TTL 7 ngày, idempotency", "", "ENG-AI", true],
+    ["RecognitionEngine adapter, evidence gate, xác nhận bằng giọng nói", "", "ENG-AI", true],
+    ["ValidatorRegistry + bộ số học/đại số chỉ dòng sai gốc; hint policy; template gợi ý; output filter; TTS Azure", "", "ENG-AI", true],
+    ["Báo cáo sau buổi và tuần; web phụ huynh; ảnh gần trực tiếp", "Chỉ báo đang xem trên máy con", "ENG-FS", true],
+    ["Worksheet generator cơ bản: template, SymPy, PDF có mã phiếu", "", "ENG-FS", true],
+    ["Liên kết tài khoản, đồng ý, xem/xuất/xóa dữ liệu (U19, U24)", "Chưa đồng ý thì không bật camera", "ENG-FS", true],
+    ["Mở rộng bộ replay lên 200–300 bài; harness chấm tự động", "", "GV", true],
+    ["Phát hành TestFlight và Google Play testing; test máy thật 45–60 phút cả hai nền tảng", "", "ENG-M", true],
+    ["Đạt cổng G0", "", "ENG-AI", true]
+  ]},
+  { id: "w5", name: "Alpha", when: "Tuần 6", items: [
+    ["Onboarding 5 gia đình (cả Android và iOS) qua video 15 phút", "Đặt máy, cắm sạc, Không làm phiền, thử chụp đề, ghi số câu trong vở và lệnh", "SƠN", true],
+    ["Nhóm Zalo hỗ trợ; phản hồi trong ngày", "", "SƠN", true],
+    ["Shadow teacher rà và gán nhãn phản hồi AI mỗi ngày; đo khối lượng", "", "GV", true],
+    ["Sửa blocker; đạt cổng G1", "", "ENG-M", true]
+  ]},
+  { id: "w6", name: "Pilot", when: "Tuần 7–10", items: [
+    ["Mở 15 gia đình; đạt G2 rồi mở 50", "", "SƠN", true],
+    ["Phát phiếu bài tuần; theo dõi tỷ lệ chụp lại", "", "GV", false],
+    ["Phỏng vấn 5–10 phụ huynh và vài học sinh mỗi tuần", "", "SƠN", false],
+    ["Theo dõi chi phí, độ trễ, kích hoạt nhầm, số lần chạm máy", "", "ENG-AI", true],
+    ["Mở thêm chủ đề HK1 khi chủ đề trước đạt", "", "ENG-AI", false],
+    ["Mời đặt cọc thật, có cam kết hoàn tiền nếu không ra mắt", "", "SƠN", true],
+    ["Khảo sát cuối pilot; chấm bảng go/no-go", "Tách người quen và người lạ", "SƠN", true],
+    ["Xóa hoặc giữ dữ liệu theo đồng ý đã ký", "", "ENG-FS", true]
+  ]}
+];
+
+const KEY = "pilot-checklist-v13";
+function load() { try { return JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) { return {}; } }
+function save(s) { try { localStorage.setItem(KEY, JSON.stringify(s)); } catch (e) {} }
+const state = load();
+const esc = (s) => s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+function render() {
+  const root = document.getElementById("phases");
+  root.innerHTML = PHASES.map((p) => {
+    const rows = p.items.map((it, i) => {
+      const id = `${p.id}-${i}`;
+      return `<li><label for="${id}">
+        <input type="checkbox" id="${id}" data-id="${id}" ${state[id] ? "checked" : ""}>
+        <span class="box" aria-hidden="true"></span>
+        <span class="txt">${esc(it[0])}${it[3] ? '<span class="crit">BẮT BUỘC</span>' : ""}${it[1] ? `<small>${esc(it[1])}</small>` : ""}</span>
+        <span class="who">${esc(it[2])}</span>
+      </label></li>`;
+    }).join("");
+    return `<div class="phase" data-phase="${p.id}">
+      <div class="phase-head"><span class="when">${p.when}</span><h3>${esc(p.name)}</h3><span class="count"></span></div>
+      <div class="meter"><i></i></div>
+      <ul class="items">${rows}</ul>
+    </div>`;
+  }).join("");
+  root.style.display = "grid"; root.style.gap = "12px";
+  updateCounts();
+}
+function updateCounts() {
+  PHASES.forEach((p) => {
+    const el = document.querySelector(`[data-phase="${p.id}"]`);
+    const done = p.items.filter((_, i) => state[`${p.id}-${i}`]).length;
+    el.querySelector(".count").textContent = `${done}/${p.items.length}`;
+    el.querySelector(".meter i").style.width = `${(done / p.items.length) * 100}%`;
+  });
+}
+document.addEventListener("change", (e) => {
+  const id = e.target.dataset && e.target.dataset.id;
+  if (!id) return;
+  if (e.target.checked) state[id] = true; else delete state[id];
+  save(state); updateCounts();
+});
+document.getElementById("reset-checks").addEventListener("click", () => {
+  Object.keys(state).forEach((k) => delete state[k]);
+  save(state); render();
+});
+render();
+</script>
+
+</html>

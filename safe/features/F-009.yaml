@@ -1,0 +1,24 @@
+# Source: baseline v1.3 (docs/product/), human PO decisions 2026-10-08.
+# Drafted by Claude PM/PO; status DRAFT until the human PO approves.
+# business_value is decided by the human PO (null until then).
+# BH = docs/product/business-hld-v1.3.md, TH = docs/product/technical-hld-v1.3.md
+id: F-009
+epic: EPIC-003
+title: Nhận dạng bài làm và evidence gate
+status: DRAFT
+description: RecognitionEngine giữ nguyên chữ trẻ viết; token không chắc → câu hỏi đóng bằng giọng nói; bài làm
+  không điều khiển prompt (TH §6.2, §8.4).
+business_value: null
+benefit_hypothesis: Giả thuyết pilot; kiểm chứng bằng KPI của EPIC-003 (BH §8, §11).
+use_cases:
+- U13
+acceptance_criteria:
+- A11 đạt theo docs/product/technical-hld-v1.3.md §15.1
+- A12 đạt theo docs/product/technical-hld-v1.3.md §15.1
+- A13 đạt theo docs/product/technical-hld-v1.3.md §15.1
+- A27 đạt theo docs/product/technical-hld-v1.3.md §15.1
+non_functional_requirements:
+- Kết luận sai khi thiếu bằng chứng < 1%
+dependencies:
+- F-019
+stories: []

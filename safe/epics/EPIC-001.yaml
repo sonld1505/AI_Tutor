@@ -1,0 +1,32 @@
+# Source: baseline v1.3 (docs/product/), human PO decisions 2026-10-08.
+# Drafted by Claude PM/PO; status DRAFT until the human PO approves.
+# business_value is decided by the human PO (null until then).
+# BH = docs/product/business-hld-v1.3.md, TH = docs/product/technical-hld-v1.3.md
+id: EPIC-001
+title: Buổi học rảnh tay và giọng nói
+status: DRAFT
+problem_statement: Trẻ phải cầm máy chụp hoặc bấm nút thì không tự học được; mỗi lần chạm máy làm gãy mạch làm bài.
+business_outcome: Cả buổi học 30–45 phút, kể cả chụp đề, không bắt trẻ chạm máy; trẻ gọi "Cô ơi" hoặc giơ thẻ lệnh.
+business_value: null
+success_metrics:
+- Buổi phải chạm máy ≤ 10% (BH §8.2) — mục tiêu pilot, chưa đo
+- Lệnh hiểu đúng lần đầu ≥ 90% — mục tiêu pilot, chưa đo
+- Kích hoạt nhầm < 1 lần/giờ — mục tiêu pilot, chưa đo
+- Âm báo p95 ≤ 1 s; câu phản hồi p95 ≤ 5 s — mục tiêu pilot, chưa đo
+features:
+- F-001
+- F-002
+- F-003
+- F-004
+risks:
+- Chưa có thư viện từ gọi tiếng Việt đạt chất lượng với giọng trẻ (TH §4.2)
+- '"Cô ơi" là cụm trẻ hay nói → kích hoạt nhầm'
+- iOS không tự bật Focus, app phải ở foreground
+dependencies:
+- Spike US-002 (cổng S)
+- Android 15+ / iOS 18.7+ (D23); cấu hình tối thiểu khác chưa đặt
+- ASR Viettel AI, TTS Azure (D27)
+owner: PM_PO
+sources:
+- docs/product/business-hld-v1.3.md §1–§8, §11
+- docs/product/technical-hld-v1.3.md §1–§15

@@ -1,0 +1,22 @@
+# Source: baseline v1.3 (docs/product/), human PO decisions 2026-10-08.
+# Drafted by Claude PM/PO; status DRAFT until the human PO approves.
+# business_value is decided by the human PO (null until then).
+# BH = docs/product/business-hld-v1.3.md, TH = docs/product/technical-hld-v1.3.md
+id: F-020
+epic: EPIC-007
+title: Harness replay và bộ dữ liệu
+status: DRAFT
+description: Chạy ảnh đề, ảnh bài làm, âm thanh qua hệ thống; chấm theo acceptance; báo theo model_version/policy_version/learned_scope_version
+  (TH §12).
+business_value: null
+benefit_hypothesis: Giả thuyết pilot; kiểm chứng bằng KPI của EPIC-007 (BH §8, §11).
+use_cases: []
+acceptance_criteria:
+- Tiêu chí theo cổng ở BH §11.1; chi tiết hoá ở Story
+non_functional_requirements:
+- Dữ liệu trẻ chỉ dùng khi có đồng ý loại 2
+dependencies:
+- Shadow teacher gán nhãn
+- F-019
+- F-024
+stories: []

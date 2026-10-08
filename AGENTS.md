@@ -2,13 +2,13 @@
 
 Hướng dẫn cho mọi coding agent (Codex, Claude Code, …) làm việc trên repository này.
 
-**Nguồn luật sản phẩm:** `CLAUDE_AI_Tutor.md` — đọc toàn bộ trước khi thay đổi bất cứ thứ gì; `CLAUDE.md` chứa thứ tự đọc và bản tóm tắt luật. **Luật quy trình kỹ thuật:** mục Engineering Agent Constitution bên dưới. Lệch về sản phẩm → `CLAUDE_AI_Tutor.md` thắng; mâu thuẫn khác → hard-stop, hỏi chủ dự án.
+**Nguồn luật sản phẩm:** `CLAUDE_AI_Tutor.md` — đọc toàn bộ trước khi thay đổi bất cứ thứ gì; file này trỏ tới baseline sản phẩm v1.3 trong `docs/product/` (Business HLD, Technical HLD, context v0.5). `CLAUDE.md` chứa thứ tự đọc và bản tóm tắt luật. **Luật quy trình kỹ thuật:** mục Engineering Agent Constitution bên dưới. Lệch về sản phẩm → theo thứ tự ưu tiên ở `CLAUDE_AI_Tutor.md` §1; mâu thuẫn khác → hard-stop, hỏi chủ dự án.
 
 ---
 
 # AI Tutor — Engineering Agent Constitution (Factory Phase 1)
 
-> Luật sản phẩm vẫn nằm ở `CLAUDE_AI_Tutor.md` và thắng nếu lệch về sản phẩm. Mục này bổ sung luật **quy trình kỹ thuật**. Nếu hai nguồn mâu thuẫn → hard-stop, hỏi chủ dự án.
+> Luật sản phẩm vẫn nằm ở `CLAUDE_AI_Tutor.md` (và baseline v1.3 mà nó trỏ tới) và thắng nếu lệch về sản phẩm. Mục này bổ sung luật **quy trình kỹ thuật**. Nếu hai nguồn mâu thuẫn → hard-stop, hỏi chủ dự án.
 > Role files: `agents/codex/`. Story: `safe/stories/`. Gates: `scripts/`, `Jenkinsfile`. Tạo worktree: `./scripts/create-worktree.sh <story-id> <role>`.
 
 ### Engineering Roles

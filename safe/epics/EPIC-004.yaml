@@ -1,0 +1,26 @@
+# Source: baseline v1.3 (docs/product/), human PO decisions 2026-10-08.
+# Drafted by Claude PM/PO; status DRAFT until the human PO approves.
+# business_value is decided by the human PO (null until then).
+# BH = docs/product/business-hld-v1.3.md, TH = docs/product/technical-hld-v1.3.md
+id: EPIC-004
+title: Tiến độ, học tiếp và báo cáo
+status: DRAFT
+problem_statement: Phụ huynh không biết con làm được bao nhiêu phần đề, hổng chỗ nào; đề dở dang bị mất.
+business_outcome: Tiến độ theo item được lưu; buổi sau học tiếp đúng chỗ; báo cáo theo tờ đề tách "trẻ báo xong"
+  khỏi "đã xác nhận".
+business_value: null
+success_metrics:
+- Học tiếp khôi phục đúng 100% số lần thử (G1) — mục tiêu pilot, chưa đo
+- Báo cáo khớp kiểm tra tay của giáo viên 100% (G1) — mục tiêu pilot, chưa đo
+- 'North Star: tỷ lệ câu/ý đúng lần kiểm tra đầu — mục tiêu pilot, chưa đo'
+features:
+- F-012
+- F-013
+risks:
+- Đếm trùng hoặc ghi "xong hết" khi còn câu chưa hỗ trợ
+dependencies:
+- EPIC-003
+owner: PM_PO
+sources:
+- docs/product/business-hld-v1.3.md §1–§8, §11
+- docs/product/technical-hld-v1.3.md §1–§15

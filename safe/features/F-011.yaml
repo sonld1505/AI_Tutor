@@ -1,0 +1,29 @@
+# Source: baseline v1.3 (docs/product/), human PO decisions 2026-10-08.
+# Drafted by Claude PM/PO; status DRAFT until the human PO approves.
+# business_value is decided by the human PO (null until then).
+# BH = docs/product/business-hld-v1.3.md, TH = docs/product/technical-hld-v1.3.md
+id: F-011
+epic: EPIC-003
+title: Hint policy, retrieval theo scope, tutor và output filter
+status: DRAFT
+description: L1/L2/L3 theo bằng chứng và history; retrieval lọc theo learned_scope_version; template giáo viên đã
+  duyệt, không có template → "cần xem lại" (D31, không LLM sinh lời); output filter chặn lộ đáp án, ngoài lề, ngoài phạm vi (TH §8.6).
+business_value: null
+benefit_hypothesis: Giả thuyết pilot; kiểm chứng bằng KPI của EPIC-003 (BH §8, §11).
+use_cases:
+- U06
+- U07
+- U14
+acceptance_criteria:
+- A08 đạt theo docs/product/technical-hld-v1.3.md §15.1
+- A17 đạt theo docs/product/technical-hld-v1.3.md §15.1
+- A20 đạt theo docs/product/technical-hld-v1.3.md §15.1
+- A21 đạt theo docs/product/technical-hld-v1.3.md §15.1
+- A30 đạt theo docs/product/technical-hld-v1.3.md §15.1
+non_functional_requirements:
+- Gợi ý L1/L2 lộ đáp án < 5%
+- 0 gợi ý ngoài phạm vi trên tập test
+dependencies:
+- F-007
+- F-010
+stories: []

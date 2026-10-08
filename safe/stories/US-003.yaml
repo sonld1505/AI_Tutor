@@ -1,0 +1,124 @@
+id: US-003
+
+title: "Adapter skeleton với fake adapter có nhãn cho các interface của Technical HLD v1.3 §14"
+
+story_type: enabler
+depends_on: [US-FACTORY-002]
+
+epic: "EPIC-007"
+feature: "F-019"
+
+status: DRAFT
+blocked_from: null
+blocked_by: []
+priority: high
+story_points: null
+
+business_context: >
+  Technical HLD v1.3 §6.1 và §14: mọi model đi qua adapter; logic nghiệp vụ không gọi API nhà cung cấp
+  trực tiếp; vertical slice dùng fake adapter và không được trình bày output fake như kết quả thật.
+  Tuần 1 của lộ trình kỹ thuật có "adapter skeleton" (Technical HLD §13).
+
+business_value: >
+  Cho phép đội làm vertical slice tuần 2–5 trước khi có provider được duyệt, và đổi model sau này
+  mà không sửa logic nghiệp vụ.
+
+description: >
+  Định nghĩa interface RecognitionEngine, Deidentifier, ItemResolver, ProblemSetBuilder, ScopeGate,
+  KnowledgeRetriever, SpeechRecognizer, IntentClassifier, TutorProvider, TtsProvider, MathValidator
+  (+ ValidatorRegistry), WorksheetGenerator, ReviewQueue trong backend (Python + FastAPI), mỗi interface
+  có một fake adapter trả dữ liệu cố định, gắn nhãn FAKE. Adapter thật sau này: Anthropic (RecognitionEngine),
+  Viettel AI (SpeechRecognizer), Azure (TtsProvider).
+  Không gọi provider thật nào.
+
+acceptance_criteria:
+  - id: AC01
+    description: "Mỗi interface trong 14 interface có định nghĩa và một fake adapter; ValidatorRegistry nhận đăng ký bộ chấm theo domain."
+  - id: AC02
+    description: "Mọi output của fake adapter mang engine = 'fake' và model_version bắt đầu bằng 'fake-'; log của mỗi lần gọi có nhãn FAKE."
+  - id: AC03
+    description: "Mỗi lời gọi adapter trả kèm engine, model_version, prompt_version, policy_version, learned_scope_version (null khi không áp dụng)."
+  - id: AC04
+    description: "Fake adapter có thể cấu hình timeout/lỗi để test đường provider timeout (A28) mà không gọi mạng."
+  - id: AC05
+    description: "Không có secret, API key hay URL provider thật trong code hoặc cấu hình."
+  - id: AC06
+    description: "Unit test cho từng fake adapter chạy trong gate Python container (AD-01) và đạt coverage theo ngưỡng của factory."
+
+functional_requirements:
+  - "FR01: Registry chọn adapter theo cấu hình; mặc định là fake."
+  - "FR02: Chọn adapter thật khi chưa được bật (chưa qua replay/G0) phải bị từ chối, không lặng lẽ dùng fake."
+
+non_functional_requirements:
+  - "NFR01: Không gọi mạng ra ngoài trong unit test."
+  - "NFR02: Fake output không được dùng làm số liệu benchmark."
+
+dependencies:
+  - "US-FACTORY-002 DONE (gate Python trong container)."
+  - "Backend Python + FastAPI (PO 2026-10-08)."
+
+components:
+  backend: true
+  frontend: false
+  android: false
+  ios: false
+  infrastructure: false
+
+api_impact: false
+ui_impact: false
+data_impact: false
+security_impact: true
+privacy_impact: false
+
+test_scenarios:
+  - id: TS01
+    covers: [AC01]
+    type: unit
+    scenario: "Liệt kê adapter registry → đủ 14 interface, mỗi interface có fake; đăng ký bộ chấm giả cho domain 'geometry' không đổi kết quả của domain 'arithmetic' (A45)."
+  - id: TS02
+    covers: [AC02, AC03]
+    type: unit
+    scenario: "Gọi từng fake adapter → output có engine='fake', model_version 'fake-*' và đủ trường version; log có FAKE."
+  - id: TS03
+    covers: [AC04]
+    type: unit
+    scenario: "Cấu hình fake TutorProvider timeout → caller nhận lỗi timeout có kiểu rõ, không có kết quả bịa."
+  - id: TS04
+    covers: [AC05]
+    type: security
+    scenario: "Security scan + grep pattern key/URL provider trong diff → 0 kết quả."
+  - id: TS05
+    covers: [AC06]
+    type: unit
+    scenario: "Chạy unit test trong container python:3.12 đã pin → PASS, coverage báo cáo."
+  - id: TS06
+    covers: [AC02]
+    type: unit
+    scenario: "Bật adapter 'real' chưa đăng ký → registry từ chối (FR02)."
+
+open_questions:
+  - "Q1 (đã trả lời 08/10): backend sản phẩm là Python + FastAPI (RAID I-012 CLOSED)."
+  - "Q2: Schema output của từng interface lấy theo Technical HLD §6.2, §7.3 hay chờ SPEC/ADR? Thay đổi schema là việc A+."
+
+definition_of_done:
+  implementation_complete: false
+  code_review_passed: false
+  build_passed: false
+  lint_passed: false
+  unit_tests_passed: false
+  integration_tests_passed: false
+  acceptance_criteria_passed: false
+  security_scan_passed: false
+  qa_passed: false
+  documentation_updated: false
+  evidence: []
+
+# Keep this block LAST: scripts/validate-story.sh reads the 20 lines after it.
+definition_of_ready:
+  business_value_defined: true
+  story_defined: false
+  acceptance_criteria_defined: true
+  dependencies_identified: true
+  architecture_reviewed: false
+  test_scenarios_defined: true
+  estimation_completed: false

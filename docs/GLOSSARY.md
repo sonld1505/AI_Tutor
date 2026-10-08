@@ -58,18 +58,35 @@ Viết tắt nguồn: **CT** = `CLAUDE_AI_Tutor.md` · **CP** = Capstone Playboo
 
 ## 4. AI Study Companion (sản phẩm)
 
+> Cập nhật 2026-10-08 theo baseline v1.3 (`docs/product/`). Viết tắt: **BH** = Business HLD v1.3 · **TH** = Technical HLD v1.3 · **CX** = context v0.5. Thuật ngữ của bản 03/10 (Edge Vision liên tục, ROI, chờ tự sửa 20–30 giây, TURN/WebRTC, `page_version`) đã bỏ; xem lịch sử Git.
+
 | Thuật ngữ | Nghĩa | Nguồn |
 |---|---|---|
-| **Student Learning Model** | Mô hình dài hạn mỗi học sinh: concept, lỗi lặp, mức hỗ trợ, khả năng tự sửa, retention, hiệu quả từng kiểu hint. | CT §2 |
-| **Learning event** | Bản ghi một sự kiện học (concept, bước quan sát, loại lỗi, hint level, tự sửa, chất lượng bằng chứng). Schema **chưa chốt**. | CT §8 |
-| **Edge Vision** | Xử lý tại thiết bị: phát hiện đổi trang/chữ mới/tay che/độ nét, sampling theo sự kiện. | CT §6 |
-| **Quality gate (ảnh)** | Điều kiện ảnh đủ ổn định/rõ trước khi OCR. | CT §6–7 |
-| **ROI (vùng bàn học)** | Vùng ảnh được cấu hình để quan sát. | CT §4, §6 |
-| **Abstain / abstention** | Tutor chủ động không kết luận khi bằng chứng chưa đủ; được đo riêng. | CT §7, §9 |
-| **Coverage** | Tỷ lệ bước được xử lý trong domain hỗ trợ (mục tiêu pilot ≥90% bước rõ). | CT §9 |
-| **False intervention** | Can thiệp sửa sai nhầm khi học sinh không sai (mục tiêu pilot <2%). | CT §9 |
-| **Hint level** | Cấp gợi ý đi từ nhẹ đến cụ thể; hạn chế đưa đáp án. | CT §7 |
-| **Chờ tự sửa** | Policy sư phạm chờ ~20–30 giây trước khi gợi ý; không phải latency hệ thống. | CT §7 |
-| **TTL** | Thời gian sống của ảnh tạm/phiên; hết hạn thì xoá. | CT §5–6 |
-| **TURN fallback** | Relay khi WebRTC P2P không kết nối được cho parent live. | CT §6 |
-| **page_version / problem_version** | Trường phiên bản trong event để chống lặp, sai thứ tự, hint cho trạng thái cũ. | CT §8 |
+| **D01–D31 / U01–U25 / A01–A46** | Mã quyết định / use case / acceptance của baseline v1.3. Số giữ nguyên qua phiên bản; mã mới nhận số tiếp theo. Mã cũ (SC-xx, U01–U17, A01–A31) không dùng nữa. | BH §0, §5.3; TH §15 |
+| **Tờ đề / bộ đề (SessionProblemSet)** | Đề in (giáo viên/phụ huynh) hoặc phiếu hệ thống, **tối đa 1 trang**, chụp đầu buổi, xác nhận câu/ý bằng giọng nói; có version. | BH D11, D16; TH §5.1 |
+| **Số câu trong vở (nhãn câu)** | Trẻ ghi số câu ở lề trái vở trước khi làm (`1) 5x + 3 = 28`); `ItemResolver` đọc để gắn lời giải với câu; lệnh "Câu N" là dự phòng. | BH D15; TH §5.3, §8.3 |
+| **Item** | Một câu/ý trong bộ đề; đơn vị chấm và báo cáo. | TH §8.7 |
+| **Run (SessionRun)** | Một lượt học trên bộ đề; học tiếp tạo `run_id` mới, output run cũ bị loại. | TH §8.7 |
+| **ItemProgress** | `NOT_STARTED`, `IN_PROGRESS`, `STUDENT_MARKED_DONE`, `NEEDS_REVISION`, `UNVERIFIED`, `VERIFIED`; cờ `NEEDS_SCOPE_REVIEW`, `UNSUPPORTED`. | TH §8.7 |
+| **Phạm vi đã học (LearnedScope)** | Danh sách bài/kỹ năng trẻ đã học, có version; gợi ý không được vượt ra ngoài. Đã học ≠ đã thành thạo. Trong pilot do shadow teacher xác nhận. | BH D13, D25; TH §8.2 |
+| **Shadow teacher** | Giáo viên đồng hành của dự án: xác nhận phạm vi đã học và rà, gán nhãn từng phản hồi AI qua lịch sử học tập; không đứng giữa trẻ và AI lúc học. | BH D25, U25; TH §8.11 |
+| **Ẩn danh hóa (Deidentifier)** | Trước khi gửi nhà cung cấp AI: bỏ metadata ảnh, che dải đầu trang, không gửi mã người dùng/học sinh/phiên. | BH D26; TH §5.7; A43 |
+| **ValidatorRegistry** | Bộ đăng ký bộ chấm theo domain; MVP có số học/đại số; hình học thêm sau pilot không đổi pipeline. | BH D30; TH §8.5; A45 |
+| **Scope gate** | Kiểm mỗi item có ít nhất một phương pháp giải trong phạm vi đã học; không chắc → `NEEDS_SCOPE_REVIEW`. | TH §8.2 |
+| **Evidence gate** | Kiểm đủ bằng chứng trước khi kết luận Toán; thiếu → hỏi lại, không tính là gợi ý. | TH §8.4 |
+| **UNKNOWN ≠ WRONG** | Không chắc thì không phán sai; hỏi lại bằng câu hỏi đóng. | CX §2; TH §1 |
+| **Dòng sai gốc** | Dòng đầu tiên làm sai trong lời giải; cô chỉ nhắm vào dòng này. | TH §8.5 |
+| **L1 / L2 / L3** | Mức gợi ý: nhắc nhẹ / khái niệm / một bước trung gian (chỉ khi trẻ hỏi thêm). | BH §5.5 |
+| **Output filter** | Chặn gợi ý lộ đáp án ở L1/L2, ngoài lề, ngoài phạm vi, sai so với validator. | TH §8.6 |
+| **Từ gọi "Cô ơi"** | Wake word nhận diện trên máy; chỉ đoạn sau từ gọi được gửi lên ASR. | BH D24; TH §4.2 |
+| **Thẻ lệnh** | Thẻ in KIỂM TRA, GIÚP CON, XONG có marker; dự phòng cho giọng nói. | TH §4.3 |
+| **Rảnh tay / không chạm máy** | Mọi bước trong buổi học, kể cả chụp đề, không bắt trẻ chạm máy. | BH D03 |
+| **Ảnh gần trực tiếp** | Ảnh vùng giấy độ phân giải thấp, mỗi vài giây, khi phụ huynh đang xem; không phải live video. | BH D17; TH §5.5 |
+| **Chặn người (`person_check`)** | Frame có người/khuôn mặt bị chặn trên máy; server từ chối ảnh khi `person_check != PASSED`. | TH §1, §7.1 |
+| **Đồng ý loại 1 / loại 2** | Dùng dịch vụ (bắt buộc) / dùng ảnh cải thiện hệ thống (tùy chọn, rút được). | BH §7 |
+| **Phiếu bài hệ thống (worksheet)** | Phiếu sinh theo lỗ hổng từ template + CAS, có dấu bốn góc và mã phiếu. | BH D16; TH §8.8 |
+| **North Star** | Tỷ lệ câu/ý đúng ở lần kiểm tra đầu trên tổng câu/ý của các đề đã làm. | BH §8.1 |
+| **Cổng S / G0 / G1 / G2 / go-no-go** | Cổng pilot: spike tuần 1 / replay và máy thật tuần 5 / alpha tuần 6 / mở 50 gia đình tuần 7 / quyết định cuối tuần 10. | BH §11 |
+| **Harness replay** | Chạy ảnh đề, bài làm, âm thanh thật qua hệ thống, chấm theo acceptance; model mới phải qua trước khi bật. | TH §12; A29 |
+| **Fake adapter** | Adapter giả cho vertical slice; phải gắn nhãn, không trình bày như kết quả thật. | TH §14 |
+| **TTL ảnh** | Ảnh tự xóa sau 7 ngày hoặc theo cài đặt phụ huynh; text đề và tiến độ vẫn giữ. | BH D20; A39 |

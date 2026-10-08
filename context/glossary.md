@@ -1,6 +1,6 @@
 # Glossary
 
-Thuật ngữ dự án: `docs/GLOSSARY.md` (bản tạm).
+Thuật ngữ dự án: `docs/GLOSSARY.md` (bản tạm; mục 4 theo baseline v1.3).
 
 Thuật ngữ factory (Phase 1):
 

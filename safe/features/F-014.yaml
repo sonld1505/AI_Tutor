@@ -1,0 +1,21 @@
+# Source: baseline v1.3 (docs/product/), human PO decisions 2026-10-08.
+# Drafted by Claude PM/PO; status DRAFT until the human PO approves.
+# business_value is decided by the human PO (null until then).
+# BH = docs/product/business-hld-v1.3.md, TH = docs/product/technical-hld-v1.3.md
+id: F-014
+epic: EPIC-005
+title: Phiếu bài hệ thống
+status: DRAFT
+description: Template theo dạng bài, đáp án kiểm bằng SymPy, giáo viên duyệt template, PDF A4 có dấu bốn góc và
+  mã phiếu; chụp phiếu lấy bộ đề từ phiếu đã sinh (TH §5.4, §8.8).
+business_value: null
+benefit_hypothesis: Giả thuyết pilot; kiểm chứng bằng KPI của EPIC-005 (BH §8, §11).
+use_cases:
+- U23
+acceptance_criteria:
+- A37 đạt theo docs/product/technical-hld-v1.3.md §15.1
+non_functional_requirements: []
+dependencies:
+- F-010
+- F-013
+stories: []

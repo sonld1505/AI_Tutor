@@ -1,0 +1,25 @@
+# Source: baseline v1.3 (docs/product/), human PO decisions 2026-10-08.
+# Drafted by Claude PM/PO; status DRAFT until the human PO approves.
+# business_value is decided by the human PO (null until then).
+# BH = docs/product/business-hld-v1.3.md, TH = docs/product/technical-hld-v1.3.md
+id: F-005
+epic: EPIC-002
+title: Chụp đề và dựng bộ đề
+status: DRAFT
+description: Tự chụp 1 trang đề, dựng manifest câu/ý, xác nhận bằng giọng nói, sửa tạo version; trang thứ hai bị
+  từ chối; câu hình học/hình/bảng giữ UNSUPPORTED (TH §5.1, §8.1).
+business_value: null
+benefit_hypothesis: Giả thuyết pilot; kiểm chứng bằng KPI của EPIC-002 (BH §8, §11).
+use_cases:
+- U02
+acceptance_criteria:
+- A02 đạt theo docs/product/technical-hld-v1.3.md §15.1
+- A03 đạt theo docs/product/technical-hld-v1.3.md §15.1
+- A04 đạt theo docs/product/technical-hld-v1.3.md §15.1
+non_functional_requirements:
+- Chụp đề p95 ≤ 60 s cho đề 2 trang (đề xuất)
+dependencies:
+- F-016
+- F-019
+- F-023
+stories: []

@@ -1,0 +1,22 @@
+# Source: baseline v1.3 (docs/product/), human PO decisions 2026-10-08.
+# Drafted by Claude PM/PO; status DRAFT until the human PO approves.
+# business_value is decided by the human PO (null until then).
+# BH = docs/product/business-hld-v1.3.md, TH = docs/product/technical-hld-v1.3.md
+id: F-021
+epic: EPIC-007
+title: Spike tuần 1 (cổng S, 14/10)
+status: DRAFT
+description: Spike Claude Opus 5.5/Sonnet 5.5/Haiku 5.5 trên bài làm (ẩn danh) và đề in một trang; spike "Cô ơi",
+  ASR Viettel AI, TTS Azure trên Android và iPhone (BH §11.1 S, TH §13 tuần 1).
+business_value: null
+benefit_hypothesis: Giả thuyết pilot; kiểm chứng bằng KPI của EPIC-007 (BH §8, §11).
+use_cases: []
+acceptance_criteria:
+- Tiêu chí theo cổng ở BH §11.1; chi tiết hoá ở Story
+non_functional_requirements:
+- 'Ngưỡng S: kết luận lỗi đúng ≥ 75%; đủ câu/ý ≥ 95%; "Cô ơi" nhận đúng ≥ 80%, kích hoạt nhầm ≤ 3 lần/giờ'
+dependencies:
+- Điều khoản nhà cung cấp đã xác minh trước khi gửi dữ liệu trẻ thật
+stories:
+- US-001
+- US-002

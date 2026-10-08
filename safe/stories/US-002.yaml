@@ -1,0 +1,125 @@
+id: US-002
+
+title: "Spike: từ gọi \"Cô ơi\" và ASR lệnh giọng trẻ trên Android và iPhone (cổng S)"
+
+story_type: enabler
+depends_on: []
+
+epic: "EPIC-001"
+feature: "F-021"
+
+status: DRAFT
+blocked_from: null
+blocked_by: []
+priority: high
+story_points: null
+
+business_context: >
+  Rảnh tay là ràng buộc cứng (D03). Chưa xác nhận có thư viện từ gọi tiếng Việt đạt chất lượng
+  với giọng trẻ trên cả Android và iOS (Technical HLD v1.3 §4.2). "Cô ơi" là cụm trẻ hay nói,
+  nên kích hoạt nhầm là rủi ro chính (Business HLD v1.3 §5.2, §12).
+
+business_value: >
+  Cổng S yêu cầu "có phương án khả thi" cho từ gọi trên Android và iPhone. Không có thì trẻ
+  phải chạm máy, mất trụ khác biệt số 1.
+
+description: >
+  ASR đã chọn là Viettel AI, TTS là Azure Neural TTS giọng nữ tiếng Việt (D27); spike đo cả hai trên máy thật.
+  So sánh ba phương án từ gọi theo Technical HLD §4.2: (1) thư viện keyword spotting có custom wake word;
+  (2) model nhỏ tự huấn luyện; (3) VAD + ASR Viettel AI, chỉ khi (1) và (2) không đạt. Đo trên máy thật
+  Android 15+ và iPhone iOS 18.7+ với bộ ghi âm 20–30 trẻ nói tập lệnh Business HLD §5.2 và âm nền (TV, anh chị em).
+
+acceptance_criteria:
+  - id: AC01
+    description: "Báo cáo cho từng phương án và từng nền tảng: tỷ lệ nhận đúng 'Cô ơi', kích hoạt nhầm/giờ trên âm nền, độ trễ từ gọi → âm báo, CPU/pin trong 45 phút."
+  - id: AC02
+    description: "Đo intent theo luật cho tập lệnh Business HLD §5.2: tỷ lệ hiểu đúng lần đầu trên tập ghi âm."
+  - id: AC03
+    description: "Barge-in: thời gian từ 'Cô ơi, dừng' tới khi TTS dừng (mục tiêu A34 ≤ 500 ms) được đo, không giả định."
+  - id: AC04
+    description: "Xác nhận chỉ đoạn sau từ gọi được gửi đi (log mạng trên máy thử); không có ASR luôn bật."
+  - id: AC05
+    description: "Khuyến nghị một phương án kèm license của thư viện/model và chi phí; PO quyết."
+  - id: AC06
+    description: "Đo ASR Viettel AI trên tập lệnh của trẻ (tỷ lệ đúng, độ trễ) và TTS Azure (độ trễ tới âm đầu, cách đọc biểu thức Toán tiếng Việt)."
+
+functional_requirements:
+  - "FR01: Ứng dụng thử nhỏ trên Android và iOS chỉ để đo, không phải app sản phẩm."
+  - "FR02: Bộ ghi âm có nhãn câu lệnh, tách giọng trẻ và âm nền."
+
+non_functional_requirements:
+  - "NFR01: Không lưu audio của trẻ ngoài bộ test được đồng ý; không commit audio vào Git."
+  - "NFR02: Mục tiêu tham chiếu (chưa phải ngưỡng cổng S): kích hoạt nhầm < 1 lần/giờ, lệnh hiểu đúng ≥ 90% (Business HLD §8.2)."
+
+dependencies:
+  - "Q1: Danh sách máy Android và iPhone dùng cho spike."
+  - "Q2: Đồng ý ghi âm 20–30 trẻ."
+  - "Xác minh điều khoản Viettel AI và Azure cho giọng nói của trẻ (A+)."
+
+components:
+  backend: false
+  frontend: false
+  android: true
+  ios: true
+  infrastructure: false
+
+api_impact: false
+ui_impact: false
+data_impact: true
+security_impact: false
+privacy_impact: true
+
+test_scenarios:
+  - id: TS01
+    covers: [AC01]
+    type: measurement
+    scenario: "Phát 1 giờ âm nền TV/hội thoại có chứa 'cô ơi' trong ngữ cảnh khác → đếm kích hoạt nhầm."
+  - id: TS02
+    covers: [AC01, AC02]
+    type: measurement
+    scenario: "Phát tập ghi âm 20–30 trẻ nói từng lệnh → tỷ lệ nhận đúng từ gọi và intent."
+  - id: TS03
+    covers: [AC03]
+    type: measurement
+    scenario: "Đang phát TTS 10 giây, nói 'Cô ơi, dừng' → đo ms tới khi dừng, 20 lần mỗi máy."
+  - id: TS04
+    covers: [AC04]
+    type: measurement
+    scenario: "Bắt gói mạng 10 phút im lặng và 10 lệnh → chỉ 10 đoạn audio được gửi."
+  - id: TS06
+    covers: [AC06]
+    type: measurement
+    scenario: "Gửi 200 đoạn lệnh có nhãn tới Viettel AI; đọc 30 câu mẫu chứa biểu thức (3x + 5 = 20, 25/3) bằng Azure → shadow teacher chấm cách đọc."
+  - id: TS05
+    covers: [AC05]
+    type: measurement
+    scenario: "Báo cáo có bảng license và chi phí cho phương án được khuyến nghị."
+
+open_questions:
+  - "Q1: Cách chốt danh sách máy đã có (tiêu chí tối thiểu + test thật); vẫn cần đội mobile đề xuất tiêu chí và máy cụ thể cho spike."
+  - "Q2: Nguồn ghi âm trẻ và hình thức đồng ý."
+  - "Q3 (đã trả lời 08/10): cổng S = nhận đúng 'Cô ơi' ≥ 80% và kích hoạt nhầm ≤ 3 lần/giờ trên mỗi nền tảng."
+  - "Q4: Spike cần kỹ sư mobile thật trên iPhone; Codex Android/iOS có máy thử không?"
+
+definition_of_done:
+  implementation_complete: false
+  code_review_passed: false
+  build_passed: false
+  lint_passed: false
+  unit_tests_passed: false
+  integration_tests_passed: false
+  acceptance_criteria_passed: false
+  security_scan_passed: false
+  qa_passed: false
+  documentation_updated: false
+  evidence: []
+
+# Keep this block LAST: scripts/validate-story.sh reads the 20 lines after it.
+definition_of_ready:
+  business_value_defined: true
+  story_defined: false
+  acceptance_criteria_defined: false
+  dependencies_identified: true
+  architecture_reviewed: false
+  test_scenarios_defined: true
+  estimation_completed: false

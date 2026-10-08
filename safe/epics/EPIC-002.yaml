@@ -1,0 +1,32 @@
+# Source: baseline v1.3 (docs/product/), human PO decisions 2026-10-08.
+# Drafted by Claude PM/PO; status DRAFT until the human PO approves.
+# business_value is decided by the human PO (null until then).
+# BH = docs/product/business-hld-v1.3.md, TH = docs/product/technical-hld-v1.3.md
+id: EPIC-002
+title: Bộ đề và phạm vi đã học
+status: DRAFT
+problem_statement: Không biết bộ đề và phần trẻ đã học thì không thể chấm theo câu, báo cáo theo tờ đề hay giữ gợi
+  ý trong phạm vi.
+business_outcome: Đầu buổi hệ thống chụp và xác nhận đủ câu/ý của tờ đề; mỗi câu được gắn phạm vi đã học có version
+  trước khi mở READY.
+business_value: null
+success_metrics:
+- Đủ câu/ý sau xác nhận 100% — mục tiêu pilot, chưa đo
+- Đúng nội dung đề ≥ 98% — mục tiêu pilot, chưa đo
+- Chụp đề p95 ≤ 60 s cho đề 2 trang (đề xuất) — mục tiêu pilot, chưa đo
+- Gợi ý ngoài phạm vi trên tập test = 0 — mục tiêu pilot, chưa đo
+features:
+- F-005
+- F-006
+- F-007
+risks:
+- Phạm vi đã học sai
+- Phạm vi HK1 rộng → trượt G0 (R-003)
+dependencies:
+- Shadow teacher xác nhận phạm vi (D25)
+- Mục lục kỹ năng và support matrix HK1 Cánh diều (tuần 1)
+- Tờ đề tối đa 1 trang (D11)
+owner: PM_PO
+sources:
+- docs/product/business-hld-v1.3.md §1–§8, §11
+- docs/product/technical-hld-v1.3.md §1–§15

@@ -4,7 +4,8 @@
 
 ## Thứ tự đọc bắt buộc
 
-1. `CLAUDE_AI_Tutor.md` — bối cảnh sản phẩm AI Study Companion + luật camera/privacy/provider/tutor + nguyên tắc coding agent.
+1. `CLAUDE_AI_Tutor.md` — bối cảnh sản phẩm AI Study Companion + luật camera/privacy/provider/tutor + nguyên tắc coding agent + thứ tự ưu tiên nguồn.
+   - Baseline sản phẩm v1.3: `docs/product/README.md` → `business-hld-v1.3.md`, `technical-hld-v1.3.md`, `ai-study-companion-context-v0.5.md`. `docs/product/history/` và `docs/capstone/` là lịch sử, không dùng làm yêu cầu.
 2. `README.md` — bản đồ repository và trạng thái thực tế.
 3. `dev-book/PM-AI-Bootcamp-Capstone-Playbook-v1.0.md` — quy trình 11 bước (scope → spec → … → build → test → RTM).
 4. Workbook theo vai trò khi cần: `dev-book/PM-AI-Bootcamp-Workbook-{Common,BA,SA,Dev}-v1.0.md`.
@@ -17,7 +18,8 @@
 - Mock phải được gắn nhãn rõ trong code, log và tài liệu; không dùng mock để tuyên bố năng lực thật.
 - Không dùng provider AI cho trẻ em khi điều khoản chưa được xác minh.
 - Không đưa secret vào Git, tài liệu, log hoặc client.
-- Camera: chỉ bật trong phiên, hướng xuống bàn, không lưu video mặc định, ảnh tạm có TTL.
+- Camera: chỉ bật trong buổi học, hướng xuống bàn, frame có người không rời máy, chỉ gửi ảnh vùng giấy đã cắt khi có trigger, ảnh gửi nhà cung cấp AI đã ẩn danh hóa, không lưu video, ảnh xóa sau 7 ngày.
+- Trẻ không phải chạm máy trong buổi học; không mở READY khi bộ đề/phạm vi đã học chưa xác nhận.
 - Không bịa số liệu; thiếu nguồn → ghi `N/A`.
 - Việc A+ (schema, secret, dữ liệu trẻ em, provider, phân quyền) → trình plan, **dừng chờ người duyệt**.
 - Mâu thuẫn hoặc thiếu thông tin để quyết → **hard-stop**, hỏi người dùng, không tự đoán.
