@@ -1,15 +1,16 @@
 # Source: baseline v1.3 (docs/product/), human PO decisions 2026-10-08.
-# Drafted by Claude PM/PO; status DRAFT until the human PO approves.
-# business_value is decided by the human PO (null until then).
+# Drafted by Claude PM/PO; approved by the human PO 2026-10-08 ("Duyệt hết theo đề xuất").
 # BH = docs/product/business-hld-v1.3.md, TH = docs/product/technical-hld-v1.3.md
 id: EPIC-006
 title: Đồng ý, quyền riêng tư và dữ liệu
-status: DRAFT
+status: APPROVED
+approved_by: HUMAN_PO
+approved_at: "2026-10-08"
 problem_statement: Camera trong nhà và dữ liệu trẻ em là rủi ro pháp lý và niềm tin lớn nhất; vi phạm là dừng dự
   án.
 business_outcome: Không frame có người nào tới server; ảnh gửi nhà cung cấp đã ẩn danh hóa; chỉ ảnh vùng giấy khi
   có trigger; hai loại đồng ý; ảnh xóa sau 7 ngày; phụ huynh xem/xuất/xóa dữ liệu.
-business_value: null
+business_value: "10/10 (thang tương đối 1–10), MoSCoW MUST: điều kiện để được gửi ảnh. PO duyệt 2026-10-08."
 success_metrics:
 - Frame có người tới server = 0 — mục tiêu pilot, chưa đo
 - Dữ liệu định danh tới nhà cung cấp AI = 0 — mục tiêu pilot, chưa đo

@@ -30,6 +30,13 @@ risks:
     mitigation: "Measure review load in alpha (week 6); queue prioritises low confidence and near-expiry items (TH v1.3 §8.11); PO decides on extra reviewers before G2."
     owner: "HUMAN_PO"
     status: OPEN
+  - id: R-006
+    description: "Week-1 spikes run on MOCK data (adult handwriting, synthetic child-like voices). Adult handwriting is usually neater than a Grade 6 child's and synthetic voices differ from real children, so gate S (MOCK) may overstate accuracy for vision, wake word and ASR."
+    probability: null
+    impact: null
+    mitigation: "Label every result MOCK; include deliberately messy pages and fast/quiet speakers in the mock sets; re-measure on consented real child data before G1 (2026-11-18) and treat a drop below the S thresholds as a stop signal."
+    owner: "HUMAN_PO"
+    status: OPEN
   - id: R-005
     description: "Masking the header band (D26) does not guarantee that names written elsewhere on a notebook page are removed before images reach Anthropic."
     probability: null
@@ -189,9 +196,10 @@ issues:
       Open product questions after baseline v1.3 (BH v1.3 §14): terms verification for Anthropic (minors guidance), Viettel AI and Azure before real child
       data (A+); minimum device spec beyond OS version; shadow teacher capacity and who confirms scope
       after the pilot; consent texts; deposit level; pilot budget.
-    blocks: [US-001, US-002]
+    blocks: []
     owner: "HUMAN_PO"
     status: OPEN
+    update_2026_10_08_w1: "Human PO 2026-10-08: start week 1 on MOCK data (adult-made notebook images, team-authored 1-page sheets, adult + synthetic voice). Provider terms, test devices and recording consent may be settled later; they no longer block US-001/US-002 but still block any real child data (needed before G1). Removed US-001, US-002 from blocks."
     update_2026_10_08: "Hint-text LLM question answered by human PO: template only; no template -> 'cần xem lại' (D31). Intent stays rule-based."
 
 dependencies:
@@ -241,3 +249,9 @@ dependencies:
     from: "US-FACTORY-003 (Code Review and Integration Test, i.e. before TESTING; first implementation commit), every later Story's implementation commits and Code Review gate"
     to: "HUMAN_PO (GitHub admin)"
     status: OPEN
+  - id: D-007
+    description: "API keys for Anthropic (US-001), Viettel AI and Azure Speech (US-002) configured by a human on the machine that runs the spikes (environment variable or secret store), never in Git, code, logs or reports. A+ (secrets, providers): PO approves before first use."
+    from: "US-001, US-002"
+    to: "HUMAN_PO"
+    status: OPEN
+    update_2026_10_08: "Human PO approved the approach (keys outside Git, configured by a human). Stays OPEN until the keys are actually configured on the spike machine; start blocker for provider calls, not a DoR item."

@@ -1,14 +1,15 @@
 # Source: baseline v1.3 (docs/product/), human PO decisions 2026-10-08.
-# Drafted by Claude PM/PO; status DRAFT until the human PO approves.
-# business_value is decided by the human PO (null until then).
+# Drafted by Claude PM/PO; approved by the human PO 2026-10-08 ("Duyệt hết theo đề xuất").
 # BH = docs/product/business-hld-v1.3.md, TH = docs/product/technical-hld-v1.3.md
 id: F-002
 epic: EPIC-001
 title: Từ gọi "Cô ơi", ASR và intent
-status: DRAFT
+status: APPROVED
+approved_by: HUMAN_PO
+approved_at: "2026-10-08"
 description: Từ gọi trên máy; chỉ đoạn sau từ gọi hoặc câu trả lời xác nhận lên ASR Viettel AI; intent theo luật
   cho tập lệnh BH §5.2; barge-in (TH §4.2).
-business_value: null
+business_value: "9/10 (thang tương đối 1–10), MoSCoW MUST: theo EPIC-001. PO duyệt 2026-10-08."
 benefit_hypothesis: Giả thuyết pilot; kiểm chứng bằng KPI của EPIC-001 (BH §8, §11).
 use_cases: []
 acceptance_criteria:

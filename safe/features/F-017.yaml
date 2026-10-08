@@ -1,14 +1,15 @@
 # Source: baseline v1.3 (docs/product/), human PO decisions 2026-10-08.
-# Drafted by Claude PM/PO; status DRAFT until the human PO approves.
-# business_value is decided by the human PO (null until then).
+# Drafted by Claude PM/PO; approved by the human PO 2026-10-08 ("Duyệt hết theo đề xuất").
 # BH = docs/product/business-hld-v1.3.md, TH = docs/product/technical-hld-v1.3.md
 id: F-017
 epic: EPIC-006
 title: Liên kết tài khoản và đồng ý
-status: DRAFT
+status: APPROVED
+approved_by: HUMAN_PO
+approved_at: "2026-10-08"
 description: Liên kết phụ huynh–học sinh; đồng ý loại 1 (bắt buộc) và loại 2 (tùy chọn, rút được); chưa có loại
   1 thì không tạo session, không bật camera/micro.
-business_value: null
+business_value: "10/10 (thang tương đối 1–10), MoSCoW MUST: theo EPIC-006. PO duyệt 2026-10-08."
 benefit_hypothesis: Giả thuyết pilot; kiểm chứng bằng KPI của EPIC-006 (BH §8, §11).
 use_cases:
 - U19

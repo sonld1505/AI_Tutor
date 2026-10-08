@@ -1,14 +1,15 @@
 # Source: baseline v1.3 (docs/product/), human PO decisions 2026-10-08.
-# Drafted by Claude PM/PO; status DRAFT until the human PO approves.
-# business_value is decided by the human PO (null until then).
+# Drafted by Claude PM/PO; approved by the human PO 2026-10-08 ("Duyệt hết theo đề xuất").
 # BH = docs/product/business-hld-v1.3.md, TH = docs/product/technical-hld-v1.3.md
 id: EPIC-007
 title: Nền tảng AI, kiểm chứng và vận hành pilot
-status: DRAFT
+status: APPROVED
+approved_by: HUMAN_PO
+approved_at: "2026-10-08"
 problem_statement: Không có adapter, bộ replay và số đo thì không thể chọn model, qua cổng G0 hay biết chi phí thật.
 business_outcome: Mọi model qua adapter có version; model chỉ bật khi qua replay và G0; shadow teacher rà mọi phản
   hồi AI; có số đo latency, token, chi phí; phát hành được trên TestFlight và Google Play testing.
-business_value: null
+business_value: "8/10 (thang tương đối 1–10), MoSCoW MUST: cần cho cổng S và G0. PO duyệt 2026-10-08."
 success_metrics:
 - Cổng S đạt cuối tuần 1 — mục tiêu pilot, chưa đo
 - Cổng G0 đạt cuối tuần 5 — mục tiêu pilot, chưa đo

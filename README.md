@@ -4,7 +4,7 @@
 
 ## Trạng thái thực tế (2026-10-08)
 
-Repository **chỉ có tài liệu**: baseline sản phẩm v1.3 (`docs/product/`), thiết kế đề xuất, giả định kinh doanh, bộ tài liệu phương pháp PM AI Bootcamp, nền Factory Phase 1 và backlog sản phẩm ở trạng thái DRAFT.
+Repository **chỉ có tài liệu**: baseline sản phẩm v1.3 (`docs/product/`), thiết kế đề xuất, giả định kinh doanh, bộ tài liệu phương pháp PM AI Bootcamp, nền Factory Phase 1 và backlog sản phẩm (Epic/Feature/roadmap đã duyệt 08/10/2026; Story tuần 1 còn DRAFT).
 **Chưa có:** code, deployment, camera integration, benchmark OCR, provider production hợp lệ cho trẻ em, dữ liệu thị trường/doanh thu. Chi tiết: `CLAUDE_AI_Tutor.md` §3.
 
 ## Bản đồ repository
@@ -22,7 +22,7 @@ Repository **chỉ có tài liệu**: baseline sản phẩm v1.3 (`docs/product/
 | `DEVBOOK-AITUTOR.md` | Nhật ký AI sai → người sửa. |
 | `context/` | File điều hướng bối cảnh cho agent (product, architecture, business rules, glossary) — trỏ về nguồn gốc. |
 | `agents/claude/`, `agents/codex/` | Định nghĩa vai trò: Claude PM/PO, BA, Scrum Master; Codex Backend, Frontend, Android, iOS, Tester, QA, DevOps. |
-| `safe/` | Artefact SAFe: `epics/` (EPIC-001→007, DRAFT), `features/` (F-001→024, DRAFT), `stories/` (factory + tuần 1, DRAFT), `roadmap.yaml` (08/10 → 16/12/2026 theo cổng S/G0/G1/G2), `backlog.yaml` (chờ PO duyệt), `pi-objectives/`, `retrospectives/` (trống), `raid.yaml`, `defects/` (DEF-001→003 cho Codex DevOps) và `templates/` (Epic, Feature, Story, PI, Sprint, DoR, DoD, Backlog, Roadmap, RAID, Retrospective, Defect). |
+| `safe/` | Artefact SAFe: `epics/` (EPIC-001→007, APPROVED), `features/` (F-001→024, APPROVED), `stories/` (factory + tuần 1, DRAFT), `roadmap.yaml` (08/10 → 16/12/2026 theo cổng S/G0/G1/G2), `backlog.yaml` (PO duyệt 08/10), `pi-objectives/`, `retrospectives/` (trống), `raid.yaml`, `defects/` (DEF-001→003 cho Codex DevOps) và `templates/` (Epic, Feature, Story, PI, Sprint, DoR, DoD, Backlog, Roadmap, RAID, Retrospective, Defect). |
 | `factory/` | `config/`, `orchestrator/`, `state/`, `logs/` — chưa có orchestrator (Phase 1 có giám sát). |
 | `scripts/`, `Jenkinsfile`, `Makefile`, `jenkins/README.md` | Quality gate **fail-closed**: NO UNIT TEST PASS = NO DEPLOY. Integration, security, artifact và deploy hiện **cố ý trả lỗi** cho tới khi được hiện thực. |
 | `backend/`, `frontend/`, `android/`, `ios/`, `tests/`, `infrastructure/`, `jenkins/` | Khung thư mục rỗng; chưa có code. |
@@ -42,4 +42,4 @@ Các file dưới đây được nhắc tới nhưng **không tồn tại** tron
 
 ## Bắt đầu
 
-Đọc theo thứ tự trong `CLAUDE.md`. Baseline sản phẩm: `docs/product/README.md`. Việc tiếp theo: chủ dự án duyệt Epic/Feature/backlog/roadmap (đều DRAFT) và chốt câu hỏi mở ở RAID I-013 (xác minh điều khoản nhà cung cấp, đồng ý, ngân sách), rồi refine Story tuần 1 cho cổng S (14/10).
+Đọc theo thứ tự trong `CLAUDE.md`. Baseline sản phẩm: `docs/product/README.md`. Epic/Feature/backlog/roadmap đã được PO duyệt 08/10/2026. Việc tiếp theo: chốt câu hỏi mở ở RAID I-013 (xác minh điều khoản nhà cung cấp, đồng ý, ngân sách), rồi refine Story tuần 1 cho cổng S (14/10).

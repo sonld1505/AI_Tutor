@@ -1,15 +1,16 @@
 # Source: baseline v1.3 (docs/product/), human PO decisions 2026-10-08.
-# Drafted by Claude PM/PO; status DRAFT until the human PO approves.
-# business_value is decided by the human PO (null until then).
+# Drafted by Claude PM/PO; approved by the human PO 2026-10-08 ("Duyệt hết theo đề xuất").
 # BH = docs/product/business-hld-v1.3.md, TH = docs/product/technical-hld-v1.3.md
 id: F-023
 epic: EPIC-006
 title: Ẩn danh hóa trước khi gửi nhà cung cấp
-status: DRAFT
+status: APPROVED
+approved_by: HUMAN_PO
+approved_at: "2026-10-08"
 description: 'Trên server, trước mọi lời gọi RecognitionEngine: kiểm lại person_check, bỏ metadata ảnh, che dải
   đầu trang, request không mang mã người dùng/học sinh/phiên/thiết bị, provider_request_id ngẫu nhiên, log chỉ hash
   (TH §5.7, D26).'
-business_value: null
+business_value: "10/10 (thang tương đối 1–10), MoSCoW MUST: theo EPIC-006. PO duyệt 2026-10-08."
 benefit_hypothesis: Giả thuyết pilot; kiểm chứng bằng KPI của EPIC-006 (BH §8, §11).
 use_cases: []
 acceptance_criteria:

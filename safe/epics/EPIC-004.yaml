@@ -1,14 +1,15 @@
 # Source: baseline v1.3 (docs/product/), human PO decisions 2026-10-08.
-# Drafted by Claude PM/PO; status DRAFT until the human PO approves.
-# business_value is decided by the human PO (null until then).
+# Drafted by Claude PM/PO; approved by the human PO 2026-10-08 ("Duyệt hết theo đề xuất").
 # BH = docs/product/business-hld-v1.3.md, TH = docs/product/technical-hld-v1.3.md
 id: EPIC-004
 title: Tiến độ, học tiếp và báo cáo
-status: DRAFT
+status: APPROVED
+approved_by: HUMAN_PO
+approved_at: "2026-10-08"
 problem_statement: Phụ huynh không biết con làm được bao nhiêu phần đề, hổng chỗ nào; đề dở dang bị mất.
 business_outcome: Tiến độ theo item được lưu; buổi sau học tiếp đúng chỗ; báo cáo theo tờ đề tách "trẻ báo xong"
   khỏi "đã xác nhận".
-business_value: null
+business_value: "6/10 (thang tương đối 1–10), MoSCoW MUST: học tiếp và báo cáo cho phụ huynh. PO duyệt 2026-10-08."
 success_metrics:
 - Học tiếp khôi phục đúng 100% số lần thử (G1) — mục tiêu pilot, chưa đo
 - Báo cáo khớp kiểm tra tay của giáo viên 100% (G1) — mục tiêu pilot, chưa đo

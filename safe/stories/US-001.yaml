@@ -8,11 +8,11 @@ depends_on: []
 epic: "EPIC-007"
 feature: "F-021"
 
-status: DRAFT
+status: READY
 blocked_from: null
 blocked_by: []
 priority: high
-story_points: null
+story_points: 5   # human PO 2026-10-08
 
 business_context: >
   Toàn bộ sản phẩm dựa trên giả thuyết model vision thương mại đọc đủ đúng chữ viết tay
@@ -24,9 +24,13 @@ business_value: >
   trước khi tốn công xây app.
 
 description: >
+  Tuần 1 chạy trên DỮ LIỆU MOCK (PO 08/10/2026): không có dữ liệu của trẻ thật. Kết quả gắn nhãn MOCK, không dùng
+  để tuyên bố năng lực thật; đo lại trên dữ liệu trẻ thật (có đồng ý, điều khoản đã xác minh) trước cổng G1.
   Chạy claude-opus-5-5, claude-sonnet-5-5 và claude-haiku-5-5 (Anthropic, PO chốt 08/10) qua một adapter
-  thử nghiệm trên hai tập: (a) 100–200 ảnh bài làm của trẻ lớp 6 trong vở, có số câu ở lề trái, chụp từ giá đỡ;
-  (b) 20–30 tờ đề in Toán 6 HK1 Cánh diều một trang (có ý con, có câu hình học). Mọi ảnh qua bước ẩn danh hóa
+  thử nghiệm trên hai tập MOCK: (a) 100–200 ảnh trang vở do người lớn (đội dự án, shadow teacher) viết tay
+  mô phỏng bài làm lớp 6, có lỗi cố ý theo các loại lỗi thường gặp và số câu ở lề trái (ví dụ "1) 5x + 3 = 28"),
+  chụp từ giá đỡ; dải đầu trang ghi tên giả để kiểm ẩn danh hóa; (b) 20–30 tờ đề in một trang do shadow teacher
+  soạn theo dạng bài Toán 6 HK1 Cánh diều (có ý con, có câu hình học), không chụp lại trang SGK. Mọi ảnh qua bước ẩn danh hóa
   (Technical HLD v1.3 §5.7) trước khi gửi Anthropic. Đo thêm khả năng đọc số câu ở lề trái vở.
   Đo theo metrics Technical HLD §12 và báo theo model_version/prompt_version. Không xây pipeline sản phẩm.
 
@@ -40,9 +44,9 @@ acceptance_criteria:
   - id: AC04
     description: "Output có cấu trúc câu/ý/dòng, LaTeX, độ tin cậy, cách đọc thay thế cho token không chắc (Technical HLD §6.2)."
   - id: AC05
-    description: "Kết luận đạt/không đạt cổng S theo ngưỡng PO chốt 08/10: model tốt nhất có kết luận lỗi đúng ≥ 75% trên bài làm và đủ câu/ý đề in ≥ 95% trước xác nhận."
+    description: "Kết luận đạt/không đạt cổng S theo ngưỡng PO chốt 08/10: model tốt nhất có kết luận lỗi đúng ≥ 75% trên bài làm và đủ câu/ý đề in ≥ 95% trước xác nhận. Kết luận ghi là 'S (MOCK)' và nêu rõ chưa đo trên chữ viết của trẻ thật."
   - id: AC06
-    description: "Không ảnh, nhãn, secret hay output thô nào của trẻ được commit vào Git; dữ liệu nằm ở nơi lưu trữ được PO duyệt."
+    description: "Không ảnh, nhãn, secret hay output thô nào được commit vào Git; tập mock và kết quả nằm ở nơi lưu trữ được PO duyệt, mọi file và báo cáo gắn nhãn MOCK."
   - id: AC07
     description: "Mọi request gửi Anthropic trong spike không có EXIF, mã người dùng/học sinh/phiên/thiết bị; dải đầu trang bị che (A43). Báo cáo ghi kích thước dải che đề xuất."
   - id: AC08
@@ -54,13 +58,14 @@ functional_requirements:
   - "FR03: Script tính metrics, chạy lại được, ghi model_version và prompt_version."
 
 non_functional_requirements:
-  - "NFR01: Chỉ dùng provider đã được PO duyệt sau khi xác minh điều khoản cho trẻ em (CLAUDE_AI_Tutor.md §10)."
+  - "NFR01: Tuần 1 chỉ gửi dữ liệu mock do người lớn tạo, không có dữ liệu trẻ thật; dữ liệu trẻ thật chỉ gửi sau khi điều khoản cho trẻ em được xác minh (CLAUDE_AI_Tutor.md §10)."
+  - "NFR04: API key Anthropic do người cấu hình ngoài Git (biến môi trường/secret store trên máy chạy spike); không nằm trong code, log hay báo cáo (A+, RAID D-007)."
   - "NFR02: Ảnh chỉ là vùng giấy đã cắt; không có khuôn mặt hoặc người trong ảnh."
   - "NFR03: Mọi số liệu trong báo cáo là số đo trên tập spike, ghi rõ cỡ mẫu; không ngoại suy thành accuracy sản phẩm."
 
 dependencies:
-  - "Q2: Provider vision được duyệt (A+)."
-  - "Q3: Nguồn và đồng ý cho ảnh bài làm của trẻ."
+  - "D-007: API key Anthropic được người cấu hình trên máy chạy spike (A+)."
+  - "Tập mock: đội dự án và shadow teacher viết tay và soạn đề (ngày 08–10/10)."
   - "Shadow teacher gán nhãn (Business HLD v1.3 D25)."
 
 components:
@@ -84,7 +89,7 @@ test_scenarios:
   - id: TS02
     covers: [AC02]
     type: measurement
-    scenario: "Đề 2 trang 5 câu 8 ý, có một câu hình vẽ → 8 item, câu hình vẽ có cờ."
+    scenario: "Đề 1 trang 5 câu 8 ý, có một câu hình vẽ → 8 item, câu hình vẽ có cờ."
   - id: TS03
     covers: [AC03]
     type: measurement
@@ -96,7 +101,7 @@ test_scenarios:
   - id: TS05
     covers: [AC06]
     type: measurement
-    scenario: "Quét repo sau spike: không có file ảnh, nhãn hay output thô của trẻ; không có secret."
+    scenario: "Quét repo sau spike: không có file ảnh, nhãn hay output thô; không có secret; báo cáo có nhãn MOCK ở tiêu đề và mỗi bảng số."
   - id: TS06
     covers: [AC07]
     type: security
@@ -111,8 +116,8 @@ open_questions:
   - "Q5: Phạm vi là toàn bộ Toán lớp 6 HK1; cần bộ SGK và danh sách dạng bài HK1 để dựng tập mẫu có độ phủ đủ."
   - "Q2: Provider đã chốt là Anthropic; còn phải xác minh điều khoản cho người dưới 18 tuổi, retention, training, vị trí xử lý (inference_geo) trước khi gửi ảnh thật. Việc A+, cần PO duyệt."
   - "Q6: Tập mẫu theo SGK Cánh diều HK1, gồm hình học; vở có số câu ở lề trái (ví dụ '1) 5x + 3 = 28')."
-  - "Q3: Ảnh bài làm lấy từ đâu, đồng ý loại 2 hay thỏa thuận riêng, lưu ở đâu, xóa khi nào?"
-  - "Q4: Ai chạy spike: Codex Backend hay kỹ sư AI của đội?"
+  - "Q3 (đã trả lời 08/10): tuần 1 dùng tập mock do người lớn tạo; nguồn và đồng ý cho ảnh trẻ thật để sau (RAID I-013), trước G1."
+  - "Q4 (đã trả lời 08/10): Codex Backend chạy spike."
   - "Q7: Shadow teacher gán nhãn tập spike (D25); cần ký hợp tác trước 14/10."
 
 definition_of_done:
@@ -131,9 +136,9 @@ definition_of_done:
 # Keep this block LAST: scripts/validate-story.sh reads the 20 lines after it.
 definition_of_ready:
   business_value_defined: true
-  story_defined: false
-  acceptance_criteria_defined: false
+  story_defined: true
+  acceptance_criteria_defined: true
   dependencies_identified: true
-  architecture_reviewed: false
+  architecture_reviewed: true        # spike, no production architecture; checked by CLAUDE_BA against TH v1.3 §5.7, §6, §12
   test_scenarios_defined: true
-  estimation_completed: false
+  estimation_completed: true
