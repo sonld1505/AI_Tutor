@@ -1,0 +1,66 @@
+sprint: SPRINT-002
+date: "2026-10-09"
+# Daily report by CLAUDE_SM on human PO request. Read-only snapshot of
+# safe/sprints/SPRINT-002.yaml, safe/stories/, safe/raid.yaml, git history and worktrees.
+# Not checked: GitHub PRs and Jenkins (gh not logged in on EC2).
+# Published page (private): https://claude.ai/artifact/QYzXNZox2jPxkuPdVvwSWD
+
+gate_s_due: "2026-10-14"
+days_to_gate_s: 5
+committed_points: 16
+completed_points: 0
+
+yesterday:   # 2026-10-08, PRs #9-#16 merged into develop
+  - "Product baseline v1.3 adopted; PO approved epics, features, backlog and roadmap."
+  - "PO decided week 1 runs on MOCK data; SPRINT-002 created."
+  - "US-001 (5 pts) and US-002 (8 pts) refined and moved to READY; US-002 assigned to CODEX_ANDROID + CODEX_IOS."
+  - "US-FACTORY-008 (3 pts) created and started (IN_PROGRESS). PO amended AC01 (pin scope) and AC02 (image ID pin) after Codex hard-stops; D-009 closed (Android SDK licence accepted)."
+
+stories:
+  - id: US-001
+    points: 5
+    status: READY
+    note: "Not started. Waiting on D-007, D-006 and mock data."
+  - id: US-002
+    points: 8
+    status: READY
+    note: "Not started. Also blocked by D-008 and I-021."
+  - id: US-FACTORY-008
+    points: 3
+    status: IN_PROGRESS
+    note: >
+      Codex work is uncommitted in /home/ubuntu/AI_Tutor-worktrees/US-FACTORY-008-DEVOPS
+      (infrastructure/docker/flutter-android/, scripts/flutter-*.sh, scripts/flutter-toolchain-offline-test.py).
+      Local image ai-tutor/flutter-android:3.47.6-android35-r1 exists (10.4 GB).
+      No test logs or evidence in factory/logs/: no test result can be confirmed.
+  - id: US-003
+    points: null
+    status: DRAFT
+    note: "Not committed to the sprint."
+
+blockers:   # all owned by HUMAN_PO
+  - "D-007: Anthropic, Viettel AI and Azure keys not configured on the spike machine (US-001, US-002)."
+  - "D-006: no agent Git identity, so no implementation commit is allowed (blocks committing US-FACTORY-008 work)."
+  - "D-008: no macOS build host, real Android 15+ / iOS 18.7+ devices or human operator (US-002)."
+  - "I-021: Flutter project layout and owner of shared Dart code undecided (US-002)."
+  - "Mock data sets (notebook pages, 1-page sheets, voice recordings) not produced; storage outside Git not named."
+
+risks:
+  - id: schedule
+    note: "0/16 pts done and both spikes have open start blockers. Gate S on 2026-10-14 is at risk if D-007, D-006 and mock data are not settled by 2026-10-10. SM judgement from status, not a measurement."
+  - id: R-006
+    note: "Mock data may overstate accuracy."
+  - id: R-008
+    note: "2 vCPU / 7 GB RAM; no build time or peak memory recorded yet."
+  - id: R-005
+    note: "Names outside the masked header band could reach the AI provider."
+
+outside_sprint:
+  - "US-FACTORY-002 IN_PROGRESS, held by I-005, I-009, D-001; US-FACTORY-001 BLOCKED; US-FACTORY-003 READY, not started."
+  - "DEF-001 (HIGH), DEF-002, DEF-003 OPEN; DEF-001 and DEF-003 have no owning Story (I-004)."
+
+decisions_needed:
+  - "Configure D-007 keys and D-006 agent Git identity."
+  - "Decide I-021."
+  - "Name who produces the mock data and where it is stored outside Git."
+  - "Whoever ran the US-FACTORY-008 Docker tests records the results as evidence."
